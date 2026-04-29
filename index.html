@@ -3,235 +3,352 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atranka — Sugauti Vanagą 2026</title>
+<title>SUGAUTI VANAGĄ — Aktorių atranka</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#1a1a18}
-
 .app{display:flex;flex-direction:column;height:100vh;background:#fff;border-left:0.5px solid #d3d1c7;border-right:0.5px solid #d3d1c7;max-width:1400px;margin:0 auto}
-
-/* ── Topbar ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:46px;background:#f5f4f0;border-bottom:0.5px solid #d3d1c7;flex-shrink:0;gap:12px}
-.tb-logo{font-size:13px;font-weight:500;color:#1a1a18;white-space:nowrap}
-.tb-logo span{color:#534AB7}
-.tb-project{font-size:12px;color:#888780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.tb-nav{display:flex;gap:2px}
-.tb-tab{font-size:11px;padding:5px 13px;border-radius:6px;color:#888780;cursor:pointer;letter-spacing:0.03em;border:none;background:none;font-family:inherit;transition:all 0.12s;white-space:nowrap}
-.tb-tab:hover{background:#e8e6e0;color:#1a1a18}
-.tb-tab.act{background:#534AB7;color:#fff}
-.tb-right{display:flex;align-items:center;gap:12px}
-.tb-sync-btn{font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;transition:background 0.12s;white-space:nowrap}
-.tb-sync-btn:hover{background:#f0eeff}
-.tb-user{display:flex;align-items:center;gap:7px;font-size:12px;color:#5f5e5a;white-space:nowrap}
-.tb-dot{width:7px;height:7px;border-radius:50%;background:#534AB7;flex-shrink:0}
-.tb-username{cursor:pointer;outline:none;border:none;background:none;font-size:12px;color:#5f5e5a;font-family:inherit}
-.tb-username:focus{color:#534AB7}
-
-/* ── Body ── */
-.body{display:flex;flex:1;overflow:hidden;min-height:0}
-
-/* ── Sidebar ── */
-.sidebar{width:190px;flex-shrink:0;background:#f5f4f0;border-right:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden}
-.sb-head{padding:12px 14px 8px;border-bottom:0.5px solid #d3d1c7}
+/* Topbar */
+.topbar{display:flex;align-items:flex-end;padding:0 16px 0;height:46px;background:#f5f4f0;position:relative;flex-shrink:0}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:0.5px;background:#d3d1c7;z-index:1}
+.tb-left{display:flex;align-items:center;padding-bottom:8px;flex-shrink:0;margin-right:10px}
+.tb-title-bold{font-size:13px;font-weight:700;color:#1a1a18;letter-spacing:0.04em;white-space:nowrap}
+.tb-title-light{font-size:13px;font-weight:400;color:#888780;margin-left:5px;white-space:nowrap}
+.tb-nav{display:flex;gap:2px;align-items:flex-end}
+.tb-tab{height:33px;padding:0 12px;display:flex;align-items:center;gap:6px;border-radius:6px 6px 0 0;border:0.5px solid #c9c7be;background:#e2e0da;color:#888780;font-size:10.5px;cursor:pointer;position:relative;bottom:-0.5px;z-index:0;transition:all 0.12s;white-space:nowrap;font-family:inherit;letter-spacing:0.03em;outline:none}
+.tb-tab:hover{background:#d6d4cd;color:#1a1a18}
+.tb-tab.act{background:#fff;color:#534AB7;border-bottom-color:#fff;z-index:2}
+.tb-tab svg{width:13px;height:13px;flex-shrink:0}
+.tb-right{display:flex;align-items:center;gap:8px;padding-bottom:8px;margin-left:auto;flex-shrink:0}
+.tb-sync{font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;transition:background 0.12s;white-space:nowrap}
+.tb-sync:hover{background:#f0eeff}
+.tb-user-btn{background:none;border:none;cursor:pointer;color:#888780;padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.12s}
+.tb-user-btn:hover{color:#534AB7;background:rgba(83,74,183,0.08)}
+.tb-user-btn svg{width:17px;height:17px}
+/* Body */
+.body{display:flex;flex:1;overflow:hidden;min-height:0;position:relative}
+/* Sidebar */
+.sidebar{width:190px;flex-shrink:0;background:#f5f4f0;border-right:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden;transition:width 0.2s}
+.sb-hamburger{display:none;align-items:center;justify-content:center;height:44px;cursor:pointer;color:#888780;flex-shrink:0;border-bottom:0.5px solid #d3d1c7;transition:color 0.12s}
+.sb-hamburger:hover{color:#534AB7}
+.sb-content{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.sb-top-nav{padding:4px 0;border-bottom:0.5px solid #d3d1c7;flex-shrink:0}
+.sb-top-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;transition:background 0.1s;border-left:2px solid transparent}
+.sb-top-item:hover{background:#ebebea}
+.sb-top-item.act{background:#fff;border-left-color:#534AB7}
+.sb-top-item.act .sb-top-nm{color:#534AB7;font-weight:500}
+.sb-top-item.act .sb-top-ic{color:#534AB7}
+.sb-top-ic{width:14px;height:14px;flex-shrink:0;color:#888780}
+.sb-top-nm{font-size:11px;color:#1a1a18;white-space:nowrap;overflow:hidden}
+.sb-badge{font-size:9px;background:#534AB7;color:#fff;border-radius:10px;padding:1px 6px;flex-shrink:0;margin-left:auto}
+.sb-head{padding:10px 14px 6px;flex-shrink:0}
 .sb-sec{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780}
-.sb-list{flex:1;overflow-y:auto;padding:5px 0}
+.sb-list{flex:1;overflow-y:auto;padding:4px 0}
 .sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-left:2px solid transparent;cursor:pointer;transition:background 0.1s}
 .sb-item:hover{background:#ebebea}
 .sb-item.act{background:#fff;border-left-color:#534AB7}
 .sb-item.act .sb-nm{font-weight:500;color:#534AB7}
 .sb-nm{font-size:11px;color:#1a1a18;letter-spacing:0.04em}
 .sb-cnt{font-size:9px;background:#e8e6e0;color:#888780;border-radius:10px;padding:1px 6px;flex-shrink:0}
-
-/* ── Main ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:50}
+.sb-overlay.vis{display:block}
+/* Main */
 .main{flex:1;min-width:0;background:#fff;overflow-y:auto;display:flex;flex-direction:column}
 .mhead{padding:12px 16px 10px;border-bottom:0.5px solid #d3d1c7;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
 .mh-title{font-size:17px;font-weight:500;letter-spacing:0.03em}
 .mh-sub{font-size:11px;color:#888780;margin-top:2px}
-.mh-fltrs{display:flex;gap:4px;flex-shrink:0}
+.mh-right{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap}
 .fl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
 .fl:hover{border-color:#888780;color:#1a1a18}
 .fl.act{background:#534AB7;border-color:#534AB7;color:#fff}
-
 .new-bar{margin:10px 14px 0;background:#EAF3DE;border:0.5px solid #97C459;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
 .nb-l{display:flex;align-items:center;gap:8px}
 .nb-dot{width:6px;height:6px;border-radius:50%;background:#3B6D11;flex-shrink:0}
 .nb-txt{font-size:11px;color:#3B6D11;font-weight:500}
-.nb-sub{font-size:10px;color:#3B6D11;opacity:0.75;margin-top:1px}
 .nb-btn{font-size:10px;font-weight:500;color:#3B6D11;border:0.5px solid #3B6D11;border-radius:6px;padding:4px 10px;cursor:pointer;background:none;font-family:inherit;white-space:nowrap;transition:background 0.12s}
 .nb-btn:hover{background:rgba(59,109,17,0.08)}
-
 .sec-lbl{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;padding:11px 14px 4px}
-
-/* ── Actor grid ── */
+/* Grids */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;padding:0 14px 14px}
+.grid-sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;padding:0 0 14px}
 .card{border-radius:8px;overflow:hidden;border:0.5px solid #d3d1c7;position:relative;cursor:pointer;transition:border-color 0.12s,box-shadow 0.12s}
 .card:hover{border-color:#b4b2a9;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 .card.sel{border-color:#534AB7;border-width:1.5px}
 .card.isnew{border-color:#97C459}
 .card-photo{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
-.card-photo-ph{width:100%;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.7)}
+.card-ph{width:100%;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.7)}
 .card-name{padding:5px 8px 6px;font-size:11px;font-weight:500;background:#f5f4f0;color:#1a1a18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge{position:absolute;top:6px;left:6px;font-size:8px;font-weight:600;letter-spacing:0.05em;padding:2px 6px;border-radius:3px}
 .b-t{background:#3B6D11;color:#C0DD97}
 .b-m{background:#854F0B;color:#FAC775}
 .cmt-dot{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600}
 .new-tag{position:absolute;bottom:26px;right:6px;font-size:8px;background:#EAF3DE;color:#3B6D11;border-radius:3px;padding:1px 5px;font-weight:500}
-
-/* ── Overview ── */
-.overview{padding:14px;display:none}
-.overview.vis{display:block}
-.ov-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;margin-bottom:6px}
-.ov-char{font-size:11px;font-weight:500;letter-spacing:0.04em;width:130px;flex-shrink:0;color:#1a1a18}
-.ov-pills{display:flex;gap:5px;flex-wrap:wrap;flex:1}
-.ov-pill{display:flex;align-items:center;gap:5px;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:5px;padding:3px 8px;cursor:pointer;transition:border-color 0.12s}
-.ov-pill:hover{border-color:#534AB7}
-.ov-pill-ph{width:22px;height:22px;border-radius:3px;flex-shrink:0;object-fit:cover}
-.ov-pill-nm{font-size:10px;color:#1a1a18}
-.ov-empty{font-size:11px;color:#b4b2a9;font-style:italic}
+/* Overview */
+.ov-wrap{padding:14px}
+.ov-char-lbl{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;padding:10px 0 6px}
+.ov-empty{font-size:11px;color:#b4b2a9;font-style:italic;padding:6px 0 14px}
+.ov-row-txt{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:border-color 0.12s}
+.ov-row-txt:hover{border-color:#b4b2a9}
+.ov-char{font-size:11px;font-weight:500;letter-spacing:0.04em;width:130px;flex-shrink:0}
 .ov-stat{font-size:11px;color:#888780}
-
-/* ── Detail panel ── */
-.panel{width:280px;flex-shrink:0;background:#f5f4f0;border-left:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden;transition:width 0.18s}
+/* Pranešimai */
+.notif-item{background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;padding:10px 12px;margin-bottom:5px;display:flex;gap:10px;align-items:flex-start;transition:opacity 0.25s}
+.notif-item.read{opacity:0.42}
+.notif-ic{width:30px;height:30px;border-radius:50%;background:#f0eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.notif-ic svg{width:13px;height:13px;color:#534AB7}
+.notif-body{flex:1;min-width:0}
+.notif-txt{font-size:11px;color:#1a1a18;line-height:1.5;margin-bottom:3px}
+.notif-txt a{color:#534AB7;cursor:pointer;text-decoration:none}
+.notif-txt a:hover{text-decoration:underline}
+.notif-time{font-size:10px;color:#888780}
+.notif-mark{font-size:9px;color:#888780;border:0.5px solid #d3d1c7;border-radius:4px;padding:2px 8px;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.notif-mark:hover{border-color:#888780;color:#1a1a18}
+/* Nauji kandidatai */
+.nauji-char-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;border-bottom:0.5px solid #e8e6e0;margin-bottom:8px;cursor:pointer}
+.nauji-char-nm{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a18}
+.nauji-cnt{font-size:9px;background:#EAF3DE;color:#3B6D11;border-radius:10px;padding:1px 7px}
+/* Panel */
+.panel{width:300px;flex-shrink:0;background:#f5f4f0;border-left:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden;transition:width 0.18s}
 .panel.hidden{width:0;border:none}
 .panel-inner{overflow-y:auto;flex:1}
 .panel-head{padding:12px 14px 10px;background:#fff;border-bottom:0.5px solid #d3d1c7;position:sticky;top:0;z-index:2}
 .ph-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .ph-name{font-size:17px;font-weight:500}
 .ph-id{font-size:10px;color:#888780;margin-top:2px}
-.ph-close{background:none;border:none;cursor:pointer;color:#888780;font-size:16px;padding:2px 4px;line-height:1;transition:color 0.1s;flex-shrink:0}
+.ph-close{background:none;border:none;cursor:pointer;color:#888780;font-size:16px;padding:2px 6px;line-height:1;transition:color 0.1s;flex-shrink:0}
 .ph-close:hover{color:#1a1a18}
 .ph-addbtn{display:inline-block;font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;margin-top:8px;transition:background 0.12s}
 .ph-addbtn:hover{background:#f0eeff}
 .pb{padding:12px 14px}
-
-.photo-main{width:100%;aspect-ratio:3/4;border-radius:8px;object-fit:cover;display:block;margin-bottom:5px}
-.photo-main-ph{width:100%;aspect-ratio:3/4;border-radius:8px;display:block;margin-bottom:5px}
-.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:10px}
-.pgrid-cell{aspect-ratio:1/1;border-radius:4px;object-fit:cover;display:block;cursor:pointer;transition:opacity 0.12s;background:#d3d1c7}
-.pgrid-cell:hover{opacity:0.8}
-
+/* Photos */
+.photo-main{width:100%;aspect-ratio:3/4;border-radius:8px;object-fit:cover;display:block;margin-bottom:7px;cursor:pointer;transition:opacity 0.12s}
+.photo-main:hover{opacity:0.9}
+.photo-main-ph{width:100%;aspect-ratio:3/4;border-radius:8px;display:block;margin-bottom:7px}
+.pgrid{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px}
+.pgrid-cell{width:calc(20% - 3px);aspect-ratio:3/4;border-radius:4px;object-fit:cover;display:block;cursor:pointer;transition:opacity 0.12s;background:#d3d1c7}
+.pgrid-cell:hover{opacity:0.78}
+/* Video */
+.vgrid{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px}
+.vthumb{width:calc(25% - 3px);aspect-ratio:16/9;border-radius:4px;background:#2c2c2a;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;text-decoration:none;overflow:hidden;transition:opacity 0.12s}
+.vthumb:hover{opacity:0.82}
+.vthumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vplay{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.88);display:flex;align-items:center;justify-content:center;font-size:6px;color:#1a1a18;position:relative;z-index:1}
+.vsrc{position:absolute;bottom:2px;right:3px;font-size:6px;color:rgba(255,255,255,0.6);z-index:1}
+/* CV */
 .psec{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin:0 0 7px}
-
-.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:13px}
-.vthumb{aspect-ratio:16/9;border-radius:4px;background:#2c2c2a;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;text-decoration:none;transition:opacity 0.12s}
-.vthumb:hover{opacity:0.8}
-.vplay{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.88);display:flex;align-items:center;justify-content:center;font-size:7px;color:#1a1a18}
-.vsrc{position:absolute;bottom:3px;right:4px;font-size:7px;color:rgba(255,255,255,0.55)}
-
 .cvrow{display:flex;padding:5px 0;border-bottom:0.5px solid #d3d1c7}
 .cvl{width:98px;flex-shrink:0;font-size:10px;color:#888780;text-transform:uppercase;letter-spacing:0.04em;padding-top:1px}
 .cvv{font-size:11px;color:#1a1a18;line-height:1.4}
 .divider{border:none;border-top:0.5px solid #d3d1c7;margin:12px 0}
-
-.uzim-input{background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:7px 9px;font-size:11px;color:#1a1a18;width:100%;margin-bottom:13px;font-family:inherit;resize:none;line-height:1.5;outline:none;transition:border-color 0.12s;min-height:60px}
-.uzim-input:focus{border-color:#534AB7}
-
+/* Info display */
+.info-display{background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 9px;font-size:11px;color:#1a1a18;min-height:38px;margin-bottom:10px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.info-display.empty{color:#b4b2a9;font-style:italic}
+/* Status */
 .stbtns{display:flex;gap:6px;margin-bottom:4px}
-.stb{flex:1;padding:8px 4px;border-radius:6px;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;text-align:center;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
+.stb{flex:1;padding:8px 4px;border-radius:6px;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;text-align:center;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s;outline:none}
 .stb:hover{border-color:#888780;color:#1a1a18}
 .stb.s-t{background:#EAF3DE;border-color:#3B6D11;color:#3B6D11}
 .stb.s-m{background:#FAEEDA;border-color:#854F0B;color:#854F0B}
-
+/* Comments */
 .cmt-item{background:#fff;border-left:2px solid #d3d1c7;border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:5px}
 .cmt-author{font-size:10px;color:#534AB7;font-weight:500}
 .cmt-time{font-size:9px;color:#888780;float:right}
-.cmt-text{font-size:11px;color:#1a1a18;margin-top:2px;line-height:1.45}
-.cmt-row{display:flex;gap:5px;margin-top:8px}
-.cmt-input{flex:1;font-size:11px;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:6px 8px;color:#1a1a18;font-family:inherit;outline:none;transition:border-color 0.12s}
-.cmt-input:focus{border-color:#534AB7}
-.cmt-send{font-size:10px;font-weight:500;padding:6px 11px;border-radius:6px;background:#534AB7;color:#fff;border:none;cursor:pointer;font-family:inherit;transition:background 0.12s;white-space:nowrap}
+.cmt-text{font-size:11px;color:#1a1a18;margin-top:2px;line-height:1.45;clear:both}
+.cmt-att-link{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px}
+.cmt-att-link a{color:#534AB7;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmt-att-link a:hover{text-decoration:underline}
+.cmt-compose{margin-top:8px}
+.cmt-row{display:flex;gap:5px;align-items:flex-end}
+.cmt-inp{flex:1;font-size:11px;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:6px 8px;color:#1a1a18;font-family:inherit;outline:none;transition:border-color 0.12s;resize:none;line-height:1.45;min-height:34px;max-height:90px;overflow-y:auto}
+.cmt-inp:focus{border-color:#534AB7}
+.cmt-clip{background:none;border:0.5px solid #d3d1c7;border-radius:6px;padding:0 7px;cursor:pointer;color:#888780;display:flex;align-items:center;height:34px;transition:all 0.12s;flex-shrink:0;position:relative;overflow:hidden}
+.cmt-clip:hover{border-color:#534AB7;color:#534AB7}
+.cmt-clip svg{width:14px;height:14px;pointer-events:none}
+.cmt-clip input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;width:100%}
+.cmt-send{font-size:10px;font-weight:500;padding:0 11px;border-radius:6px;background:#534AB7;color:#fff;border:none;cursor:pointer;font-family:inherit;transition:background 0.12s;white-space:nowrap;flex-shrink:0;height:34px}
 .cmt-send:hover{background:#3c349e}
 .cmt-send:disabled{background:#b4b2a9;cursor:not-allowed}
+.cmt-pending{display:flex;align-items:center;gap:5px;font-size:10px;color:#888780;padding:4px 0;margin-top:3px}
+.cmt-pending span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.cmt-pending .rm{cursor:pointer;color:#c0392b;border:none;background:none;font-size:12px;padding:0;line-height:1}
+/* Gallery */
+.gallery{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:300;display:flex;align-items:center;justify-content:center}
+.gal-img{max-height:90vh;max-width:90vw;object-fit:contain;border-radius:3px;display:block;user-select:none}
+.gal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background 0.12s}
+.gal-close:hover{background:rgba(255,255,255,0.22)}
+.gal-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:background 0.12s}
+.gal-btn:hover{background:rgba(255,255,255,0.2)}
+.gal-prev{left:16px}
+.gal-next{right:16px}
+.gal-ctr{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:11px}
+/* Modals */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:500;margin-bottom:16px}
+.modal-lbl{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#888780;margin:14px 0 5px;display:block}
+.modal-lbl:first-of-type{margin-top:0}
+.modal-ta{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;resize:vertical;min-height:68px;transition:border-color 0.12s;line-height:1.5}
+.modal-ta:focus{border-color:#534AB7;background:#fff}
+.modal-inp{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;transition:border-color 0.12s}
+.modal-inp:focus{border-color:#534AB7;background:#fff}
+.vid-prev{margin-top:8px;border-radius:6px;overflow:hidden;background:#2c2c2a;position:relative;aspect-ratio:16/9;display:none}
+.vid-prev img{width:100%;height:100%;object-fit:cover}
+.vid-prev-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.vid-prev-play span{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.88);display:flex;align-items:center;justify-content:center;font-size:9px}
+.modal-btns{display:flex;gap:8px;margin-top:18px}
+.btn-save{flex:1;padding:9px;background:#534AB7;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.12s}
+.btn-save:hover{background:#3c349e}
+.btn-cancel{flex:1;padding:9px;background:none;color:#888780;border:0.5px solid #d3d1c7;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.12s}
+.btn-cancel:hover{border-color:#888780;color:#1a1a18}
+/* User settings */
+.us-email{font-size:11px;color:#534AB7;margin-bottom:14px;font-weight:500}
+.us-group{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#888780;margin:14px 0 8px}
+.us-check,.us-radio{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11px;color:#1a1a18;cursor:pointer;user-select:none}
+.us-check input,.us-radio input{accent-color:#534AB7;cursor:pointer}
 
-.att-list{margin-bottom:6px}
-.att-item{display:flex;align-items:center;gap:8px;padding:6px 9px;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;margin-bottom:4px;font-size:11px;color:#5f5e5a}
-.att-item a{color:#534AB7;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.att-item a:hover{text-decoration:underline}
-.att-icon{font-size:13px;flex-shrink:0}
-.att-btn{font-size:10px;color:#888780;border:0.5px dashed #d3d1c7;border-radius:6px;padding:6px 10px;text-align:center;margin-top:6px;cursor:pointer;transition:border-color 0.12s,color 0.12s;position:relative;overflow:hidden}
-.att-btn:hover{border-color:#534AB7;color:#534AB7}
-.att-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-
-/* ── Loading / empty states ── */
+/* Utils */
 .loading{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:#888780;font-size:12px;gap:8px}
 .spinner{width:16px;height:16px;border:2px solid #d3d1c7;border-top-color:#534AB7;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:60px 20px;color:#888780;font-size:12px}
-
-/* ── Setup screen ── */
-.setup-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f4f0}
-.setup-box{background:#fff;border:0.5px solid #d3d1c7;border-radius:12px;padding:32px;width:420px}
-.setup-logo{font-size:20px;font-weight:500;color:#1a1a18;margin-bottom:4px}
-.setup-logo span{color:#534AB7}
-.setup-sub{font-size:12px;color:#888780;margin-bottom:24px}
-.setup-label{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#888780;margin-bottom:6px}
-.setup-input{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;color:#1a1a18;outline:none;margin-bottom:14px;transition:border-color 0.12s}
-.setup-input:focus{border-color:#534AB7;background:#fff}
-.setup-btn{width:100%;padding:10px;background:#534AB7;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.12s}
-.setup-btn:hover{background:#3c349e}
-.setup-err{font-size:11px;color:#c0392b;margin-top:8px;display:none}
-
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#d3d1c7;border-radius:2px}
 ::-webkit-scrollbar-thumb:hover{background:#b4b2a9}
-
 .toast{position:fixed;bottom:20px;right:20px;background:#2c2c2a;color:#f5f4f0;font-size:11px;padding:9px 16px;border-radius:8px;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none}
 .toast.show{opacity:1}
+/* Mobile */
+@media(max-width:768px){
+  .app{max-width:100%;border:none}
+  .tb-title-light{display:none}
+  .tb-tab{padding:0 10px;height:32px;gap:0}
+  .tb-tab .tab-lbl{display:none}
+  .tb-tab svg{width:15px;height:15px}
+  .tb-sync{display:none}
+  .sidebar{width:44px}
+  .sidebar.sb-open{width:220px;position:fixed;top:0;left:0;height:100%;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,0.14)}
+  .sb-hamburger{display:flex}
+  .sb-content{opacity:0;pointer-events:none;transition:opacity 0.15s;width:220px}
+  .sidebar.sb-open .sb-content{opacity:1;pointer-events:all}
+  .panel{position:fixed;top:0;right:-100%;width:100%;height:100%;z-index:100;border:none;transition:right 0.3s cubic-bezier(0.32,0.72,0,1)}
+  .panel:not(.hidden){right:0}
+  .panel.hidden{right:-100%;width:100%}
+  .sb-item,.sb-top-item{padding:10px 14px}
+  .stb{padding:10px 4px}
+}
 </style>
 </head>
 <body>
 
-<!-- SETUP SCREEN (shown if no config) -->
-<div class="setup-screen" id="setupScreen" style="display:none">
-  <div class="setup-box">
-    <div class="setup-logo">Atranka<span>.</span></div>
-    <div class="setup-sub">Įveskite projekto duomenis</div>
-    <div class="setup-label">Jūsų vardas</div>
-    <input class="setup-input" id="setupName" type="text" placeholder="Vardas" value="">
-    <div class="setup-label">Projekto pavadinimas</div>
-    <input class="setup-input" id="setupProject" type="text" placeholder="Sugauti Vanagą 2026" value="">
-    <button class="setup-btn" onclick="saveSetup()">Pradėti</button>
-    <div class="setup-err" id="setupErr">Prašome užpildyti visus laukus</div>
+<!-- Gallery -->
+<div class="gallery" id="gallery" style="display:none" onclick="if(event.target===this)closeGallery()">
+  <button class="gal-close" onclick="closeGallery()">✕</button>
+  <button class="gal-btn gal-prev" onclick="galNav(-1)">&#8249;</button>
+  <img class="gal-img" id="galImg" src="" alt="">
+  <button class="gal-btn gal-next" onclick="galNav(1)">&#8250;</button>
+  <div class="gal-ctr" id="galCtr"></div>
+</div>
+
+<!-- Info form modal -->
+<div class="modal-ov" id="infoModal" style="display:none" onclick="if(event.target===this)closeInfoModal()">
+  <div class="modal-box">
+    <div class="modal-title">Papildyti informaciją</div>
+    <label class="modal-lbl" style="margin-top:0">Užimtumas</label>
+    <textarea class="modal-ta" id="ifUzim" rows="3" placeholder="Užimtumo informacija…"></textarea>
+    <label class="modal-lbl">Pastabos</label>
+    <textarea class="modal-ta" id="ifPastab" rows="4" placeholder="Pastabos apie kandidatą…"></textarea>
+    <label class="modal-lbl">Pridėti video (YouTube arba Dropbox nuoroda)</label>
+    <input class="modal-inp" id="ifVid" type="url" placeholder="https://…" oninput="previewVid(this.value)">
+    <div class="vid-prev" id="vidPrev"><img id="vidThumb" src="" alt=""><div class="vid-prev-play"><span>▶</span></div></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeInfoModal()">Atšaukti</button>
+      <button class="btn-save" onclick="saveInfoModal()">Išsaugoti</button>
+    </div>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- User settings modal -->
+<div class="modal-ov" id="userModal" style="display:none" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal-box">
+    <div class="modal-title">Pranešimų nustatymai</div>
+    <div class="us-email" id="usEmail">—</div>
+    <div style="font-size:11px;color:#1a1a18">Gauti pranešimus el. paštu apie:</div>
+    <div style="margin-top:6px">
+      <label class="us-check"><input type="checkbox" id="pA"> pridėtus naujus kandidatus</label>
+      <label class="us-check"><input type="checkbox" id="pC"> naujus komentarus</label>
+      <label class="us-check"><input type="checkbox" id="pI"> atnaujintą informaciją</label>
+      <label class="us-check"><input type="checkbox" id="pV"> pridėtus vaizdo įrašus</label>
+      <label class="us-check"><input type="checkbox" id="pS"> pakeistą kandidato statusą</label>
+    </div>
+    <div class="us-group">Šiuos pranešimus noriu gauti:</div>
+    <label class="us-radio"><input type="radio" name="freq" id="fImm" value="iškart"> iškart</label>
+    <label class="us-radio"><input type="radio" name="freq" id="fDay" value="kasdien"> kasdien (santrauka)</label>
+    <div class="modal-btns" style="margin-top:20px">
+      <button class="btn-cancel" onclick="closeUserModal()">Uždaryti</button>
+      <button class="btn-save" onclick="saveUserPrefs()">Išsaugoti</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+<!-- Main app -->
 <div class="app" id="appShell" style="display:none">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px;min-width:0">
-      <div class="tb-logo">Atranka<span>.</span></div>
-      <div class="tb-project" id="tbProject">—</div>
+    <div class="tb-left">
+      <span class="tb-title-bold">SUGAUTI VANAGĄ</span>
+      <span class="tb-title-light">Aktorių atranka</span>
     </div>
     <div class="tb-nav">
-      <button class="tb-tab" onclick="showOverview('patvirtinti',this)">Patvirtinti</button>
-      <button class="tb-tab" onclick="showOverview('galbut',this)">Galbūt</button>
-      <button class="tb-tab" onclick="showOverview('nepatvirtinti',this)">Nepatvirtinti</button>
+      <button class="tb-tab" id="tabPatv" onclick="showOverview('patvirtinti',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+        <span class="tab-lbl">Patvirtinti</span>
+      </button>
+      <button class="tb-tab" id="tabGalb" onclick="showOverview('galbut',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        <span class="tab-lbl">Galbūt</span>
+      </button>
+      <button class="tb-tab" id="tabNepa" onclick="showOverview('nepatvirtinti',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"/><path d="M13.9 21.818a10 10 0 0 1-3.8 0"/><path d="M17.609 3.72a10 10 0 0 1 2.69 2.7"/><path d="M2.182 13.9a10 10 0 0 1 0-3.8"/><path d="M20.28 17.61a10 10 0 0 1-2.7 2.69"/><path d="M21.818 10.1a10 10 0 0 1 0 3.8"/><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"/><path d="m6.163 21.117-2.906.85a1 1 0 0 1-1.236-1.169l.965-2.98"/></svg>
+        <span class="tab-lbl">Nepatvirtinti</span>
+      </button>
     </div>
     <div class="tb-right">
-      <div class="tb-sync-btn" id="syncStatus" onclick="loadData()">↻ Atnaujinti</div>
-      <div class="tb-user">
-        <div class="tb-dot"></div>
-        <span id="tbUsername">—</span>
-      </div>
+      <div class="tb-sync" id="syncBtn" onclick="loadData()">↻ Atnaujinti</div>
+      <button class="tb-user-btn" onclick="openUserModal()" title="Pranešimų nustatymai">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
     </div>
   </div>
 
   <div class="body">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sb-head"><div class="sb-sec">Veikėjai</div></div>
-      <div class="sb-list" id="sidebarList">
-        <div class="loading"><div class="spinner"></div> Kraunama…</div>
+    <div class="sidebar" id="sidebar">
+      <div class="sb-hamburger" onclick="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </div>
+      <div class="sb-content" id="sbContent">
+        <div class="sb-top-nav">
+          <div class="sb-top-item" id="sbPran" onclick="switchView('pranesimai')">
+            <svg class="sb-top-ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="sb-top-nm">Pranešimai</span>
+            <span class="sb-badge" id="pranBadge" style="display:none">0</span>
+          </div>
+          <div class="sb-top-item" id="sbNauji" onclick="switchView('nauji')">
+            <svg class="sb-top-ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            <span class="sb-top-nm">Nauji kandidatai</span>
+            <span class="sb-badge" id="naukBadge" style="display:none">0</span>
+          </div>
+        </div>
+        <div class="sb-head"><div class="sb-sec">Veikėjai</div></div>
+        <div class="sb-list" id="sidebarList"><div class="loading" style="padding:14px"><div class="spinner"></div></div></div>
       </div>
     </div>
 
-    <!-- MAIN -->
     <div class="main" id="mainArea">
-      <div class="loading" style="margin-top:60px"><div class="spinner"></div> Kraunama kandidatai…</div>
+      <div class="loading" style="margin-top:60px"><div class="spinner"></div> Kraunama…</div>
     </div>
 
-    <!-- PANEL -->
     <div class="panel hidden" id="panel">
       <div class="panel-inner" id="panelInner"></div>
     </div>
@@ -241,633 +358,708 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://grsmscrbnzttgpzrqzxx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA';
-const PHOTO_BASE = SUPABASE_URL + '/storage/v1/object/public/actor-photos/';
+// Injected server-side by Apps Script doGet() — do not edit manually
+var _cfg = {
+  username:  '<?= username ?>',
+  userEmail: '<?= userEmail ?>',
+  scriptUrl: '<?= scriptUrl ?>'
+};
+</script>
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL    = 'https://grsmscrbnzttgpzrqzxx.supabase.co';
+const SUPABASE_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA';
+const PHOTO_BASE      = SUPABASE_URL + '/storage/v1/object/public/actor-photos/';
+const APPS_SCRIPT_URL = _cfg.scriptUrl; // injected from server
 
-// ── State ─────────────────────────────────────────────────────────────────
-let state = {
-  username: '',
-  projectName: '',
-  projectId: null,
-  baskets: [],
+// ── State ──────────────────────────────────────────────────────────────────
+const S = {
+  username: _cfg.username, userEmail: _cfg.userEmail,
+  projectId: null, baskets: [],
+  view: 'pranesimai',        // pranesimai | nauji | basket | patvirtinti | galbut | nepatvirtinti
   activeBasketId: null,
-  basketActors: [],     // [{basket_actor_id, actor, status, photos, comments, is_new}]
-  seenActorIds: new Set(JSON.parse(localStorage.getItem('seenActors') || '[]')),
-  activeFilter: 'all',
-  activeOverview: null,
-  selectedBasketActorId: null,
+  basketActors: [],
+  seenActors:  new Set(JSON.parse(localStorage.getItem('seenActors')  || '[]')),
+  seenNotifs:  new Set(JSON.parse(localStorage.getItem('seenNotifs')  || '[]')),
+  filter: 'all',
+  selectedBaId: null,
+  galPhotos: [], galIdx: 0,
+  infoModalBaId: null,
 };
 
-// ── Supabase helpers ───────────────────────────────────────────────────────
+// ── Supabase ───────────────────────────────────────────────────────────────
 async function sb(path, opts = {}) {
   const r = await fetch(SUPABASE_URL + path, {
     ...opts,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-      ...(opts.headers || {})
-    }
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation', ...(opts.headers||{}) }
   });
   if (!r.ok) { const t = await r.text(); throw new Error(t); }
   return r.json().catch(() => ({}));
 }
+function pUrl(p) { return p ? PHOTO_BASE + p : null; }
 
-function photoUrl(path) {
-  return path ? PHOTO_BASE + path : null;
+// ── Apps Script ────────────────────────────────────────────────────────────
+async function asGet(p)  {
+  if (!APPS_SCRIPT_URL) return null;
+  try { return await (await fetch(APPS_SCRIPT_URL + '?' + new URLSearchParams(p))).json(); } catch { return null; }
+}
+async function asPost(d) {
+  if (!APPS_SCRIPT_URL) return null;
+  try { return await (await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(d) })).json(); } catch { return null; }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
-window.onload = async () => {
-  const name = localStorage.getItem('castingUsername');
-  const project = localStorage.getItem('castingProject');
-  if (!name || !project) {
-    document.getElementById('setupScreen').style.display = 'flex';
-    return;
-  }
-  state.username = name;
-  state.projectName = project;
-  startApp();
-};
-
-function saveSetup() {
-  const name = document.getElementById('setupName').value.trim();
-  const project = document.getElementById('setupProject').value.trim();
-  if (!name || !project) {
-    document.getElementById('setupErr').style.display = 'block';
-    return;
-  }
-  localStorage.setItem('castingUsername', name);
-  localStorage.setItem('castingProject', project);
-  state.username = name;
-  state.projectName = project;
-  document.getElementById('setupScreen').style.display = 'none';
-  startApp();
-}
-
+// ── Init ───────────────────────────────────────────────────────────────────
+// User identity is resolved server-side by Apps Script doGet() via
+// Session.getActiveUser().getEmail() — injected into _cfg above.
+window.onload = () => { startApp(); };
 function startApp() {
   document.getElementById('appShell').style.display = 'flex';
-  document.getElementById('tbUsername').textContent = state.username;
-  document.getElementById('tbProject').textContent = state.projectName;
   loadData();
   startRealtime();
 }
 
-// ── Load data ─────────────────────────────────────────────────────────────
+// ── Load data ──────────────────────────────────────────────────────────────
 async function loadData() {
-  setSyncStatus('↻ Kraunama…', true);
+  setSyncTxt('↻ Kraunama…');
   try {
-    // Find project
-    const projects = await sb('/rest/v1/projects?select=id,name&order=created_at.desc&limit=1');
-    if (!projects.length) {
-      document.getElementById('mainArea').innerHTML = '<div class="empty-state">Projekto duomenų nerasta.<br>Pirmiausia paleiskite sinchronizaciją iš naršyklės plėtinio.</div>';
-      setSyncStatus('↻ Atnaujinti');
-      return;
+    const projs = await sb('/rest/v1/projects?select=id,name&order=created_at.desc&limit=1');
+    if (!projs.length) {
+      document.getElementById('mainArea').innerHTML = '<div class="empty-state">Projekto duomenų nerasta.<br>Paleiskite sinchronizaciją iš naršyklės plėtinio.</div>';
+      setSyncTxt('↻ Atnaujinti'); return;
     }
-    state.projectId = projects[0].id;
-    document.getElementById('tbProject').textContent = projects[0].name;
-
-    // Load baskets
-    const baskets = await sb(`/rest/v1/baskets?project_id=eq.${state.projectId}&select=id,name,basket_date,actor_count&order=basket_date.asc,name.asc`);
-    state.baskets = baskets;
+    S.projectId = projs[0].id;
+    S.baskets = await sb(`/rest/v1/baskets?project_id=eq.${S.projectId}&select=id,name,basket_date,actor_count&order=basket_date.asc,name.asc`);
     renderSidebar();
-
-    if (baskets.length > 0) {
-      const first = state.activeBasketId
-        ? baskets.find(b => b.id === state.activeBasketId) || baskets[0]
-        : baskets[0];
-      await selectBasket(first.id, false);
-    }
-    setSyncStatus('↻ Atnaujinti');
-  } catch(e) {
-    setSyncStatus('⚠ Klaida');
-    showToast('Nepavyko užkrauti duomenų: ' + e.message);
-  }
+    updateBadges();
+    switchView(S.view || 'pranesimai');
+    setSyncTxt('↻ Atnaujinti');
+  } catch(e) { setSyncTxt('⚠ Klaida'); showToast('Klaida: ' + e.message); }
 }
+function setSyncTxt(t) { document.getElementById('syncBtn').textContent = t; }
 
-function setSyncStatus(text, spinning) {
-  const el = document.getElementById('syncStatus');
-  el.textContent = text;
-}
-
-// ── Sidebar ───────────────────────────────────────────────────────────────
+// ── Sidebar ────────────────────────────────────────────────────────────────
 function renderSidebar() {
   const list = document.getElementById('sidebarList');
-  if (!state.baskets.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:20px 14px;font-size:11px;">Veikėjų nerasta</div>';
-    return;
-  }
-  list.innerHTML = state.baskets.map(b => `
-    <div class="sb-item ${b.id === state.activeBasketId ? 'act' : ''}" onclick="selectBasket('${b.id}',true)">
-      <span class="sb-nm">${b.name.toUpperCase()}</span>
-      <span class="sb-cnt">${b.actor_count || 0}</span>
-    </div>`).join('');
+  if (!S.baskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
+  list.innerHTML = S.baskets.map(b =>
+    `<div class="sb-item ${b.id===S.activeBasketId && S.view==='basket' ? 'act' : ''}" onclick="selectBasket('${b.id}')">
+       <span class="sb-nm">${b.name.toUpperCase()}</span>
+       <span class="sb-cnt">${b.actor_count||0}</span>
+     </div>`).join('');
+  document.getElementById('sbPran').classList.toggle('act',  S.view === 'pranesimai');
+  document.getElementById('sbNauji').classList.toggle('act', S.view === 'nauji');
 }
 
-// ── Select basket ─────────────────────────────────────────────────────────
-async function selectBasket(basketId, fromClick) {
-  state.activeBasketId = basketId;
-  state.activeOverview = null;
-  state.selectedBasketActorId = null;
-  document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
-  renderSidebar();
-  closePanel();
-
-  const basket = state.baskets.find(b => b.id === basketId);
-  renderBasketHeader(basket);
-  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
-
+async function updateBadges() {
+  if (!S.projectId) return;
+  // Pranešimai unread count
   try {
-    // Load basket_actors with actor + photos + comment count
-    const bas = await sb(`/rest/v1/basket_actors?basket_id=eq.${basketId}&select=id,status,basket_id,actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)`);
-
-    // Load primary photos per actor
-    const actorIds = bas.map(r => r.actors?.id).filter(Boolean);
-    let photos = [];
-    if (actorIds.length) {
-      photos = await sb(`/rest/v1/actor_photos?actor_id=in.(${actorIds.join(',')})&select=id,actor_id,storage_path,is_primary&order=is_primary.desc`);
-    }
-
-    state.basketActors = bas.map(ba => ({
-      basket_actor_id: ba.id,
-      actor: ba.actors,
-      status: ba.status || 'pending',
-      comment_count: (ba.comments || []).length,
-      is_new: !state.seenActorIds.has(ba.id),
-      photos: photos.filter(p => p.actor_id === ba.actors?.id)
-    }));
-
-    renderBasketGrid();
-  } catch(e) {
-    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti kandidatų</div>';
-  }
+    const ns = await sb(`/rest/v1/notifications?project_id=eq.${S.projectId}&select=id,read_by`);
+    const unread = ns.filter(n => !(n.read_by||[]).includes(S.username)).length;
+    const b = document.getElementById('pranBadge');
+    b.textContent = unread; b.style.display = unread ? '' : 'none';
+  } catch {}
 }
 
-function renderBasketHeader(basket) {
-  // keep header in place while grid loads
-  const main = document.getElementById('mainArea');
-  const existing = main.querySelector('.mhead');
-  if (!existing) {
-    // will be created in renderBasketGrid
-  }
+// ── View switching ─────────────────────────────────────────────────────────
+function switchView(view) {
+  S.view = view; S.activeBasketId = null;
+  document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
+  closePanel(); renderSidebar();
+  if      (view === 'pranesimai') loadPranesimai();
+  else if (view === 'nauji')      loadNauji();
 }
 
-// ── Basket grid ────────────────────────────────────────────────────────────
-function renderBasketGrid() {
-  const basket = state.baskets.find(b => b.id === state.activeBasketId);
-  const actors = state.basketActors;
+// ── Pranešimai ─────────────────────────────────────────────────────────────
+async function loadPranesimai() {
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+  let notifs = [];
+  try { notifs = await sb(`/rest/v1/notifications?project_id=eq.${S.projectId}&select=*&order=created_at.desc&limit=60`); } catch {}
+  renderPranesimai(notifs);
+}
 
-  const newOnes   = actors.filter(a => a.is_new);
-  const taip      = actors.filter(a => !a.is_new && a.status === 'yes');
-  const galbut    = actors.filter(a => !a.is_new && a.status === 'maybe');
-  const pending   = actors.filter(a => !a.is_new && (a.status === 'pending' || !a.status));
-
-  const f = state.activeFilter;
-
-  let html = `
-    <div class="mhead">
-      <div>
-        <div class="mh-title">${basket ? basket.name.toUpperCase() : ''}</div>
-        <div class="mh-sub">${basket?.basket_date || ''} · ${actors.length} kandidatai</div>
+function renderPranesimai(notifs) {
+  const unread = notifs.filter(n => !(n.read_by||[]).includes(S.username)).length;
+  let html = `<div class="mhead">
+    <div><div class="mh-title">Pranešimai</div><div class="mh-sub">${unread ? unread + ' neskaityta' : 'Visi perskaityti'}</div></div>
+    ${unread ? `<button class="fl" onclick="markAllRead()">Žymėti visus kaip peržiūrėta</button>` : ''}
+  </div><div style="padding:10px 14px 14px">`;
+  if (!notifs.length) { html += '<div class="empty-state" style="padding:40px 0">Pranešimų nerasta</div>'; }
+  else notifs.forEach(n => {
+    const isRead = (n.read_by||[]).includes(S.username);
+    html += `<div class="notif-item ${isRead?'read':''}" id="notif-${n.id}">
+      <div class="notif-ic">${nIcon(n.type)}</div>
+      <div class="notif-body">
+        <div class="notif-txt">${nText(n)}</div>
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
       </div>
-      <div class="mh-fltrs">
-        <button class="fl ${f==='all'?'act':''}" onclick="setFilter('all',this)">Visi</button>
-        <button class="fl ${f==='taip'?'act':''}" onclick="setFilter('taip',this)">Taip</button>
-        <button class="fl ${f==='galbut'?'act':''}" onclick="setFilter('galbut',this)">Galbūt</button>
-      </div>
+      ${!isRead ? `<button class="notif-mark" onclick="markRead('${n.id}')">Peržiūrėta</button>` : ''}
     </div>`;
+  });
+  document.getElementById('mainArea').innerHTML = html + '</div>';
+}
 
-  if (newOnes.length && (f === 'all')) {
-    html += `
-      <div class="new-bar" id="newBanner">
-        <div class="nb-l"><div class="nb-dot"></div>
-          <div><div class="nb-txt">${newOnes.length} naujai pridėti kandidatai</div>
-          <div class="nb-sub">Sinchronizuota</div></div>
-        </div>
-        <button class="nb-btn" onclick="dismissNew()">Žymėti kaip skaityta</button>
-      </div>
-      <div class="sec-lbl" id="newSection">Nauji · ${newOnes.length}</div>
-      <div class="grid">${newOnes.map(a => actorCard(a)).join('')}</div>`;
-  }
+function nIcon(t) {
+  const m = {
+    new_actors_batch: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>`,
+    new_comment:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    status_change:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>`,
+    info_update:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
+    new_video:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>`,
+  };
+  return m[t] || m.new_comment;
+}
 
-  if (f === 'all' || f === 'taip') {
-    if (taip.length) {
-      html += `<div class="sec-lbl">Taip · ${taip.length}</div><div class="grid">${taip.map(a => actorCard(a)).join('')}</div>`;
+function nText(n) {
+  const a = esc(n.actor_name||''), b = esc(n.basket_name||''), by = esc(n.triggered_by||'');
+  const loc = b ? ` (${b})` : '';
+  switch(n.type) {
+    case 'new_actors_batch': return `Pridėti <strong>${n.count||''}</strong> nauji kandidatai · <a onclick="switchView('nauji')">Nauji kandidatai →</a>`;
+    case 'new_comment':  return `<strong>${by}</strong> pakomentuvo <strong>${a}</strong>${loc}`;
+    case 'status_change': {
+      const ns = n.meta?.new_status === 'yes' ? 'Taip' : n.meta?.new_status === 'maybe' ? 'Galbūt' : (n.meta?.new_status||'');
+      return `Statusas pakeistas — <strong>${a}</strong>: ${ns}${loc}`;
     }
+    case 'info_update': return `Atnaujinta informacija: <strong>${a}</strong>${loc}`;
+    case 'new_video':   return `Pridėtas naujas video: <strong>${a}</strong>${loc}`;
+    default: return n.meta?.text || 'Pranešimas';
   }
-  if (f === 'all' || f === 'galbut') {
-    if (galbut.length) {
-      html += `<div class="sec-lbl">Galbūt · ${galbut.length}</div><div class="grid">${galbut.map(a => actorCard(a)).join('')}</div>`;
-    }
-  }
-  if (f === 'all') {
-    if (pending.length) {
-      html += `<div class="sec-lbl">Neperžiūrėti · ${pending.length}</div><div class="grid">${pending.map(a => actorCard(a)).join('')}</div>`;
-    }
-  }
+}
 
-  if (!actors.length) {
-    html += '<div class="empty-state">Kandidatų nerasta. Paleiskite sinchronizaciją.</div>';
-  }
+async function markRead(id) {
+  try {
+    const [n] = await sb(`/rest/v1/notifications?id=eq.${id}&select=read_by`);
+    const rb = [...(n?.read_by||[])];
+    if (!rb.includes(S.username)) rb.push(S.username);
+    await sb(`/rest/v1/notifications?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ read_by: rb }) });
+    const el = document.getElementById('notif-'+id);
+    if (el) { el.classList.add('read'); el.querySelector('.notif-mark')?.remove(); }
+    updateBadges();
+  } catch {}
+}
 
+async function markAllRead() {
+  try {
+    const ns = await sb(`/rest/v1/notifications?project_id=eq.${S.projectId}&select=id,read_by`);
+    for (const n of ns.filter(n => !(n.read_by||[]).includes(S.username))) {
+      const rb = [...(n.read_by||[]), S.username];
+      await sb(`/rest/v1/notifications?id=eq.${n.id}`, { method:'PATCH', body: JSON.stringify({ read_by: rb }) });
+    }
+    loadPranesimai(); updateBadges();
+  } catch {}
+}
+
+async function createNotif(type, data) {
+  if (!S.projectId) return;
+  try {
+    await sb('/rest/v1/notifications', { method:'POST', body: JSON.stringify({
+      project_id: S.projectId, type,
+      basket_id:       data.basketId     || null,
+      basket_actor_id: data.baId         || null,
+      actor_name:      data.actorName    || null,
+      basket_name:     data.basketName   || null,
+      count:           data.count        || 1,
+      triggered_by:    S.username,
+      meta:            data.meta         || {}
+    }) });
+    updateBadges();
+  } catch {}
+}
+
+// ── Nauji kandidatai ───────────────────────────────────────────────────────
+async function loadNauji() {
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+  if (!S.baskets.length) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nėra duomenų</div>'; return; }
+  try {
+    const rows = await sb(`/rest/v1/basket_actors?basket_id=in.(${S.baskets.map(b=>b.id).join(',')})&select=id,basket_id,status,actors(id,first_name,agency_id),actor_photos(storage_path,is_primary)`);
+    const newOnes = rows.filter(r => !S.seenActors.has(r.id));
+    const badge = document.getElementById('naukBadge');
+    badge.textContent = newOnes.length; badge.style.display = newOnes.length ? '' : 'none';
+    renderNauji(newOnes);
+  } catch(e) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti</div>'; }
+}
+
+function renderNauji(newOnes) {
+  let html = `<div class="mhead">
+    <div><div class="mh-title">Nauji kandidatai</div><div class="mh-sub">${newOnes.length} neperžiūrėti</div></div>
+    ${newOnes.length ? `<button class="fl" onclick="markNaujiRead()">Žymėti kaip peržiūrėta</button>` : ''}
+  </div>`;
+  if (!newOnes.length) { html += '<div class="empty-state">Naujų kandidatų nėra</div>'; document.getElementById('mainArea').innerHTML = html; return; }
+  S.baskets.forEach(basket => {
+    const bNew = newOnes.filter(r => r.basket_id === basket.id);
+    if (!bNew.length) return;
+    html += `<div style="padding:0 14px">
+      <div class="nauji-char-row" onclick="selectBasket('${basket.id}')">
+        <span class="nauji-char-nm">${basket.name.toUpperCase()}</span>
+        <span class="nauji-cnt">${bNew.length} nauji</span>
+      </div></div><div class="grid" style="padding-top:0">`;
+    bNew.forEach(r => {
+      const ph = r.actor_photos?.find(p=>p.is_primary) || r.actor_photos?.[0];
+      const img = ph ? `<img class="card-photo" src="${pUrl(ph.storage_path)}" loading="lazy" alt="">` : `<div class="card-ph" style="background:${hsl(r.actors?.agency_id||'x')}">${r.actors?.first_name||'?'}</div>`;
+      const bst = r.status==='yes' ? '<div class="badge b-t">Taip</div>' : r.status==='maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
+      html += `<div class="card isnew" onclick="jumpToActor('${r.id}','${basket.id}')">${img}${bst}<div class="card-name">${r.actors?.first_name||'—'}</div></div>`;
+    });
+    html += '</div>';
+  });
   document.getElementById('mainArea').innerHTML = html;
 }
 
-function actorCard(a) {
-  const sel = a.basket_actor_id === state.selectedBasketActorId ? ' sel' : '';
-  const isNew = a.is_new ? ' isnew' : '';
-  const primaryPhoto = a.photos?.find(p => p.is_primary);
-  const photoHtml = primaryPhoto
-    ? `<img class="card-photo" src="${photoUrl(primaryPhoto.storage_path)}" loading="lazy" alt="${a.actor?.first_name || ''}">`
-    : `<div class="card-photo-ph" style="background:${strColor(a.actor?.agency_id||'x')}">${a.actor?.first_name || '?'}</div>`;
-  const badgeHtml = a.status === 'yes' ? '<div class="badge b-t">Taip</div>'
-    : a.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
-  const cmtHtml = a.comment_count > 0 ? `<div class="cmt-dot">${a.comment_count}</div>` : '';
-  const newHtml = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
-  return `<div class="card${sel}${isNew}" onclick="openActor('${a.basket_actor_id}')">
-    ${photoHtml}${badgeHtml}${cmtHtml}${newHtml}
-    <div class="card-name">${a.actor?.first_name || '—'}</div>
-  </div>`;
-}
-
-function strColor(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
-  const hue = h % 360;
-  return `hsl(${hue},30%,30%)`;
-}
-
-// ── Filter ────────────────────────────────────────────────────────────────
-function setFilter(f, btn) {
-  state.activeFilter = f;
-  renderBasketGrid();
-}
-
-// ── Dismiss new ───────────────────────────────────────────────────────────
-function dismissNew() {
-  state.basketActors.filter(a => a.is_new).forEach(a => {
-    state.seenActorIds.add(a.basket_actor_id);
-    a.is_new = false;
+function markNaujiRead() {
+  document.querySelectorAll('.card.isnew').forEach(c => {
+    const m = c.getAttribute('onclick').match(/jumpToActor\('([^']+)'/);
+    if (m) S.seenActors.add(m[1]);
   });
-  localStorage.setItem('seenActors', JSON.stringify([...state.seenActorIds]));
-  renderBasketGrid();
-  showToast('Pažymėta kaip skaityta');
+  localStorage.setItem('seenActors', JSON.stringify([...S.seenActors]));
+  document.getElementById('naukBadge').style.display = 'none';
+  showToast('Pažymėta kaip peržiūrėta');
+  loadNauji();
 }
 
-// ── Overview tabs ─────────────────────────────────────────────────────────
+// ── Select basket ──────────────────────────────────────────────────────────
+async function selectBasket(id) {
+  S.view = 'basket'; S.activeBasketId = id; S.selectedBaId = null;
+  document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
+  closePanel(); renderSidebar(); closeSidebar();
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+  try {
+    const bas = await sb(`/rest/v1/basket_actors?basket_id=eq.${id}&select=id,status,basket_id,actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)`);
+    // Load extended fields separately (graceful if columns don't exist yet)
+    let ext = {};
+    try {
+      const extRows = await sb(`/rest/v1/basket_actors?basket_id=eq.${id}&select=id,availability,notes,videos`);
+      extRows.forEach(r => { ext[r.id] = r; });
+    } catch {}
+    const actorIds = bas.map(r => r.actors?.id).filter(Boolean);
+    let photos = [];
+    if (actorIds.length) photos = await sb(`/rest/v1/actor_photos?actor_id=in.(${actorIds.join(',')})&select=id,actor_id,storage_path,is_primary&order=is_primary.desc`);
+    S.basketActors = bas.map(ba => ({
+      basket_actor_id: ba.id, actor: ba.actors, status: ba.status||'pending',
+      comment_count: (ba.comments||[]).length, is_new: !S.seenActors.has(ba.id),
+      photos: photos.filter(p => p.actor_id === ba.actors?.id),
+      availability: ext[ba.id]?.availability || '',
+      notes:        ext[ba.id]?.notes        || '',
+      videos:       ext[ba.id]?.videos       || [],
+    }));
+    renderGrid();
+  } catch(e) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti kandidatų</div>'; }
+}
+
+// ── Basket grid ────────────────────────────────────────────────────────────
+function renderGrid() {
+  const basket = S.baskets.find(b => b.id === S.activeBasketId);
+  const actors = S.basketActors;
+  const newOnes = actors.filter(a => a.is_new);
+  const taip    = actors.filter(a => !a.is_new && a.status === 'yes');
+  const galbut  = actors.filter(a => !a.is_new && a.status === 'maybe');
+  const pending = actors.filter(a => !a.is_new && (a.status === 'pending' || !a.status));
+  const f = S.filter;
+  let html = `<div class="mhead">
+    <div><div class="mh-title">${basket ? basket.name.toUpperCase() : ''}</div><div class="mh-sub">${basket?.basket_date||''} · ${actors.length} kandidatai</div></div>
+    <div class="mh-right">
+      <button class="fl ${f==='all'?'act':''}"    onclick="setFilter('all')">Visi</button>
+      <button class="fl ${f==='taip'?'act':''}"   onclick="setFilter('taip')">Taip</button>
+      <button class="fl ${f==='galbut'?'act':''}" onclick="setFilter('galbut')">Galbūt</button>
+    </div></div>`;
+  if (newOnes.length && f==='all') {
+    html += `<div class="new-bar"><div class="nb-l"><div class="nb-dot"></div><div class="nb-txt">${newOnes.length} naujai pridėti</div></div>
+      <button class="nb-btn" onclick="dismissNew()">Žymėti kaip peržiūrėta</button></div>
+      <div class="sec-lbl">Nauji · ${newOnes.length}</div><div class="grid">${newOnes.map(cardHtml).join('')}</div>`;
+  }
+  if (f==='all'||f==='taip')   { if (taip.length)    html += `<div class="sec-lbl">Taip · ${taip.length}</div><div class="grid">${taip.map(cardHtml).join('')}</div>`; }
+  if (f==='all'||f==='galbut') { if (galbut.length)  html += `<div class="sec-lbl">Galbūt · ${galbut.length}</div><div class="grid">${galbut.map(cardHtml).join('')}</div>`; }
+  if (f==='all')               { if (pending.length) html += `<div class="sec-lbl">Neperžiūrėti · ${pending.length}</div><div class="grid">${pending.map(cardHtml).join('')}</div>`; }
+  if (!actors.length) html += '<div class="empty-state">Kandidatų nerasta.</div>';
+  document.getElementById('mainArea').innerHTML = html;
+}
+
+function cardHtml(a) {
+  const sel = a.basket_actor_id === S.selectedBaId ? ' sel' : '';
+  const isNew = a.is_new ? ' isnew' : '';
+  const ph = a.photos?.find(p => p.is_primary);
+  const img = ph ? `<img class="card-photo" src="${pUrl(ph.storage_path)}" loading="lazy" alt="${a.actor?.first_name||''}">` : `<div class="card-ph" style="background:${hsl(a.actor?.agency_id||'x')}">${a.actor?.first_name||'?'}</div>`;
+  const bst = a.status==='yes' ? '<div class="badge b-t">Taip</div>' : a.status==='maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
+  const cmt = a.comment_count > 0 ? `<div class="cmt-dot">${a.comment_count}</div>` : '';
+  const ntag = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
+  return `<div class="card${sel}${isNew}" onclick="openActor('${a.basket_actor_id}')">${img}${bst}${cmt}${ntag}<div class="card-name">${a.actor?.first_name||'—'}</div></div>`;
+}
+
+function setFilter(f) { S.filter = f; renderGrid(); }
+function dismissNew() {
+  S.basketActors.filter(a => a.is_new).forEach(a => { S.seenActors.add(a.basket_actor_id); a.is_new = false; });
+  localStorage.setItem('seenActors', JSON.stringify([...S.seenActors]));
+  renderGrid(); showToast('Pažymėta kaip peržiūrėta');
+}
+
+// ── Overview tabs ──────────────────────────────────────────────────────────
 async function showOverview(type, btn) {
-  state.activeOverview = type;
-  state.activeBasketId = null;
+  S.view = type; S.activeBasketId = null; S.selectedBaId = null;
   document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
   if (btn) btn.classList.add('act');
-  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('act'));
-  closePanel();
-
+  document.getElementById('sbPran').classList.remove('act');
+  document.getElementById('sbNauji').classList.remove('act');
+  closePanel(); closeSidebar(); renderSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
-
   try {
-    // Load all basket_actors across project with status
-    const rows = await sb(`/rest/v1/basket_actors?select=id,status,basket_id,actor_id,actors(id,first_name,agency_id),actor_photos(storage_path,is_primary)&basket_id=in.(${state.baskets.map(b=>b.id).join(',')})`);
-
-    let html = '';
-
-    if (type === 'patvirtinti') {
-      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Patvirtinti aktoriai · Visi veikėjai</div>';
-      for (const b of state.baskets) {
-        const confirmed = rows.filter(r => r.basket_id === b.id && r.status === 'yes');
-        html += `<div class="ov-row"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-pills">`;
-        if (confirmed.length) {
-          confirmed.forEach(r => {
-            const ph = r.actor_photos?.find(p => p.is_primary) || r.actor_photos?.[0];
-            const imgHtml = ph
-              ? `<img class="ov-pill-ph" src="${photoUrl(ph.storage_path)}" alt="">`
-              : `<div class="ov-pill-ph" style="background:${strColor(r.actors?.agency_id||'x')};border-radius:3px;"></div>`;
-            html += `<div class="ov-pill" onclick="jumpToActor('${r.id}','${b.id}')">${imgHtml}<span class="ov-pill-nm">${r.actors?.first_name||'—'}</span></div>`;
+    const rows = await sb(`/rest/v1/basket_actors?basket_id=in.(${S.baskets.map(b=>b.id).join(',')})&select=id,status,basket_id,actors(id,first_name,agency_id),actor_photos(storage_path,is_primary)`);
+    let html = '<div class="ov-wrap">';
+    if (type === 'patvirtinti' || type === 'galbut') {
+      const ts  = type === 'patvirtinti' ? 'yes' : 'maybe';
+      const lbl = type === 'patvirtinti' ? 'Patvirtinti aktoriai' : 'Galbūt kandidatai';
+      html += `<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">${lbl} · Visi veikėjai</div>`;
+      S.baskets.forEach(basket => {
+        const filt = rows.filter(r => r.basket_id === basket.id && r.status === ts);
+        html += `<div class="ov-char-lbl">${basket.name.toUpperCase()}</div>`;
+        if (filt.length) {
+          html += `<div class="grid-sm">`;
+          filt.forEach(r => {
+            const ph = r.actor_photos?.find(p=>p.is_primary) || r.actor_photos?.[0];
+            const img = ph ? `<img class="card-photo" src="${pUrl(ph.storage_path)}" loading="lazy" alt="">` : `<div class="card-ph" style="background:${hsl(r.actors?.agency_id||'x')}">${r.actors?.first_name||'?'}</div>`;
+            html += `<div class="card" onclick="jumpToActor('${r.id}','${basket.id}')">${img}<div class="card-name">${r.actors?.first_name||'—'}</div></div>`;
           });
-        } else {
-          html += '<div class="ov-empty">Nėra patvirtintų</div>';
-        }
-        html += '</div></div>';
-      }
-      html += '</div>';
-
-    } else if (type === 'galbut') {
-      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Galbūt kandidatai · Visi veikėjai</div>';
-      for (const b of state.baskets) {
-        const maybe = rows.filter(r => r.basket_id === b.id && r.status === 'maybe');
-        html += `<div class="ov-row"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-pills">`;
-        if (maybe.length) {
-          maybe.forEach(r => {
-            const ph = r.actor_photos?.find(p => p.is_primary) || r.actor_photos?.[0];
-            const imgHtml = ph
-              ? `<img class="ov-pill-ph" src="${photoUrl(ph.storage_path)}" alt="">`
-              : `<div class="ov-pill-ph" style="background:${strColor(r.actors?.agency_id||'x')};border-radius:3px;"></div>`;
-            html += `<div class="ov-pill" onclick="jumpToActor('${r.id}','${b.id}')">${imgHtml}<span class="ov-pill-nm">${r.actors?.first_name||'—'}</span></div>`;
-          });
-        } else {
-          html += '<div class="ov-empty">Nėra</div>';
-        }
-        html += '</div></div>';
-      }
-      html += '</div>';
-
-    } else if (type === 'nepatvirtinti') {
-      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Nepatvirtinti veikėjai</div>';
-      for (const b of state.baskets) {
-        const confirmed = rows.filter(r => r.basket_id === b.id && r.status === 'yes');
-        if (!confirmed.length) {
-          const total = rows.filter(r => r.basket_id === b.id).length;
-          const reviewed = rows.filter(r => r.basket_id === b.id && (r.status === 'yes' || r.status === 'maybe')).length;
-          html += `<div class="ov-row" style="cursor:pointer" onclick="selectBasket('${b.id}',true)"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-stat">${total} kandidatai · ${reviewed} peržiūrėta</div></div>`;
-        }
-      }
-      html += '</div>';
+          html += `</div>`;
+        } else html += `<div class="ov-empty">${type==='patvirtinti' ? 'Nėra patvirtintų' : 'Nėra'}</div>`;
+      });
+    } else {
+      html += `<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Veikėjai be patvirtinto aktoriaus</div>`;
+      let any = false;
+      S.baskets.forEach(basket => {
+        if (rows.filter(r => r.basket_id === basket.id && r.status === 'yes').length) return;
+        any = true;
+        const tot = rows.filter(r => r.basket_id === basket.id).length;
+        const rev = rows.filter(r => r.basket_id === basket.id && (r.status==='yes'||r.status==='maybe')).length;
+        html += `<div class="ov-row-txt" onclick="selectBasket('${basket.id}')"><div class="ov-char">${basket.name.toUpperCase()}</div><div class="ov-stat">${tot} kandidatai · ${rev} peržiūrėta</div></div>`;
+      });
+      if (!any) html += '<div style="font-size:13px;color:#888780;padding:20px 0">Visi veikėjai turi patvirtintą aktorių 🎉</div>';
     }
-
-    document.getElementById('mainArea').innerHTML = html;
-  } catch(e) {
-    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti</div>';
-  }
+    document.getElementById('mainArea').innerHTML = html + '</div>';
+  } catch { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti</div>'; }
 }
 
 async function jumpToActor(baId, basketId) {
-  await selectBasket(basketId, false);
-  renderSidebar();
-  state.selectedBasketActorId = baId;
-  renderBasketGrid();
-  openActor(baId);
+  await selectBasket(basketId);
+  S.selectedBaId = baId; renderGrid(); openActor(baId);
 }
 
-// ── Actor panel ───────────────────────────────────────────────────────────
+// ── Actor panel ────────────────────────────────────────────────────────────
 async function openActor(baId) {
-  state.selectedBasketActorId = baId;
-  const panel = document.getElementById('panel');
-  panel.classList.remove('hidden');
-
-  // re-render cards to show selection
-  document.querySelectorAll('.card').forEach(c => {
-    c.classList.toggle('sel', c.getAttribute('onclick')?.includes(baId));
-  });
-
-  const ba = state.basketActors.find(a => a.basket_actor_id === baId);
+  S.selectedBaId = baId;
+  document.getElementById('panel').classList.remove('hidden');
+  document.querySelectorAll('.card').forEach(c => c.classList.toggle('sel', c.getAttribute('onclick')?.includes(`'${baId}'`)));
+  const ba = S.basketActors.find(a => a.basket_actor_id === baId);
   if (!ba) return;
+  const actor  = ba.actor;
+  const basket = S.baskets.find(b => b.id === S.activeBasketId);
+  const allPh  = ba.photos || [];
+  const mainPh = allPh.find(p => p.is_primary);
+  const restPh = allPh.filter(p => !p.is_primary);
+  // Store gallery photos in state
+  S.galPhotos = [mainPh, ...restPh].filter(Boolean).map(p => pUrl(p.storage_path));
 
-  const actor = ba.actor;
-  const basket = state.baskets.find(b => b.id === state.activeBasketId);
-  const primaryPhoto = ba.photos?.find(p => p.is_primary);
-  const otherPhotos = ba.photos?.filter(p => !p.is_primary) || [];
-
-  // Load comments
   let comments = [];
   try {
-    comments = await sb(`/rest/v1/comments?basket_actor_id=eq.${baId}&select=id,author_name,content,created_at&order=created_at.asc`);
+    comments = await sb(`/rest/v1/comments?basket_actor_id=eq.${baId}&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc`);
     ba.comment_count = comments.length;
-  } catch(e) {}
+  } catch {}
 
-  // Load attachments
-  let attachments = [];
-  try {
-    attachments = await sb(`/rest/v1/attachments?basket_actor_id=eq.${baId}&select=id,file_name,storage_path,uploaded_by,created_at&order=created_at.asc`);
-  } catch(e) {}
+  const sT = ba.status === 'yes'   ? 's-t' : '';
+  const sM = ba.status === 'maybe' ? 's-m' : '';
 
-  const mainPhotoHtml = primaryPhoto
-    ? `<img class="photo-main" src="${photoUrl(primaryPhoto.storage_path)}" alt="${actor?.first_name||''}">`
-    : `<div class="photo-main-ph" style="background:${strColor(actor?.agency_id||'x')}"></div>`;
+  const mainImg = mainPh
+    ? `<img class="photo-main" src="${pUrl(mainPh.storage_path)}" alt="${actor?.first_name||''}" onclick="openGallery(0)">`
+    : `<div class="photo-main-ph" style="background:${hsl(actor?.agency_id||'x')}"></div>`;
 
-  const gridPhotos = otherPhotos.slice(0, 6).map(p =>
-    `<img class="pgrid-cell" src="${photoUrl(p.storage_path)}" alt="">`
-  ).join('') + Array(Math.max(0, 6 - otherPhotos.length)).fill('<div class="pgrid-cell"></div>').join('');
+  const thumbs = restPh.slice(0,9).map((p, i) =>
+    `<img class="pgrid-cell" src="${pUrl(p.storage_path)}" alt="" onclick="openGallery(${i+1})">`).join('');
 
-  const statusTaip = ba.status === 'yes' ? 's-t' : '';
-  const statusGalbut = ba.status === 'maybe' ? 's-m' : '';
-
-  const commentsHtml = comments.map(c => {
-    const d = new Date(c.created_at);
-    const time = d.toLocaleDateString('lt-LT',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'});
-    return `<div class="cmt-item"><span class="cmt-author">${escHtml(c.author_name)}</span><span class="cmt-time">${time}</span><div class="cmt-text">${escHtml(c.content)}</div></div>`;
+  const vids = (ba.videos||[]).map(v => {
+    const th = v.thumbnail || '';
+    return `<a class="vthumb" href="${esc(v.url)}" target="_blank" rel="noopener">
+      ${th ? `<img src="${esc(th)}" alt="">` : ''}
+      <div class="vplay">▶</div><div class="vsrc">${esc(v.source||'')}</div></a>`;
   }).join('');
 
-  const attHtml = attachments.map(a =>
-    `<div class="att-item"><span class="att-icon">📎</span><a href="${SUPABASE_URL}/storage/v1/object/public/attachments/${a.storage_path}" target="_blank">${escHtml(a.file_name)}</a></div>`
-  ).join('');
+  const cmtsHtml = comments.map(c => {
+    const d = new Date(c.created_at);
+    const t = d.toLocaleDateString('lt-LT',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'});
+    const attHtml = c.attachment_path
+      ? `<div class="cmt-att-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg><a href="${SUPABASE_URL}/storage/v1/object/public/attachments/${esc(c.attachment_path)}" target="_blank">${esc(c.attachment_name||'Priedas')}</a></div>` : '';
+    return `<div class="cmt-item"><span class="cmt-author">${esc(c.author_name)}</span><span class="cmt-time">${t}</span><div class="cmt-text">${esc(c.content)}</div>${attHtml}</div>`;
+  }).join('');
 
   document.getElementById('panelInner').innerHTML = `
     <div class="panel-head">
       <div class="ph-top">
-        <div>
-          <div class="ph-name">${actor?.first_name || '—'}</div>
-          <div class="ph-id">ID ${actor?.agency_id || '—'} · ${basket?.name?.toUpperCase() || ''}</div>
-        </div>
+        <div><div class="ph-name">${actor?.first_name||'—'}</div><div class="ph-id">ID ${actor?.agency_id||'—'} · ${basket?.name?.toUpperCase()||''}</div></div>
         <button class="ph-close" onclick="closePanel()">✕</button>
       </div>
-      <div class="ph-addbtn" onclick="showToast('Funkcija bus prieinama pilnoje versijoje')">+ Papildyti informaciją</div>
+      <div class="ph-addbtn" onclick="openInfoModal('${baId}')">+ Papildyti informaciją</div>
     </div>
     <div class="pb">
-      ${mainPhotoHtml}
-      <div class="pgrid">${gridPhotos}</div>
-
-      <div class="psec">Video</div>
-      <div class="vgrid" id="vgrid-${baId}">
-        <div style="color:#888780;font-size:10px;grid-column:1/-1;padding:4px 0">Videoįrašai pridedami rankiniu būdu</div>
-      </div>
-
+      ${mainImg}
+      ${thumbs ? `<div class="pgrid">${thumbs}</div>` : ''}
+      <div class="psec" style="margin-top:4px">Video</div>
+      <div class="vgrid" id="vgrid-${baId}">${vids||'<div style="color:#888780;font-size:10px;grid-column:1/-1;padding:2px 0 8px">Nėra pridėtų videoįrašų</div>'}</div>
       <div class="psec">Duomenys</div>
-      ${cvRow('Gimimo metai', actor?.dob)}
-      ${cvRow('Ūgis', actor?.height ? actor.height + ' cm' : null)}
-      ${cvRow('Svoris', actor?.weight ? actor.weight + ' kg' : null)}
-      ${cvRow('Batų dydis', actor?.shoe_size)}
-      ${cvRow('Drabužių dydis', actor?.clothing_size)}
-      ${cvRow('Plaukų spalva', actor?.hair_color)}
-      ${cvRow('Akių spalva', actor?.eye_color)}
-      ${cvRow('Kalbos', actor?.languages)}
-      ${cvRowLast('Gabumai', actor?.skills)}
-
+      ${cvR('Gimimo metai',actor?.dob)}${cvR('Ūgis',actor?.height?actor.height+' cm':null)}
+      ${cvR('Svoris',actor?.weight?actor.weight+' kg':null)}${cvR('Batų dydis',actor?.shoe_size)}
+      ${cvR('Drabužių dydis',actor?.clothing_size)}${cvR('Plaukų spalva',actor?.hair_color)}
+      ${cvR('Akių spalva',actor?.eye_color)}${cvR('Kalbos',actor?.languages)}
+      ${cvR('Gabumai',actor?.skills,true)}
       <hr class="divider">
-
       <div class="psec">Užimtumas</div>
-      <textarea class="uzim-input" id="uzimInput-${baId}" placeholder="Užimtumo informacija…" onblur="saveUzimtumas('${baId}',this.value)"></textarea>
-
+      <div class="info-display ${!ba.availability?'empty':''}" id="uzimD-${baId}">${ba.availability?esc(ba.availability):'Nepridėta informacija'}</div>
+      <div class="psec">Pastabos</div>
+      <div class="info-display ${!ba.notes?'empty':''}" id="pastD-${baId}">${ba.notes?esc(ba.notes):'Nėra pastabų'}</div>
       <div class="psec">Statusas</div>
       <div class="stbtns">
-        <button class="stb ${statusTaip}" onclick="setStatus('${baId}','yes',this)">Taip</button>
-        <button class="stb ${statusGalbut}" onclick="setStatus('${baId}','maybe',this)">Galbūt</button>
+        <button class="stb ${sT}" id="stbT-${baId}" onclick="setStatus('${baId}','yes',this)">Taip</button>
+        <button class="stb ${sM}" id="stbM-${baId}" onclick="setStatus('${baId}','maybe',this)">Galbūt</button>
       </div>
-
       <hr class="divider">
-
       <div class="psec">Komentarai</div>
-      <div id="cmt-list-${baId}">${commentsHtml}</div>
-      <div class="cmt-row">
-        <input class="cmt-input" id="cmt-input-${baId}" type="text" placeholder="Rašyti komentarą…" onkeydown="if(event.key==='Enter')addComment('${baId}')">
-        <button class="cmt-send" onclick="addComment('${baId}')">Siųsti</button>
+      <div id="cmtList-${baId}">${cmtsHtml}</div>
+      <div class="cmt-compose">
+        <div class="cmt-row">
+          <textarea class="cmt-inp" id="cmtInp-${baId}" rows="1" placeholder="Rašyti komentarą…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addCmt('${baId}')}"></textarea>
+          <label class="cmt-clip" title="Pridėti priedą">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>
+            <input type="file" id="cmtFile-${baId}" onchange="setPending('${baId}',this)">
+          </label>
+          <button class="cmt-send" onclick="addCmt('${baId}')">Siųsti</button>
+        </div>
+        <div id="cmtPend-${baId}"></div>
       </div>
-
-      <hr class="divider">
-
-      <div class="psec">Priedai</div>
-      <div class="att-list" id="att-list-${baId}">${attHtml}</div>
-      <div class="att-btn">+ Pridėti priedą<input type="file" onchange="uploadAttachment('${baId}',this)"></div>
     </div>`;
 }
 
-function cvRow(label, val) {
+function cvR(lbl, val, last) {
   if (!val) return '';
-  return `<div class="cvrow"><span class="cvl">${label}</span><span class="cvv">${escHtml(String(val))}</span></div>`;
+  return `<div class="cvrow" ${last?'style="border:none"':''}><span class="cvl">${lbl}</span><span class="cvv">${esc(String(val))}</span></div>`;
 }
-function cvRowLast(label, val) {
-  if (!val) return '';
-  return `<div class="cvrow" style="border:none"><span class="cvl">${label}</span><span class="cvv">${escHtml(String(val))}</span></div>`;
-}
-
 function closePanel() {
   document.getElementById('panel').classList.add('hidden');
   document.querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
-  state.selectedBasketActorId = null;
+  S.selectedBaId = null;
 }
 
-// ── Status ────────────────────────────────────────────────────────────────
+// ── Status (toggleable) ────────────────────────────────────────────────────
 async function setStatus(baId, status, btn) {
-  const container = btn.closest('.stbtns');
-  container.querySelectorAll('.stb').forEach(b => { b.classList.remove('s-t','s-m'); });
-  if (status === 'yes') btn.classList.add('s-t');
-  else if (status === 'maybe') btn.classList.add('s-m');
-
-  const ba = state.basketActors.find(a => a.basket_actor_id === baId);
-  if (ba) ba.status = status;
-
+  const ba = S.basketActors.find(a => a.basket_actor_id === baId);
+  const newSt = ba?.status === status ? 'pending' : status;
+  const cont  = btn.closest('.stbtns');
+  cont.querySelectorAll('.stb').forEach(b => b.classList.remove('s-t','s-m'));
+  if (newSt === 'yes')   document.getElementById('stbT-'+baId)?.classList.add('s-t');
+  if (newSt === 'maybe') document.getElementById('stbM-'+baId)?.classList.add('s-m');
+  if (ba) ba.status = newSt;
+  const basket = S.baskets.find(b => b.id === S.activeBasketId);
   try {
-    await sb(`/rest/v1/basket_actors?id=eq.${baId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, status_updated_by: state.username, status_updated_at: new Date().toISOString() })
-    });
-    renderBasketGrid();
-    showToast('Statusas išsaugotas');
-  } catch(e) {
-    showToast('Klaida išsaugant statusą');
-  }
-}
-
-// ── Užimtumas ─────────────────────────────────────────────────────────────
-async function saveUzimtumas(baId, value) {
-  // Store in comments with special author tag, or as a separate field
-  // For now we save as a note comment tagged [užimtumas]
-  try {
-    // Check if existing uzimtumas comment
-    const existing = await sb(`/rest/v1/comments?basket_actor_id=eq.${baId}&author_name=eq.[užimtumas]&select=id`);
-    if (value.trim()) {
-      if (existing.length) {
-        await sb(`/rest/v1/comments?id=eq.${existing[0].id}`, {
-          method: 'PATCH', body: JSON.stringify({ content: value })
-        });
-      } else {
-        await sb('/rest/v1/comments', {
-          method: 'POST', body: JSON.stringify({ basket_actor_id: baId, author_name: '[užimtumas]', content: value })
-        });
-      }
+    await sb(`/rest/v1/basket_actors?id=eq.${baId}`, { method:'PATCH', body: JSON.stringify({ status: newSt, status_updated_by: S.username, status_updated_at: new Date().toISOString() }) });
+    renderGrid(); showToast('Statusas atnaujintas');
+    if (newSt !== 'pending') {
+      await createNotif('status_change', { baId, basketId: S.activeBasketId, actorName: ba?.actor?.first_name, basketName: basket?.name, meta: { new_status: newSt } });
+      asPost({ action:'sendNotification', type:'status_change', data: { actorName: ba?.actor?.first_name, basketName: basket?.name, newStatus: newSt, changedBy: S.username }, sender: S.username });
     }
-  } catch(e) {}
+  } catch { showToast('Klaida išsaugant statusą'); }
 }
 
-// ── Comments ──────────────────────────────────────────────────────────────
-async function addComment(baId) {
-  const input = document.getElementById('cmt-input-' + baId);
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
+// ── Info modal ─────────────────────────────────────────────────────────────
+function openInfoModal(baId) {
+  S.infoModalBaId = baId;
+  const ba = S.basketActors.find(a => a.basket_actor_id === baId);
+  document.getElementById('ifUzim').value  = ba?.availability || '';
+  document.getElementById('ifPastab').value = ba?.notes || '';
+  document.getElementById('ifVid').value   = '';
+  document.getElementById('vidPrev').style.display = 'none';
+  document.getElementById('infoModal').style.display = 'flex';
+}
+function closeInfoModal() { document.getElementById('infoModal').style.display = 'none'; S.infoModalBaId = null; }
 
-  const btn = input.nextElementSibling;
-  btn.disabled = true;
-
+async function saveInfoModal() {
+  const baId = S.infoModalBaId; if (!baId) return;
+  const av  = document.getElementById('ifUzim').value.trim();
+  const nt  = document.getElementById('ifPastab').value.trim();
+  const vu  = document.getElementById('ifVid').value.trim();
+  const ba  = S.basketActors.find(a => a.basket_actor_id === baId);
+  const basket = S.baskets.find(b => b.id === S.activeBasketId);
   try {
-    const rows = await sb('/rest/v1/comments', {
-      method: 'POST',
-      body: JSON.stringify({ basket_actor_id: baId, author_name: state.username, content: text })
-    });
-    const c = Array.isArray(rows) ? rows[0] : rows;
-    const list = document.getElementById('cmt-list-' + baId);
-    const div = document.createElement('div');
-    div.className = 'cmt-item';
-    div.innerHTML = `<span class="cmt-author">${escHtml(state.username)}</span><span class="cmt-time">šiandien</span><div class="cmt-text">${escHtml(text)}</div>`;
-    list.appendChild(div);
-    div.scrollIntoView({ behavior: 'smooth' });
+    const upd = { availability: av, notes: nt };
+    let addedVideo = false;
+    if (vu) { const vd = parseVid(vu); upd.videos = [...(ba?.videos||[]), vd]; addedVideo = true; }
+    await sb(`/rest/v1/basket_actors?id=eq.${baId}`, { method:'PATCH', body: JSON.stringify(upd) });
+    if (ba) { ba.availability = av; ba.notes = nt; if (upd.videos) ba.videos = upd.videos; }
+    // Update display
+    const uzEl = document.getElementById('uzimD-'+baId);
+    if (uzEl) { uzEl.textContent = av||'Nepridėta informacija'; uzEl.className = 'info-display' + (av?'':' empty'); }
+    const paEl = document.getElementById('pastD-'+baId);
+    if (paEl) { paEl.textContent = nt||'Nėra pastabų'; paEl.className = 'info-display' + (nt?'':' empty'); }
+    if (upd.videos && ba) {
+      const vg = document.getElementById('vgrid-'+baId);
+      if (vg) vg.innerHTML = ba.videos.map(v => `<a class="vthumb" href="${esc(v.url)}" target="_blank" rel="noopener">${v.thumbnail?`<img src="${esc(v.thumbnail)}" alt="">`:''}<div class="vplay">▶</div><div class="vsrc">${esc(v.source||'')}</div></a>`).join('');
+    }
+    closeInfoModal(); showToast('Informacija išsaugota');
+    await createNotif('info_update', { baId, basketId: S.activeBasketId, actorName: ba?.actor?.first_name, basketName: basket?.name });
+    if (addedVideo) { await createNotif('new_video', { baId, basketId: S.activeBasketId, actorName: ba?.actor?.first_name, basketName: basket?.name }); }
+    asPost({ action:'sendNotification', type:'info_update', data: { actorName: ba?.actor?.first_name, basketName: basket?.name }, sender: S.username });
+  } catch(e) { showToast('Nepavyko išsaugoti: ' + e.message); }
+}
 
-    const ba = state.basketActors.find(a => a.basket_actor_id === baId);
-    if (ba) ba.comment_count = (ba.comment_count || 0) + 1;
-  } catch(e) {
-    showToast('Nepavyko išsiųsti komentaro');
+function parseVid(url) {
+  let source = 'video', thumbnail = '';
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) { source = 'YouTube'; thumbnail = `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`; }
+  else if (url.includes('dropbox.com')) source = 'Dropbox';
+  return { url, thumbnail, source, added_by: S.username, added_at: new Date().toISOString() };
+}
+function previewVid(url) {
+  const prev = document.getElementById('vidPrev');
+  const thumb = document.getElementById('vidThumb');
+  if (!url) { prev.style.display = 'none'; return; }
+  const d = parseVid(url);
+  if (d.thumbnail) { thumb.src = d.thumbnail; prev.style.display = 'block'; } else prev.style.display = 'none';
+}
+
+// ── Comments + attachments ─────────────────────────────────────────────────
+const pendingFiles = {};
+function setPending(baId, inp) {
+  const file = inp.files[0]; if (!file) return;
+  pendingFiles[baId] = file;
+  const el = document.getElementById('cmtPend-'+baId);
+  el.innerHTML = `<div class="cmt-pending"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg><span>${esc(file.name)}</span><button class="rm" onclick="rmPending('${baId}')">✕</button></div>`;
+}
+function rmPending(baId) {
+  delete pendingFiles[baId];
+  const el = document.getElementById('cmtPend-'+baId); if (el) el.innerHTML = '';
+  const fi = document.getElementById('cmtFile-'+baId); if (fi) fi.value = '';
+}
+
+async function addCmt(baId) {
+  const inp  = document.getElementById('cmtInp-'+baId);
+  const text = inp.value.trim();
+  const file = pendingFiles[baId];
+  if (!text && !file) return;
+  const btn = inp.closest('.cmt-compose').querySelector('.cmt-send');
+  btn.disabled = true;
+  let att_path = null, att_name = null;
+  if (file) {
+    try {
+      const path = `${baId}/${Date.now()}_${file.name}`;
+      const up = await fetch(`${SUPABASE_URL}/storage/v1/object/attachments/${path}`, {
+        method:'POST', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':file.type}, body:file });
+      if (up.ok) { att_path = path; att_name = file.name; }
+    } catch { showToast('Priedo įkelti nepavyko'); }
   }
+  try {
+    const payload = { basket_actor_id: baId, author_name: S.username, content: text||(att_name?'📎 '+att_name:''), attachment_path: att_path, attachment_name: att_name };
+    // Try with attachment columns first, fall back without
+    let saved;
+    try { saved = await sb('/rest/v1/comments', { method:'POST', body: JSON.stringify(payload) }); }
+    catch { saved = await sb('/rest/v1/comments', { method:'POST', body: JSON.stringify({ basket_actor_id: baId, author_name: S.username, content: payload.content }) }); }
+    const list = document.getElementById('cmtList-'+baId);
+    const now  = new Date();
+    const t = now.toLocaleDateString('lt-LT',{month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'});
+    const attHtml = att_path ? `<div class="cmt-att-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg><a href="${SUPABASE_URL}/storage/v1/object/public/attachments/${esc(att_path)}" target="_blank">${esc(att_name)}</a></div>` : '';
+    const div = document.createElement('div'); div.className = 'cmt-item';
+    div.innerHTML = `<span class="cmt-author">${esc(S.username)}</span><span class="cmt-time">${t}</span><div class="cmt-text">${esc(payload.content)}</div>${attHtml}`;
+    list.appendChild(div); div.scrollIntoView({ behavior:'smooth' });
+    inp.value = ''; rmPending(baId);
+    const ba = S.basketActors.find(a => a.basket_actor_id === baId);
+    if (ba) ba.comment_count = (ba.comment_count||0) + 1;
+    const basket = S.baskets.find(b => b.id === S.activeBasketId);
+    await createNotif('new_comment', { baId, basketId: S.activeBasketId, actorName: ba?.actor?.first_name, basketName: basket?.name });
+    asPost({ action:'sendNotification', type:'new_comment', data: { actorName: ba?.actor?.first_name, basketName: basket?.name, message: text, author: S.username }, sender: S.username });
+  } catch(e) { showToast('Nepavyko išsiųsti'); }
   btn.disabled = false;
 }
 
-// ── Attachments ───────────────────────────────────────────────────────────
-async function uploadAttachment(baId, input) {
-  const file = input.files[0];
-  if (!file) return;
-  showToast('Įkeliama…');
+// ── Gallery ────────────────────────────────────────────────────────────────
+function openGallery(idx) {
+  if (!S.galPhotos.length) return;
+  S.galIdx = idx;
+  updateGal();
+  document.getElementById('gallery').style.display = 'flex';
+  document.addEventListener('keydown', galKey);
+}
+function updateGal() {
+  const len = S.galPhotos.length;
+  document.getElementById('galImg').src = S.galPhotos[S.galIdx] || '';
+  document.getElementById('galCtr').textContent = `${S.galIdx+1} / ${len}`;
+  document.querySelector('.gal-prev').style.display = len > 1 ? 'flex' : 'none';
+  document.querySelector('.gal-next').style.display = len > 1 ? 'flex' : 'none';
+}
+function galNav(d) { S.galIdx = (S.galIdx + d + S.galPhotos.length) % S.galPhotos.length; updateGal(); }
+function closeGallery() { document.getElementById('gallery').style.display = 'none'; document.removeEventListener('keydown', galKey); }
+function galKey(e) { if (e.key==='ArrowLeft') galNav(-1); else if (e.key==='ArrowRight') galNav(1); else if (e.key==='Escape') closeGallery(); }
 
-  try {
-    const path = `${baId}/${Date.now()}_${file.name}`;
-    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/attachments/${path}`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': file.type },
-      body: file
-    });
-    if (!uploadRes.ok) throw new Error('Upload failed');
-
-    await sb('/rest/v1/attachments', {
-      method: 'POST',
-      body: JSON.stringify({ basket_actor_id: baId, file_name: file.name, storage_path: path, uploaded_by: state.username })
-    });
-
-    const list = document.getElementById('att-list-' + baId);
-    const url = `${SUPABASE_URL}/storage/v1/object/public/attachments/${path}`;
-    const div = document.createElement('div');
-    div.className = 'att-item';
-    div.innerHTML = `<span class="att-icon">📎</span><a href="${url}" target="_blank">${escHtml(file.name)}</a>`;
-    list.appendChild(div);
-    showToast('Priedas įkeltas');
-  } catch(e) {
-    showToast('Nepavyko įkelti priedo');
-  }
-  input.value = '';
+// ── User settings ──────────────────────────────────────────────────────────
+async function openUserModal() {
+  document.getElementById('usEmail').textContent = S.userEmail || S.username;
+  let prefs = JSON.parse(localStorage.getItem('notifPrefs')||'{}');
+  if (APPS_SCRIPT_URL && S.username) { try { const sp = await asGet({ action:'getPrefs', name:S.username }); if (sp) prefs = {...prefs,...sp}; } catch {} }
+  document.getElementById('pA').checked = prefs.new_actors    !== false;
+  document.getElementById('pC').checked = prefs.new_comments  !== false;
+  document.getElementById('pI').checked = prefs.info_update   !== false;
+  document.getElementById('pV').checked = prefs.new_videos    !== false;
+  document.getElementById('pS').checked = prefs.status_change !== false;
+  const freq = prefs.frequency || 'iškart';
+  document.getElementById('fImm').checked = freq === 'iškart';
+  document.getElementById('fDay').checked = freq === 'kasdien';
+  document.getElementById('userModal').style.display = 'flex';
+}
+function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+async function saveUserPrefs() {
+  const prefs = { new_actors: document.getElementById('pA').checked, new_comments: document.getElementById('pC').checked, info_update: document.getElementById('pI').checked, new_videos: document.getElementById('pV').checked, status_change: document.getElementById('pS').checked, frequency: document.querySelector('input[name="freq"]:checked')?.value || 'iškart' };
+  localStorage.setItem('notifPrefs', JSON.stringify(prefs));
+  if (APPS_SCRIPT_URL) asPost({ action:'setPrefs', name:S.username, prefs });
+  closeUserModal(); showToast('Nustatymai išsaugoti');
 }
 
-// ── Realtime ──────────────────────────────────────────────────────────────
+// ── Sidebar mobile ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sbOverlay');
+  const open = sb.classList.contains('sb-open');
+  sb.classList.toggle('sb-open', !open);
+  ov.classList.toggle('vis', !open);
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('sb-open');
+  document.getElementById('sbOverlay').classList.remove('vis');
+}
+
+// ── Realtime polling ───────────────────────────────────────────────────────
 function startRealtime() {
-  // Poll for new comments every 30s as lightweight alternative to websocket
   setInterval(async () => {
-    if (!state.selectedBasketActorId) return;
+    if (!S.selectedBaId) return;
     try {
-      const comments = await sb(`/rest/v1/comments?basket_actor_id=eq.${state.selectedBasketActorId}&select=id,author_name,content,created_at&order=created_at.asc`);
-      const list = document.getElementById('cmt-list-' + state.selectedBasketActorId);
+      const cmts = await sb(`/rest/v1/comments?basket_actor_id=eq.${S.selectedBaId}&select=id&order=created_at.asc`);
+      const list = document.getElementById('cmtList-'+S.selectedBaId);
       if (!list) return;
-      const currentCount = list.children.length;
-      if (comments.filter(c => c.author_name !== '[užimtumas]').length > currentCount) {
-        const ba = state.basketActors.find(a => a.basket_actor_id === state.selectedBasketActorId);
-        if (ba) {
-          ba.comment_count = comments.filter(c => c.author_name !== '[užimtumas]').length;
-          openActor(state.selectedBasketActorId);
-        }
-      }
-    } catch(e) {}
+      const curr = list.querySelectorAll('.cmt-item').length;
+      if (cmts.length > curr) { const ba = S.basketActors.find(a => a.basket_actor_id === S.selectedBaId); if (ba) { ba.comment_count = cmts.length; openActor(S.selectedBaId); } }
+    } catch {}
+    if (S.projectId) updateBadges();
   }, 30000);
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────
-function escHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── Utils ──────────────────────────────────────────────────────────────────
+function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function hsl(s) { let h=0; for (let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return `hsl(${h%360},30%,30%)`; }
+function timeAgo(ds) {
+  if (!ds) return '';
+  const m = Math.floor((Date.now() - new Date(ds))/60000);
+  if (m < 1)  return 'ką tik';
+  if (m < 60) return `prieš ${m} min`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `prieš ${h} val`;
+  const d = Math.floor(h/24);
+  if (d < 7)  return `prieš ${d} d`;
+  return new Date(ds).toLocaleDateString('lt-LT',{month:'short',day:'numeric'});
 }
-
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._to);
-  t._to = setTimeout(() => t.classList.remove('show'), 2400);
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._to); t._to = setTimeout(() => t.classList.remove('show'), 2400);
 }
 </script>
 </body>
