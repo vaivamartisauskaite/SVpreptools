@@ -404,8 +404,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 var SUPABASE_URL = 'https://grsmscrbnzttgpzrqzxx.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA';
 var PHOTO_BASE   = SUPABASE_URL + '/storage/v1/object/public/actor-photos/';
-var RESEND_KEY   = 'e_MgnFHeyN_BHxMjNmZ4kDw2yTdnUDC23tL';
 var RESEND_FROM  = 'SUGAUTI VANAGĄ <onboarding@resend.dev>';
+var EMAIL_FN_URL = 'https://grsmscrbnzttgpzrqzxx.supabase.co/functions/v1/send-email';
 // Admin password hash (SHA-256 of "Dobiliukas_852456")
 var ADMIN_HASH   = 'e1f72e6cf1bc3c62ca7577066fd27bf5439bb0de6b9184a062687296cc50b363';
 
@@ -1193,9 +1193,9 @@ async function sendNotifEmails(type, data) {
       if (!u[prefKey]) continue;
       if (u.frequency === 'kasdien') continue;
       try {
-        await fetch('https://api.resend.com/emails', {
+        await fetch(EMAIL_FN_URL, {
           method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + RESEND_KEY, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ from: RESEND_FROM, to: [u.email], subject: subject, html: bodyHtml })
         });
       } catch(e) {}
