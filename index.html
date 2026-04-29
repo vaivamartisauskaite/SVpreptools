@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atranka — Sugauti Vanagą 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#1a1a18}
+
+.app{display:flex;flex-direction:column;height:100vh;background:#fff;border-left:0.5px solid #d3d1c7;border-right:0.5px solid #d3d1c7;max-width:1400px;margin:0 auto}
+
+/* ── Topbar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:46px;background:#f5f4f0;border-bottom:0.5px solid #d3d1c7;flex-shrink:0;gap:12px}
+.tb-logo{font-size:13px;font-weight:500;color:#1a1a18;white-space:nowrap}
+.tb-logo span{color:#534AB7}
+.tb-project{font-size:12px;color:#888780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.tb-nav{display:flex;gap:2px}
+.tb-tab{font-size:11px;padding:5px 13px;border-radius:6px;color:#888780;cursor:pointer;letter-spacing:0.03em;border:none;background:none;font-family:inherit;transition:all 0.12s;white-space:nowrap}
+.tb-tab:hover{background:#e8e6e0;color:#1a1a18}
+.tb-tab.act{background:#534AB7;color:#fff}
+.tb-right{display:flex;align-items:center;gap:12px}
+.tb-sync-btn{font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;transition:background 0.12s;white-space:nowrap}
+.tb-sync-btn:hover{background:#f0eeff}
+.tb-user{display:flex;align-items:center;gap:7px;font-size:12px;color:#5f5e5a;white-space:nowrap}
+.tb-dot{width:7px;height:7px;border-radius:50%;background:#534AB7;flex-shrink:0}
+.tb-username{cursor:pointer;outline:none;border:none;background:none;font-size:12px;color:#5f5e5a;font-family:inherit}
+.tb-username:focus{color:#534AB7}
+
+/* ── Body ── */
+.body{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* ── Sidebar ── */
+.sidebar{width:190px;flex-shrink:0;background:#f5f4f0;border-right:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:12px 14px 8px;border-bottom:0.5px solid #d3d1c7}
+.sb-sec{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780}
+.sb-list{flex:1;overflow-y:auto;padding:5px 0}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-left:2px solid transparent;cursor:pointer;transition:background 0.1s}
+.sb-item:hover{background:#ebebea}
+.sb-item.act{background:#fff;border-left-color:#534AB7}
+.sb-item.act .sb-nm{font-weight:500;color:#534AB7}
+.sb-nm{font-size:11px;color:#1a1a18;letter-spacing:0.04em}
+.sb-cnt{font-size:9px;background:#e8e6e0;color:#888780;border-radius:10px;padding:1px 6px;flex-shrink:0}
+
+/* ── Main ── */
+.main{flex:1;min-width:0;background:#fff;overflow-y:auto;display:flex;flex-direction:column}
+.mhead{padding:12px 16px 10px;border-bottom:0.5px solid #d3d1c7;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.mh-title{font-size:17px;font-weight:500;letter-spacing:0.03em}
+.mh-sub{font-size:11px;color:#888780;margin-top:2px}
+.mh-fltrs{display:flex;gap:4px;flex-shrink:0}
+.fl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
+.fl:hover{border-color:#888780;color:#1a1a18}
+.fl.act{background:#534AB7;border-color:#534AB7;color:#fff}
+
+.new-bar{margin:10px 14px 0;background:#EAF3DE;border:0.5px solid #97C459;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+.nb-l{display:flex;align-items:center;gap:8px}
+.nb-dot{width:6px;height:6px;border-radius:50%;background:#3B6D11;flex-shrink:0}
+.nb-txt{font-size:11px;color:#3B6D11;font-weight:500}
+.nb-sub{font-size:10px;color:#3B6D11;opacity:0.75;margin-top:1px}
+.nb-btn{font-size:10px;font-weight:500;color:#3B6D11;border:0.5px solid #3B6D11;border-radius:6px;padding:4px 10px;cursor:pointer;background:none;font-family:inherit;white-space:nowrap;transition:background 0.12s}
+.nb-btn:hover{background:rgba(59,109,17,0.08)}
+
+.sec-lbl{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;padding:11px 14px 4px}
+
+/* ── Actor grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;padding:0 14px 14px}
+.card{border-radius:8px;overflow:hidden;border:0.5px solid #d3d1c7;position:relative;cursor:pointer;transition:border-color 0.12s,box-shadow 0.12s}
+.card:hover{border-color:#b4b2a9;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.card.sel{border-color:#534AB7;border-width:1.5px}
+.card.isnew{border-color:#97C459}
+.card-photo{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card-photo-ph{width:100%;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.7)}
+.card-name{padding:5px 8px 6px;font-size:11px;font-weight:500;background:#f5f4f0;color:#1a1a18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;top:6px;left:6px;font-size:8px;font-weight:600;letter-spacing:0.05em;padding:2px 6px;border-radius:3px}
+.b-t{background:#3B6D11;color:#C0DD97}
+.b-m{background:#854F0B;color:#FAC775}
+.cmt-dot{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600}
+.new-tag{position:absolute;bottom:26px;right:6px;font-size:8px;background:#EAF3DE;color:#3B6D11;border-radius:3px;padding:1px 5px;font-weight:500}
+
+/* ── Overview ── */
+.overview{padding:14px;display:none}
+.overview.vis{display:block}
+.ov-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;margin-bottom:6px}
+.ov-char{font-size:11px;font-weight:500;letter-spacing:0.04em;width:130px;flex-shrink:0;color:#1a1a18}
+.ov-pills{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.ov-pill{display:flex;align-items:center;gap:5px;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:5px;padding:3px 8px;cursor:pointer;transition:border-color 0.12s}
+.ov-pill:hover{border-color:#534AB7}
+.ov-pill-ph{width:22px;height:22px;border-radius:3px;flex-shrink:0;object-fit:cover}
+.ov-pill-nm{font-size:10px;color:#1a1a18}
+.ov-empty{font-size:11px;color:#b4b2a9;font-style:italic}
+.ov-stat{font-size:11px;color:#888780}
+
+/* ── Detail panel ── */
+.panel{width:280px;flex-shrink:0;background:#f5f4f0;border-left:0.5px solid #d3d1c7;display:flex;flex-direction:column;overflow:hidden;transition:width 0.18s}
+.panel.hidden{width:0;border:none}
+.panel-inner{overflow-y:auto;flex:1}
+.panel-head{padding:12px 14px 10px;background:#fff;border-bottom:0.5px solid #d3d1c7;position:sticky;top:0;z-index:2}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ph-name{font-size:17px;font-weight:500}
+.ph-id{font-size:10px;color:#888780;margin-top:2px}
+.ph-close{background:none;border:none;cursor:pointer;color:#888780;font-size:16px;padding:2px 4px;line-height:1;transition:color 0.1s;flex-shrink:0}
+.ph-close:hover{color:#1a1a18}
+.ph-addbtn{display:inline-block;font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;margin-top:8px;transition:background 0.12s}
+.ph-addbtn:hover{background:#f0eeff}
+.pb{padding:12px 14px}
+
+.photo-main{width:100%;aspect-ratio:3/4;border-radius:8px;object-fit:cover;display:block;margin-bottom:5px}
+.photo-main-ph{width:100%;aspect-ratio:3/4;border-radius:8px;display:block;margin-bottom:5px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:10px}
+.pgrid-cell{aspect-ratio:1/1;border-radius:4px;object-fit:cover;display:block;cursor:pointer;transition:opacity 0.12s;background:#d3d1c7}
+.pgrid-cell:hover{opacity:0.8}
+
+.psec{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin:0 0 7px}
+
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:13px}
+.vthumb{aspect-ratio:16/9;border-radius:4px;background:#2c2c2a;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;text-decoration:none;transition:opacity 0.12s}
+.vthumb:hover{opacity:0.8}
+.vplay{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.88);display:flex;align-items:center;justify-content:center;font-size:7px;color:#1a1a18}
+.vsrc{position:absolute;bottom:3px;right:4px;font-size:7px;color:rgba(255,255,255,0.55)}
+
+.cvrow{display:flex;padding:5px 0;border-bottom:0.5px solid #d3d1c7}
+.cvl{width:98px;flex-shrink:0;font-size:10px;color:#888780;text-transform:uppercase;letter-spacing:0.04em;padding-top:1px}
+.cvv{font-size:11px;color:#1a1a18;line-height:1.4}
+.divider{border:none;border-top:0.5px solid #d3d1c7;margin:12px 0}
+
+.uzim-input{background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:7px 9px;font-size:11px;color:#1a1a18;width:100%;margin-bottom:13px;font-family:inherit;resize:none;line-height:1.5;outline:none;transition:border-color 0.12s;min-height:60px}
+.uzim-input:focus{border-color:#534AB7}
+
+.stbtns{display:flex;gap:6px;margin-bottom:4px}
+.stb{flex:1;padding:8px 4px;border-radius:6px;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;text-align:center;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
+.stb:hover{border-color:#888780;color:#1a1a18}
+.stb.s-t{background:#EAF3DE;border-color:#3B6D11;color:#3B6D11}
+.stb.s-m{background:#FAEEDA;border-color:#854F0B;color:#854F0B}
+
+.cmt-item{background:#fff;border-left:2px solid #d3d1c7;border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:5px}
+.cmt-author{font-size:10px;color:#534AB7;font-weight:500}
+.cmt-time{font-size:9px;color:#888780;float:right}
+.cmt-text{font-size:11px;color:#1a1a18;margin-top:2px;line-height:1.45}
+.cmt-row{display:flex;gap:5px;margin-top:8px}
+.cmt-input{flex:1;font-size:11px;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:6px 8px;color:#1a1a18;font-family:inherit;outline:none;transition:border-color 0.12s}
+.cmt-input:focus{border-color:#534AB7}
+.cmt-send{font-size:10px;font-weight:500;padding:6px 11px;border-radius:6px;background:#534AB7;color:#fff;border:none;cursor:pointer;font-family:inherit;transition:background 0.12s;white-space:nowrap}
+.cmt-send:hover{background:#3c349e}
+.cmt-send:disabled{background:#b4b2a9;cursor:not-allowed}
+
+.att-list{margin-bottom:6px}
+.att-item{display:flex;align-items:center;gap:8px;padding:6px 9px;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;margin-bottom:4px;font-size:11px;color:#5f5e5a}
+.att-item a{color:#534AB7;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-item a:hover{text-decoration:underline}
+.att-icon{font-size:13px;flex-shrink:0}
+.att-btn{font-size:10px;color:#888780;border:0.5px dashed #d3d1c7;border-radius:6px;padding:6px 10px;text-align:center;margin-top:6px;cursor:pointer;transition:border-color 0.12s,color 0.12s;position:relative;overflow:hidden}
+.att-btn:hover{border-color:#534AB7;color:#534AB7}
+.att-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* ── Loading / empty states ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:#888780;font-size:12px;gap:8px}
+.spinner{width:16px;height:16px;border:2px solid #d3d1c7;border-top-color:#534AB7;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:60px 20px;color:#888780;font-size:12px}
+
+/* ── Setup screen ── */
+.setup-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f4f0}
+.setup-box{background:#fff;border:0.5px solid #d3d1c7;border-radius:12px;padding:32px;width:420px}
+.setup-logo{font-size:20px;font-weight:500;color:#1a1a18;margin-bottom:4px}
+.setup-logo span{color:#534AB7}
+.setup-sub{font-size:12px;color:#888780;margin-bottom:24px}
+.setup-label{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#888780;margin-bottom:6px}
+.setup-input{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;color:#1a1a18;outline:none;margin-bottom:14px;transition:border-color 0.12s}
+.setup-input:focus{border-color:#534AB7;background:#fff}
+.setup-btn{width:100%;padding:10px;background:#534AB7;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.12s}
+.setup-btn:hover{background:#3c349e}
+.setup-err{font-size:11px;color:#c0392b;margin-top:8px;display:none}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d3d1c7;border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:#b4b2a9}
+
+.toast{position:fixed;bottom:20px;right:20px;background:#2c2c2a;color:#f5f4f0;font-size:11px;padding:9px 16px;border-radius:8px;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN (shown if no config) -->
+<div class="setup-screen" id="setupScreen" style="display:none">
+  <div class="setup-box">
+    <div class="setup-logo">Atranka<span>.</span></div>
+    <div class="setup-sub">Įveskite projekto duomenis</div>
+    <div class="setup-label">Jūsų vardas</div>
+    <input class="setup-input" id="setupName" type="text" placeholder="Vardas" value="">
+    <div class="setup-label">Projekto pavadinimas</div>
+    <input class="setup-input" id="setupProject" type="text" placeholder="Sugauti Vanagą 2026" value="">
+    <button class="setup-btn" onclick="saveSetup()">Pradėti</button>
+    <div class="setup-err" id="setupErr">Prašome užpildyti visus laukus</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="appShell" style="display:none">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <div class="tb-logo">Atranka<span>.</span></div>
+      <div class="tb-project" id="tbProject">—</div>
+    </div>
+    <div class="tb-nav">
+      <button class="tb-tab" onclick="showOverview('patvirtinti',this)">Patvirtinti</button>
+      <button class="tb-tab" onclick="showOverview('galbut',this)">Galbūt</button>
+      <button class="tb-tab" onclick="showOverview('nepatvirtinti',this)">Nepatvirtinti</button>
+    </div>
+    <div class="tb-right">
+      <div class="tb-sync-btn" id="syncStatus" onclick="loadData()">↻ Atnaujinti</div>
+      <div class="tb-user">
+        <div class="tb-dot"></div>
+        <span id="tbUsername">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-head"><div class="sb-sec">Veikėjai</div></div>
+      <div class="sb-list" id="sidebarList">
+        <div class="loading"><div class="spinner"></div> Kraunama…</div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="mainArea">
+      <div class="loading" style="margin-top:60px"><div class="spinner"></div> Kraunama kandidatai…</div>
+    </div>
+
+    <!-- PANEL -->
+    <div class="panel hidden" id="panel">
+      <div class="panel-inner" id="panelInner"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://grsmscrbnzttgpzrqzxx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA';
+const PHOTO_BASE = SUPABASE_URL + '/storage/v1/object/public/actor-photos/';
+
+// ── State ─────────────────────────────────────────────────────────────────
+let state = {
+  username: '',
+  projectName: '',
+  projectId: null,
+  baskets: [],
+  activeBasketId: null,
+  basketActors: [],     // [{basket_actor_id, actor, status, photos, comments, is_new}]
+  seenActorIds: new Set(JSON.parse(localStorage.getItem('seenActors') || '[]')),
+  activeFilter: 'all',
+  activeOverview: null,
+  selectedBasketActorId: null,
+};
+
+// ── Supabase helpers ───────────────────────────────────────────────────────
+async function sb(path, opts = {}) {
+  const r = await fetch(SUPABASE_URL + path, {
+    ...opts,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(opts.headers || {})
+    }
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(t); }
+  return r.json().catch(() => ({}));
+}
+
+function photoUrl(path) {
+  return path ? PHOTO_BASE + path : null;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+window.onload = async () => {
+  const name = localStorage.getItem('castingUsername');
+  const project = localStorage.getItem('castingProject');
+  if (!name || !project) {
+    document.getElementById('setupScreen').style.display = 'flex';
+    return;
+  }
+  state.username = name;
+  state.projectName = project;
+  startApp();
+};
+
+function saveSetup() {
+  const name = document.getElementById('setupName').value.trim();
+  const project = document.getElementById('setupProject').value.trim();
+  if (!name || !project) {
+    document.getElementById('setupErr').style.display = 'block';
+    return;
+  }
+  localStorage.setItem('castingUsername', name);
+  localStorage.setItem('castingProject', project);
+  state.username = name;
+  state.projectName = project;
+  document.getElementById('setupScreen').style.display = 'none';
+  startApp();
+}
+
+function startApp() {
+  document.getElementById('appShell').style.display = 'flex';
+  document.getElementById('tbUsername').textContent = state.username;
+  document.getElementById('tbProject').textContent = state.projectName;
+  loadData();
+  startRealtime();
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────
+async function loadData() {
+  setSyncStatus('↻ Kraunama…', true);
+  try {
+    // Find project
+    const projects = await sb('/rest/v1/projects?select=id,name&order=created_at.desc&limit=1');
+    if (!projects.length) {
+      document.getElementById('mainArea').innerHTML = '<div class="empty-state">Projekto duomenų nerasta.<br>Pirmiausia paleiskite sinchronizaciją iš naršyklės plėtinio.</div>';
+      setSyncStatus('↻ Atnaujinti');
+      return;
+    }
+    state.projectId = projects[0].id;
+    document.getElementById('tbProject').textContent = projects[0].name;
+
+    // Load baskets
+    const baskets = await sb(`/rest/v1/baskets?project_id=eq.${state.projectId}&select=id,name,basket_date,actor_count&order=basket_date.asc,name.asc`);
+    state.baskets = baskets;
+    renderSidebar();
+
+    if (baskets.length > 0) {
+      const first = state.activeBasketId
+        ? baskets.find(b => b.id === state.activeBasketId) || baskets[0]
+        : baskets[0];
+      await selectBasket(first.id, false);
+    }
+    setSyncStatus('↻ Atnaujinti');
+  } catch(e) {
+    setSyncStatus('⚠ Klaida');
+    showToast('Nepavyko užkrauti duomenų: ' + e.message);
+  }
+}
+
+function setSyncStatus(text, spinning) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = text;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('sidebarList');
+  if (!state.baskets.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px 14px;font-size:11px;">Veikėjų nerasta</div>';
+    return;
+  }
+  list.innerHTML = state.baskets.map(b => `
+    <div class="sb-item ${b.id === state.activeBasketId ? 'act' : ''}" onclick="selectBasket('${b.id}',true)">
+      <span class="sb-nm">${b.name.toUpperCase()}</span>
+      <span class="sb-cnt">${b.actor_count || 0}</span>
+    </div>`).join('');
+}
+
+// ── Select basket ─────────────────────────────────────────────────────────
+async function selectBasket(basketId, fromClick) {
+  state.activeBasketId = basketId;
+  state.activeOverview = null;
+  state.selectedBasketActorId = null;
+  document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
+  renderSidebar();
+  closePanel();
+
+  const basket = state.baskets.find(b => b.id === basketId);
+  renderBasketHeader(basket);
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+
+  try {
+    // Load basket_actors with actor + photos + comment count
+    const bas = await sb(`/rest/v1/basket_actors?basket_id=eq.${basketId}&select=id,status,basket_id,actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)`);
+
+    // Load primary photos per actor
+    const actorIds = bas.map(r => r.actors?.id).filter(Boolean);
+    let photos = [];
+    if (actorIds.length) {
+      photos = await sb(`/rest/v1/actor_photos?actor_id=in.(${actorIds.join(',')})&select=id,actor_id,storage_path,is_primary&order=is_primary.desc`);
+    }
+
+    state.basketActors = bas.map(ba => ({
+      basket_actor_id: ba.id,
+      actor: ba.actors,
+      status: ba.status || 'pending',
+      comment_count: (ba.comments || []).length,
+      is_new: !state.seenActorIds.has(ba.id),
+      photos: photos.filter(p => p.actor_id === ba.actors?.id)
+    }));
+
+    renderBasketGrid();
+  } catch(e) {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti kandidatų</div>';
+  }
+}
+
+function renderBasketHeader(basket) {
+  // keep header in place while grid loads
+  const main = document.getElementById('mainArea');
+  const existing = main.querySelector('.mhead');
+  if (!existing) {
+    // will be created in renderBasketGrid
+  }
+}
+
+// ── Basket grid ────────────────────────────────────────────────────────────
+function renderBasketGrid() {
+  const basket = state.baskets.find(b => b.id === state.activeBasketId);
+  const actors = state.basketActors;
+
+  const newOnes   = actors.filter(a => a.is_new);
+  const taip      = actors.filter(a => !a.is_new && a.status === 'yes');
+  const galbut    = actors.filter(a => !a.is_new && a.status === 'maybe');
+  const pending   = actors.filter(a => !a.is_new && (a.status === 'pending' || !a.status));
+
+  const f = state.activeFilter;
+
+  let html = `
+    <div class="mhead">
+      <div>
+        <div class="mh-title">${basket ? basket.name.toUpperCase() : ''}</div>
+        <div class="mh-sub">${basket?.basket_date || ''} · ${actors.length} kandidatai</div>
+      </div>
+      <div class="mh-fltrs">
+        <button class="fl ${f==='all'?'act':''}" onclick="setFilter('all',this)">Visi</button>
+        <button class="fl ${f==='taip'?'act':''}" onclick="setFilter('taip',this)">Taip</button>
+        <button class="fl ${f==='galbut'?'act':''}" onclick="setFilter('galbut',this)">Galbūt</button>
+      </div>
+    </div>`;
+
+  if (newOnes.length && (f === 'all')) {
+    html += `
+      <div class="new-bar" id="newBanner">
+        <div class="nb-l"><div class="nb-dot"></div>
+          <div><div class="nb-txt">${newOnes.length} naujai pridėti kandidatai</div>
+          <div class="nb-sub">Sinchronizuota</div></div>
+        </div>
+        <button class="nb-btn" onclick="dismissNew()">Žymėti kaip skaityta</button>
+      </div>
+      <div class="sec-lbl" id="newSection">Nauji · ${newOnes.length}</div>
+      <div class="grid">${newOnes.map(a => actorCard(a)).join('')}</div>`;
+  }
+
+  if (f === 'all' || f === 'taip') {
+    if (taip.length) {
+      html += `<div class="sec-lbl">Taip · ${taip.length}</div><div class="grid">${taip.map(a => actorCard(a)).join('')}</div>`;
+    }
+  }
+  if (f === 'all' || f === 'galbut') {
+    if (galbut.length) {
+      html += `<div class="sec-lbl">Galbūt · ${galbut.length}</div><div class="grid">${galbut.map(a => actorCard(a)).join('')}</div>`;
+    }
+  }
+  if (f === 'all') {
+    if (pending.length) {
+      html += `<div class="sec-lbl">Neperžiūrėti · ${pending.length}</div><div class="grid">${pending.map(a => actorCard(a)).join('')}</div>`;
+    }
+  }
+
+  if (!actors.length) {
+    html += '<div class="empty-state">Kandidatų nerasta. Paleiskite sinchronizaciją.</div>';
+  }
+
+  document.getElementById('mainArea').innerHTML = html;
+}
+
+function actorCard(a) {
+  const sel = a.basket_actor_id === state.selectedBasketActorId ? ' sel' : '';
+  const isNew = a.is_new ? ' isnew' : '';
+  const primaryPhoto = a.photos?.find(p => p.is_primary);
+  const photoHtml = primaryPhoto
+    ? `<img class="card-photo" src="${photoUrl(primaryPhoto.storage_path)}" loading="lazy" alt="${a.actor?.first_name || ''}">`
+    : `<div class="card-photo-ph" style="background:${strColor(a.actor?.agency_id||'x')}">${a.actor?.first_name || '?'}</div>`;
+  const badgeHtml = a.status === 'yes' ? '<div class="badge b-t">Taip</div>'
+    : a.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
+  const cmtHtml = a.comment_count > 0 ? `<div class="cmt-dot">${a.comment_count}</div>` : '';
+  const newHtml = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
+  return `<div class="card${sel}${isNew}" onclick="openActor('${a.basket_actor_id}')">
+    ${photoHtml}${badgeHtml}${cmtHtml}${newHtml}
+    <div class="card-name">${a.actor?.first_name || '—'}</div>
+  </div>`;
+}
+
+function strColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const hue = h % 360;
+  return `hsl(${hue},30%,30%)`;
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  state.activeFilter = f;
+  renderBasketGrid();
+}
+
+// ── Dismiss new ───────────────────────────────────────────────────────────
+function dismissNew() {
+  state.basketActors.filter(a => a.is_new).forEach(a => {
+    state.seenActorIds.add(a.basket_actor_id);
+    a.is_new = false;
+  });
+  localStorage.setItem('seenActors', JSON.stringify([...state.seenActorIds]));
+  renderBasketGrid();
+  showToast('Pažymėta kaip skaityta');
+}
+
+// ── Overview tabs ─────────────────────────────────────────────────────────
+async function showOverview(type, btn) {
+  state.activeOverview = type;
+  state.activeBasketId = null;
+  document.querySelectorAll('.tb-tab').forEach(t => t.classList.remove('act'));
+  if (btn) btn.classList.add('act');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('act'));
+  closePanel();
+
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+
+  try {
+    // Load all basket_actors across project with status
+    const rows = await sb(`/rest/v1/basket_actors?select=id,status,basket_id,actor_id,actors(id,first_name,agency_id),actor_photos(storage_path,is_primary)&basket_id=in.(${state.baskets.map(b=>b.id).join(',')})`);
+
+    let html = '';
+
+    if (type === 'patvirtinti') {
+      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Patvirtinti aktoriai · Visi veikėjai</div>';
+      for (const b of state.baskets) {
+        const confirmed = rows.filter(r => r.basket_id === b.id && r.status === 'yes');
+        html += `<div class="ov-row"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-pills">`;
+        if (confirmed.length) {
+          confirmed.forEach(r => {
+            const ph = r.actor_photos?.find(p => p.is_primary) || r.actor_photos?.[0];
+            const imgHtml = ph
+              ? `<img class="ov-pill-ph" src="${photoUrl(ph.storage_path)}" alt="">`
+              : `<div class="ov-pill-ph" style="background:${strColor(r.actors?.agency_id||'x')};border-radius:3px;"></div>`;
+            html += `<div class="ov-pill" onclick="jumpToActor('${r.id}','${b.id}')">${imgHtml}<span class="ov-pill-nm">${r.actors?.first_name||'—'}</span></div>`;
+          });
+        } else {
+          html += '<div class="ov-empty">Nėra patvirtintų</div>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+
+    } else if (type === 'galbut') {
+      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Galbūt kandidatai · Visi veikėjai</div>';
+      for (const b of state.baskets) {
+        const maybe = rows.filter(r => r.basket_id === b.id && r.status === 'maybe');
+        html += `<div class="ov-row"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-pills">`;
+        if (maybe.length) {
+          maybe.forEach(r => {
+            const ph = r.actor_photos?.find(p => p.is_primary) || r.actor_photos?.[0];
+            const imgHtml = ph
+              ? `<img class="ov-pill-ph" src="${photoUrl(ph.storage_path)}" alt="">`
+              : `<div class="ov-pill-ph" style="background:${strColor(r.actors?.agency_id||'x')};border-radius:3px;"></div>`;
+            html += `<div class="ov-pill" onclick="jumpToActor('${r.id}','${b.id}')">${imgHtml}<span class="ov-pill-nm">${r.actors?.first_name||'—'}</span></div>`;
+          });
+        } else {
+          html += '<div class="ov-empty">Nėra</div>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+
+    } else if (type === 'nepatvirtinti') {
+      html = '<div style="padding:14px"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:10px;">Nepatvirtinti veikėjai</div>';
+      for (const b of state.baskets) {
+        const confirmed = rows.filter(r => r.basket_id === b.id && r.status === 'yes');
+        if (!confirmed.length) {
+          const total = rows.filter(r => r.basket_id === b.id).length;
+          const reviewed = rows.filter(r => r.basket_id === b.id && (r.status === 'yes' || r.status === 'maybe')).length;
+          html += `<div class="ov-row" style="cursor:pointer" onclick="selectBasket('${b.id}',true)"><div class="ov-char">${b.name.toUpperCase()}</div><div class="ov-stat">${total} kandidatai · ${reviewed} peržiūrėta</div></div>`;
+        }
+      }
+      html += '</div>';
+    }
+
+    document.getElementById('mainArea').innerHTML = html;
+  } catch(e) {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti</div>';
+  }
+}
+
+async function jumpToActor(baId, basketId) {
+  await selectBasket(basketId, false);
+  renderSidebar();
+  state.selectedBasketActorId = baId;
+  renderBasketGrid();
+  openActor(baId);
+}
+
+// ── Actor panel ───────────────────────────────────────────────────────────
+async function openActor(baId) {
+  state.selectedBasketActorId = baId;
+  const panel = document.getElementById('panel');
+  panel.classList.remove('hidden');
+
+  // re-render cards to show selection
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.toggle('sel', c.getAttribute('onclick')?.includes(baId));
+  });
+
+  const ba = state.basketActors.find(a => a.basket_actor_id === baId);
+  if (!ba) return;
+
+  const actor = ba.actor;
+  const basket = state.baskets.find(b => b.id === state.activeBasketId);
+  const primaryPhoto = ba.photos?.find(p => p.is_primary);
+  const otherPhotos = ba.photos?.filter(p => !p.is_primary) || [];
+
+  // Load comments
+  let comments = [];
+  try {
+    comments = await sb(`/rest/v1/comments?basket_actor_id=eq.${baId}&select=id,author_name,content,created_at&order=created_at.asc`);
+    ba.comment_count = comments.length;
+  } catch(e) {}
+
+  // Load attachments
+  let attachments = [];
+  try {
+    attachments = await sb(`/rest/v1/attachments?basket_actor_id=eq.${baId}&select=id,file_name,storage_path,uploaded_by,created_at&order=created_at.asc`);
+  } catch(e) {}
+
+  const mainPhotoHtml = primaryPhoto
+    ? `<img class="photo-main" src="${photoUrl(primaryPhoto.storage_path)}" alt="${actor?.first_name||''}">`
+    : `<div class="photo-main-ph" style="background:${strColor(actor?.agency_id||'x')}"></div>`;
+
+  const gridPhotos = otherPhotos.slice(0, 6).map(p =>
+    `<img class="pgrid-cell" src="${photoUrl(p.storage_path)}" alt="">`
+  ).join('') + Array(Math.max(0, 6 - otherPhotos.length)).fill('<div class="pgrid-cell"></div>').join('');
+
+  const statusTaip = ba.status === 'yes' ? 's-t' : '';
+  const statusGalbut = ba.status === 'maybe' ? 's-m' : '';
+
+  const commentsHtml = comments.map(c => {
+    const d = new Date(c.created_at);
+    const time = d.toLocaleDateString('lt-LT',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="cmt-item"><span class="cmt-author">${escHtml(c.author_name)}</span><span class="cmt-time">${time}</span><div class="cmt-text">${escHtml(c.content)}</div></div>`;
+  }).join('');
+
+  const attHtml = attachments.map(a =>
+    `<div class="att-item"><span class="att-icon">📎</span><a href="${SUPABASE_URL}/storage/v1/object/public/attachments/${a.storage_path}" target="_blank">${escHtml(a.file_name)}</a></div>`
+  ).join('');
+
+  document.getElementById('panelInner').innerHTML = `
+    <div class="panel-head">
+      <div class="ph-top">
+        <div>
+          <div class="ph-name">${actor?.first_name || '—'}</div>
+          <div class="ph-id">ID ${actor?.agency_id || '—'} · ${basket?.name?.toUpperCase() || ''}</div>
+        </div>
+        <button class="ph-close" onclick="closePanel()">✕</button>
+      </div>
+      <div class="ph-addbtn" onclick="showToast('Funkcija bus prieinama pilnoje versijoje')">+ Papildyti informaciją</div>
+    </div>
+    <div class="pb">
+      ${mainPhotoHtml}
+      <div class="pgrid">${gridPhotos}</div>
+
+      <div class="psec">Video</div>
+      <div class="vgrid" id="vgrid-${baId}">
+        <div style="color:#888780;font-size:10px;grid-column:1/-1;padding:4px 0">Videoįrašai pridedami rankiniu būdu</div>
+      </div>
+
+      <div class="psec">Duomenys</div>
+      ${cvRow('Gimimo metai', actor?.dob)}
+      ${cvRow('Ūgis', actor?.height ? actor.height + ' cm' : null)}
+      ${cvRow('Svoris', actor?.weight ? actor.weight + ' kg' : null)}
+      ${cvRow('Batų dydis', actor?.shoe_size)}
+      ${cvRow('Drabužių dydis', actor?.clothing_size)}
+      ${cvRow('Plaukų spalva', actor?.hair_color)}
+      ${cvRow('Akių spalva', actor?.eye_color)}
+      ${cvRow('Kalbos', actor?.languages)}
+      ${cvRowLast('Gabumai', actor?.skills)}
+
+      <hr class="divider">
+
+      <div class="psec">Užimtumas</div>
+      <textarea class="uzim-input" id="uzimInput-${baId}" placeholder="Užimtumo informacija…" onblur="saveUzimtumas('${baId}',this.value)"></textarea>
+
+      <div class="psec">Statusas</div>
+      <div class="stbtns">
+        <button class="stb ${statusTaip}" onclick="setStatus('${baId}','yes',this)">Taip</button>
+        <button class="stb ${statusGalbut}" onclick="setStatus('${baId}','maybe',this)">Galbūt</button>
+      </div>
+
+      <hr class="divider">
+
+      <div class="psec">Komentarai</div>
+      <div id="cmt-list-${baId}">${commentsHtml}</div>
+      <div class="cmt-row">
+        <input class="cmt-input" id="cmt-input-${baId}" type="text" placeholder="Rašyti komentarą…" onkeydown="if(event.key==='Enter')addComment('${baId}')">
+        <button class="cmt-send" onclick="addComment('${baId}')">Siųsti</button>
+      </div>
+
+      <hr class="divider">
+
+      <div class="psec">Priedai</div>
+      <div class="att-list" id="att-list-${baId}">${attHtml}</div>
+      <div class="att-btn">+ Pridėti priedą<input type="file" onchange="uploadAttachment('${baId}',this)"></div>
+    </div>`;
+}
+
+function cvRow(label, val) {
+  if (!val) return '';
+  return `<div class="cvrow"><span class="cvl">${label}</span><span class="cvv">${escHtml(String(val))}</span></div>`;
+}
+function cvRowLast(label, val) {
+  if (!val) return '';
+  return `<div class="cvrow" style="border:none"><span class="cvl">${label}</span><span class="cvv">${escHtml(String(val))}</span></div>`;
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.add('hidden');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
+  state.selectedBasketActorId = null;
+}
+
+// ── Status ────────────────────────────────────────────────────────────────
+async function setStatus(baId, status, btn) {
+  const container = btn.closest('.stbtns');
+  container.querySelectorAll('.stb').forEach(b => { b.classList.remove('s-t','s-m'); });
+  if (status === 'yes') btn.classList.add('s-t');
+  else if (status === 'maybe') btn.classList.add('s-m');
+
+  const ba = state.basketActors.find(a => a.basket_actor_id === baId);
+  if (ba) ba.status = status;
+
+  try {
+    await sb(`/rest/v1/basket_actors?id=eq.${baId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, status_updated_by: state.username, status_updated_at: new Date().toISOString() })
+    });
+    renderBasketGrid();
+    showToast('Statusas išsaugotas');
+  } catch(e) {
+    showToast('Klaida išsaugant statusą');
+  }
+}
+
+// ── Užimtumas ─────────────────────────────────────────────────────────────
+async function saveUzimtumas(baId, value) {
+  // Store in comments with special author tag, or as a separate field
+  // For now we save as a note comment tagged [užimtumas]
+  try {
+    // Check if existing uzimtumas comment
+    const existing = await sb(`/rest/v1/comments?basket_actor_id=eq.${baId}&author_name=eq.[užimtumas]&select=id`);
+    if (value.trim()) {
+      if (existing.length) {
+        await sb(`/rest/v1/comments?id=eq.${existing[0].id}`, {
+          method: 'PATCH', body: JSON.stringify({ content: value })
+        });
+      } else {
+        await sb('/rest/v1/comments', {
+          method: 'POST', body: JSON.stringify({ basket_actor_id: baId, author_name: '[užimtumas]', content: value })
+        });
+      }
+    }
+  } catch(e) {}
+}
+
+// ── Comments ──────────────────────────────────────────────────────────────
+async function addComment(baId) {
+  const input = document.getElementById('cmt-input-' + baId);
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const btn = input.nextElementSibling;
+  btn.disabled = true;
+
+  try {
+    const rows = await sb('/rest/v1/comments', {
+      method: 'POST',
+      body: JSON.stringify({ basket_actor_id: baId, author_name: state.username, content: text })
+    });
+    const c = Array.isArray(rows) ? rows[0] : rows;
+    const list = document.getElementById('cmt-list-' + baId);
+    const div = document.createElement('div');
+    div.className = 'cmt-item';
+    div.innerHTML = `<span class="cmt-author">${escHtml(state.username)}</span><span class="cmt-time">šiandien</span><div class="cmt-text">${escHtml(text)}</div>`;
+    list.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth' });
+
+    const ba = state.basketActors.find(a => a.basket_actor_id === baId);
+    if (ba) ba.comment_count = (ba.comment_count || 0) + 1;
+  } catch(e) {
+    showToast('Nepavyko išsiųsti komentaro');
+  }
+  btn.disabled = false;
+}
+
+// ── Attachments ───────────────────────────────────────────────────────────
+async function uploadAttachment(baId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('Įkeliama…');
+
+  try {
+    const path = `${baId}/${Date.now()}_${file.name}`;
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/attachments/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': file.type },
+      body: file
+    });
+    if (!uploadRes.ok) throw new Error('Upload failed');
+
+    await sb('/rest/v1/attachments', {
+      method: 'POST',
+      body: JSON.stringify({ basket_actor_id: baId, file_name: file.name, storage_path: path, uploaded_by: state.username })
+    });
+
+    const list = document.getElementById('att-list-' + baId);
+    const url = `${SUPABASE_URL}/storage/v1/object/public/attachments/${path}`;
+    const div = document.createElement('div');
+    div.className = 'att-item';
+    div.innerHTML = `<span class="att-icon">📎</span><a href="${url}" target="_blank">${escHtml(file.name)}</a>`;
+    list.appendChild(div);
+    showToast('Priedas įkeltas');
+  } catch(e) {
+    showToast('Nepavyko įkelti priedo');
+  }
+  input.value = '';
+}
+
+// ── Realtime ──────────────────────────────────────────────────────────────
+function startRealtime() {
+  // Poll for new comments every 30s as lightweight alternative to websocket
+  setInterval(async () => {
+    if (!state.selectedBasketActorId) return;
+    try {
+      const comments = await sb(`/rest/v1/comments?basket_actor_id=eq.${state.selectedBasketActorId}&select=id,author_name,content,created_at&order=created_at.asc`);
+      const list = document.getElementById('cmt-list-' + state.selectedBasketActorId);
+      if (!list) return;
+      const currentCount = list.children.length;
+      if (comments.filter(c => c.author_name !== '[užimtumas]').length > currentCount) {
+        const ba = state.basketActors.find(a => a.basket_actor_id === state.selectedBasketActorId);
+        if (ba) {
+          ba.comment_count = comments.filter(c => c.author_name !== '[užimtumas]').length;
+          openActor(state.selectedBasketActorId);
+        }
+      }
+    } catch(e) {}
+  }, 30000);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>
