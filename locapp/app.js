@@ -4,7 +4,14 @@
 //   gs.*  → Apps Script proxy (Komanda, Drive photos, uploads, email)
 // ============================================================
 
-const sbClient = supabase.createClient(window.CFG.SUPABASE_URL, window.CFG.SUPABASE_ANON);
+const sbClient = supabase.createClient(window.CFG.SUPABASE_URL, window.CFG.SUPABASE_ANON, {
+  auth: {
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+    flowType: 'implicit'
+  }
+});
 
 // ── small helpers ─────────────────────────────────────
 const $  = (id) => document.getElementById(id);
@@ -49,17 +56,25 @@ const gs = {
 
 // ── auth ──────────────────────────────────────────────
 async function init() {
-  const { data: { session } } = await sbClient.auth.getSession();
-  if (!session) {
-    // handle OAuth callback fragment if just returned from Google
-    if (window.location.hash.includes('access_token')) {
-      // wait for client to process the hash
-      await new Promise(r => setTimeout(r, 500));
-      const { data: { session: s2 } } = await sbClient.auth.getSession();
-      if (s2) return loadApp(s2);
+  // If we just came back from Google with #access_token=... in the URL,
+  // wait for the Supabase client to process the hash before checking session.
+  // detectSessionInUrl handles this asynchronously on script load.
+  if (window.location.hash.includes('access_token')) {
+    // Give the client a moment to ingest the hash, then clean the URL.
+    for (let i = 0; i < 20; i++) {
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (session) {
+        // strip the hash so a refresh doesn't re-trigger anything weird
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return loadApp(session);
+      }
+      await new Promise(r => setTimeout(r, 100));
     }
-    return showSignIn();
+    // gave up waiting → fall through to normal session check
   }
+
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) return showSignIn();
   return loadApp(session);
 }
 
