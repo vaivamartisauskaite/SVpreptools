@@ -1662,6 +1662,21 @@ async function selectGalPhoto(locId, fileId) {
   };
   main.insertBefore(img, main.querySelector('.gal-nav'));
 
+  // Set up the download button — uc?export=download streams the
+  // original file. Suggest a sensible filename based on the photo's
+  // Drive name (falls back to <id>.jpg if the name is missing).
+  const dlBtn = document.getElementById('galDownloadBtn');
+  if (dlBtn) {
+    const photos = S.drivePhotos[locId] || [];
+    const meta = photos.find(p => p.id === fileId);
+    let filename = (meta && meta.name) ? meta.name : (fileId + '.jpg');
+    // If the filename has no extension, append .jpg
+    if (!/\.[a-z0-9]{2,4}$/i.test(filename)) filename += '.jpg';
+    dlBtn.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    dlBtn.setAttribute('download', filename);
+    dlBtn.style.display = 'inline-flex';
+  }
+
   loadPhotoComments(fileId);
   updateGalNavState();
 }
@@ -1685,7 +1700,11 @@ function updateGalNavState() {
   }
 }
 
-function closeGallery() { $('modal-gal').classList.remove('open'); }
+function closeGallery() {
+  $('modal-gal').classList.remove('open');
+  const dl = document.getElementById('galDownloadBtn');
+  if (dl) dl.style.display = 'none';
+}
 
 // Move gallery selection by ±1 (or any delta).
 function navGallery(delta) {
@@ -1858,7 +1877,13 @@ const MODAL_HTML = `
 
 <div class="modal-ov" id="modal-gal" onclick="if(event.target===this)closeGallery()">
   <div class="gal-modal" onclick="event.stopPropagation()">
-    <div class="gal-hdr"><span class="gal-title" id="galTitle">Nuotraukų galerija</span><button class="gal-close" onclick="closeGallery()">${IC.close}</button></div>
+    <div class="gal-hdr">
+      <span class="gal-title" id="galTitle">Nuotraukų galerija</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <a id="galDownloadBtn" href="#" download style="display:none;font-size:11px;padding:4px 10px;border:1px solid #b8c4b7;border-radius:6px;background:#fff;color:#1a1a18;text-decoration:none;cursor:pointer;align-items:center;gap:4px" target="_blank" rel="noopener">${IC.download}<span class="btn-lbl">Atsisiųsti</span></a>
+        <button class="gal-close" onclick="closeGallery()">${IC.close}</button>
+      </div>
+    </div>
     <div class="gal-body">
       <div class="gal-photo-section">
         <div class="gal-img" id="galMainImg">
