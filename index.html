@@ -114,6 +114,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .notif-item.removing{opacity:0;max-height:0;padding-top:0;padding-bottom:0;margin-bottom:0;border-width:0}
 .notif-ic{width:30px;height:30px;border-radius:50%;background:#f0eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 .notif-ic svg{width:13px;height:13px;color:#534AB7}
+.notif-ic.has-photo{width:48px;height:48px;border-radius:6px;background:#e8e6dd;overflow:hidden;margin-top:0}
+.notif-ic.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .notif-body{flex:1;min-width:0}
 .notif-txt{font-size:11px;color:#1a1a18;line-height:1.5;margin-bottom:3px}
 .notif-txt a{color:#534AB7;cursor:pointer;text-decoration:none}
@@ -585,6 +587,40 @@ async function loadPranesimai() {
   try { notifs = await sb('/rest/v1/notifications?project_id=eq.' + S.projectId + '&select=*&order=created_at.desc&limit=60'); } catch(e) {}
   // Hide already-read notifications entirely
   notifs = notifs.filter(function(n){ return !(n.read_by || []).includes(S.username); });
+  // Resolve actor primary photo for any notification with basket_actor_id —
+  // 2 bulk queries instead of N+1.
+  var baIds = Array.from(new Set(notifs.map(function(n){ return n.basket_actor_id; }).filter(Boolean)));
+  if (baIds.length) {
+    try {
+      var baRows = await sb('/rest/v1/basket_actors?id=in.(' + baIds.join(',') + ')&select=id,actor_id');
+      var baToActor = {};
+      baRows.forEach(function(r){ baToActor[r.id] = r.actor_id; });
+      var actorIds = Array.from(new Set(Object.values(baToActor).filter(Boolean)));
+      var photoMap = {};
+      if (actorIds.length) {
+        var phs = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
+        phs.forEach(function(p){ if (!photoMap[p.actor_id]) photoMap[p.actor_id] = p.storage_path; });
+      }
+      notifs.forEach(function(n){
+        if (n.basket_actor_id) {
+          var aid = baToActor[n.basket_actor_id];
+          if (aid && photoMap[aid]) n._photoPath = photoMap[aid];
+        }
+      });
+    } catch(e) {}
+  }
+  // For new_char_refs, surface the most recent ref photo as preview
+  var charRefBasketIds = Array.from(new Set(notifs.filter(function(n){ return n.type === 'new_char_refs' && n.basket_id; }).map(function(n){ return n.basket_id; })));
+  if (charRefBasketIds.length) {
+    try {
+      var refs = await sb('/rest/v1/character_refs?basket_id=in.(' + charRefBasketIds.join(',') + ')&select=basket_id,storage_path&order=created_at.desc');
+      var refMap = {};
+      refs.forEach(function(r){ if (!refMap[r.basket_id]) refMap[r.basket_id] = r.storage_path; });
+      notifs.forEach(function(n){
+        if (n.type === 'new_char_refs' && n.basket_id && refMap[n.basket_id]) n._refPath = refMap[n.basket_id];
+      });
+    } catch(e) {}
+  }
   S.notifications = notifs;
   renderPranesimai(notifs);
 }
@@ -603,8 +639,20 @@ function renderPranesimai(notifs) {
 }
 
 function notifHtml(n) {
+  // Photo on the left if we have one (actor photo for candidate-related notifs,
+  // first ref photo for new_char_refs). Otherwise fall back to type icon.
+  var icHtml;
+  if (n._photoPath) {
+    var url = PHOTO_BASE + n._photoPath;
+    icHtml = '<div class="notif-ic has-photo"><img src="' + esc(url) + '" alt="" onerror="this.parentNode.innerHTML=\'' + nIcon(n.type).replace(/'/g, "\\'") + '\';this.parentNode.classList.remove(\'has-photo\')"></div>';
+  } else if (n._refPath) {
+    var refUrl = REFS_BASE + n._refPath;
+    icHtml = '<div class="notif-ic has-photo"><img src="' + esc(refUrl) + '" alt="" onerror="this.parentNode.innerHTML=\'' + nIcon(n.type).replace(/'/g, "\\'") + '\';this.parentNode.classList.remove(\'has-photo\')"></div>';
+  } else {
+    icHtml = '<div class="notif-ic">' + nIcon(n.type) + '</div>';
+  }
   return '<div class="notif-item" id="notif-' + n.id + '" onclick="onNotifClick(\'' + n.id + '\',event)">'
-    + '<div class="notif-ic">' + nIcon(n.type) + '</div>'
+    + icHtml
     + '<div class="notif-body"><div class="notif-txt">' + nText(n) + '</div><div class="notif-time">' + timeAgo(n.created_at) + '</div></div>'
     + '<button class="notif-mark" onclick="event.stopPropagation();markRead(\'' + n.id + '\')">Peržiūrėta</button>'
     + '</div>';
