@@ -62,6 +62,18 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .mhead{padding:12px 16px 10px;border-bottom:0.5px solid #d3d1c7;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
 .mh-title{font-size:17px;font-weight:500;letter-spacing:0.03em}
 .mh-sub{font-size:11px;color:#888780;margin-top:2px}
+.mh-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1;flex-wrap:wrap}
+.cref-strip{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cref-thumb{width:72px;height:72px;border-radius:6px;overflow:hidden;background:#e8e6dd;cursor:pointer;flex-shrink:0;position:relative;border:0.5px solid #d3d1c7;transition:transform 0.12s}
+.cref-thumb:hover{transform:scale(1.04)}
+.cref-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cref-del{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;font-size:11px}
+.cref-thumb:hover .cref-del{display:flex}
+.cref-del:hover{background:rgba(192,57,43,0.9)}
+.cref-add{width:72px;height:72px;border-radius:6px;border:1px dashed #b4b2a9;background:transparent;color:#888780;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-family:inherit;flex-shrink:0;transition:all 0.12s}
+.cref-add:hover{border-color:#534AB7;color:#534AB7;background:#f0effe}
+.cref-add svg{width:16px;height:16px}
+.cref-add-busy{opacity:0.5;cursor:wait}
 .mh-right{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap}
 .fl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
 .fl:hover{border-color:#888780;color:#1a1a18}
@@ -268,6 +280,10 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
   .panel.hidden{right:-100%;width:100%}
   .sb-item,.sb-top-item{padding:10px 14px}
   .stb{padding:10px 4px}
+  .mh-left{gap:8px}
+  .cref-thumb,.cref-add{width:56px;height:56px}
+  .cref-add svg{width:14px;height:14px}
+  .cref-add span{font-size:8px}
 }
 </style>
 </head>
@@ -419,6 +435,7 @@ var SUPABASE_URL = 'https://grsmscrbnzttgpzrqzxx.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA';
 var PHOTO_BASE   = SUPABASE_URL + '/storage/v1/object/public/actor-photos/';
 var ATT_BASE     = SUPABASE_URL + '/storage/v1/object/public/attachments/';
+var REFS_BASE    = SUPABASE_URL + '/storage/v1/object/public/character-refs/';
 var RESEND_FROM  = 'SV Casting <onboarding@resend.dev>';
 var EMAIL_FN_URL = 'https://eotbvbrfeesuhe2.m.pipedream.net';
 // Admin password hash (SHA-256 of "Dobiliukas_852456")
@@ -435,6 +452,7 @@ var S = {
   galPhotos: [], galIdx: 0,
   infoModalBaId: null,
   notifications: [],
+  charRefs: {}, // basket_id → array of ref rows
 };
 
 // ── Supabase ───────────────────────────────────────────────────────────────
@@ -599,6 +617,7 @@ function nIcon(t) {
     status_change:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
     info_update:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
     new_video:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+    new_char_refs:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
   };
   return m[t] || m.new_comment;
 }
@@ -614,6 +633,7 @@ function nText(n) {
   }
   if (n.type === 'info_update') return 'Atnaujinta informacija: <strong>' + a + '</strong>' + loc;
   if (n.type === 'new_video')   return 'Pridėtas naujas video: <strong>' + a + '</strong>' + loc;
+  if (n.type === 'new_char_refs') return '<strong>' + by + '</strong> pridėjo <strong>' + (n.count || '') + '</strong> reference' + ((n.count||0) === 1 ? '' : 's') + ' veikėjui <strong>' + b + '</strong>';
   return (n.meta && n.meta.text) || 'Pranešimas';
 }
 
@@ -625,6 +645,8 @@ async function onNotifClick(id, ev) {
   await markRead(id, true);
   if (n.type === 'new_actors_batch') {
     switchView('nauji');
+  } else if (n.type === 'new_char_refs' && n.basket_id) {
+    selectBasket(n.basket_id);
   } else if (n.basket_actor_id && n.basket_id) {
     jumpToActor(n.basket_actor_id, n.basket_id);
   } else if (n.basket_id) {
@@ -769,6 +791,11 @@ async function selectBasket(id) {
     var actorIds = bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean);
     var photos = [];
     if (actorIds.length) photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=id,actor_id,storage_path,is_primary&order=is_primary.desc');
+    // Character reference photos for this basket
+    try {
+      var refs = await sb('/rest/v1/character_refs?basket_id=eq.' + id + '&select=id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
+      S.charRefs[id] = refs;
+    } catch(e) { S.charRefs[id] = []; }
     S.basketActors = bas.map(function(ba) {
       return {
         basket_actor_id: ba.id, actor: ba.actors, status: ba.status || 'pending',
@@ -792,8 +819,24 @@ function renderGrid() {
   var galbut  = actors.filter(function(a){ return !a.is_new && a.status === 'maybe'; });
   var pending = actors.filter(function(a){ return !a.is_new && (a.status === 'pending' || !a.status); });
   var f = S.filter;
-  var html = '<div class="mhead"><div><div class="mh-title">' + (basket ? basket.name.toUpperCase() : '') + '</div>'
-    + '<div class="mh-sub">' + actors.length + ' kandidatai</div></div>'
+  var refs = S.charRefs[S.activeBasketId] || [];
+  var refsHtml = '<div class="cref-strip">';
+  refs.forEach(function(r, i) {
+    var url = REFS_BASE + r.storage_path;
+    refsHtml += '<div class="cref-thumb" onclick="openRefGallery(' + i + ')">'
+      + '<img src="' + esc(url) + '" alt="" onerror="this.style.display=\'none\'">'
+      + '<button class="cref-del" onclick="event.stopPropagation();deleteCharRef(\'' + r.id + '\',\'' + r.storage_path + '\')" title="Ištrinti">×</button>'
+      + '</div>';
+  });
+  refsHtml += '<button class="cref-add" id="crefAddBtn" onclick="document.getElementById(\'crefFile\').click()" title="Pridėti references">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>'
+    + '<span>References</span></button>';
+  refsHtml += '<input type="file" id="crefFile" accept="image/*" multiple style="display:none" onchange="addCharRefs(this.files)">';
+  refsHtml += '</div>';
+
+  var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
+    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (refs.length ? ' · ' + refs.length + ' references' : '') + '</div></div>'
+    + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
     + '<button class="fl ' + (f === 'taip' ? 'act' : '') + '" onclick="setFilter(\'taip\')">Taip</button>'
@@ -830,6 +873,85 @@ function dismissNew() {
   localStorage.setItem('seenActors', JSON.stringify(Array.from(S.seenActors)));
   renderGrid(); updateBadges(); showToast('Pažymėta kaip peržiūrėta');
 }
+
+// ── Character reference photos ─────────────────────────────────────────────
+async function addCharRefs(fileList) {
+  if (!fileList || !fileList.length) return;
+  var basketId = S.activeBasketId;
+  if (!basketId) return;
+  var btn = document.getElementById('crefAddBtn');
+  if (btn) btn.classList.add('cref-add-busy');
+  var files = Array.from(fileList).slice(0, 10); // hard cap
+  var uploaded = 0, failed = 0;
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (!f.type || !/^image\//i.test(f.type)) {
+      // try by extension
+      if (!/\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(f.name)) { failed++; continue; }
+    }
+    try {
+      var safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+      var path = basketId + '/' + Date.now() + '_' + safeName;
+      var contentType = f.type || inferMime(f.name);
+      var up = await fetch(SUPABASE_URL + '/storage/v1/object/character-refs/' + path, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': contentType, 'x-upsert': 'true' },
+        body: f
+      });
+      if (!up.ok) { failed++; continue; }
+      var ins = await sb('/rest/v1/character_refs', {
+        method: 'POST',
+        body: JSON.stringify({ basket_id: basketId, storage_path: path, original_filename: f.name, uploaded_by: S.username, position: (S.charRefs[basketId] || []).length + uploaded })
+      });
+      var row = Array.isArray(ins) ? ins[0] : ins;
+      if (!S.charRefs[basketId]) S.charRefs[basketId] = [];
+      S.charRefs[basketId].push(row || { id: 'tmp-' + Date.now(), storage_path: path, original_filename: f.name, uploaded_by: S.username, created_at: new Date().toISOString() });
+      uploaded++;
+    } catch(e) { failed++; }
+  }
+  // Reset the file input so picking the same files again still triggers change
+  var inp = document.getElementById('crefFile'); if (inp) inp.value = '';
+  if (btn) btn.classList.remove('cref-add-busy');
+  renderGrid();
+  if (uploaded) {
+    var basket = S.baskets.find(function(b){ return b.id === basketId; });
+    showToast(uploaded + (uploaded === 1 ? ' reference pridėta' : ' references pridėtos'));
+    // Notification
+    try {
+      await createNotif('new_char_refs', { basketId: basketId, basketName: (basket && basket.name), count: uploaded });
+    } catch(e) {}
+  }
+  if (failed) showToast('Nepavyko: ' + failed);
+}
+
+async function deleteCharRef(refId, storagePath) {
+  if (!confirm('Ištrinti šią reference nuotrauką?')) return;
+  try {
+    // Delete storage file (best effort) and DB row
+    try {
+      await fetch(SUPABASE_URL + '/storage/v1/object/character-refs/' + storagePath, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+    } catch(e) {}
+    await sb('/rest/v1/character_refs?id=eq.' + refId, { method: 'DELETE' });
+    var arr = S.charRefs[S.activeBasketId] || [];
+    S.charRefs[S.activeBasketId] = arr.filter(function(r){ return r.id !== refId; });
+    renderGrid();
+    showToast('Ištrinta');
+  } catch(e) { showToast('Nepavyko ištrinti'); }
+}
+
+function openRefGallery(idx) {
+  var refs = S.charRefs[S.activeBasketId] || [];
+  if (!refs.length) return;
+  S.galPhotos = refs.map(function(r){ return REFS_BASE + r.storage_path; });
+  S.galIdx = idx || 0;
+  updateGal();
+  document.getElementById('gallery').style.display = 'flex';
+  document.addEventListener('keydown', galKey);
+}
+
 
 // ── Overview tabs ──────────────────────────────────────────────────────────
 async function showOverview(type, btn) {
