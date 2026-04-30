@@ -1247,8 +1247,7 @@ async function loadNewLocations() {
       </div>`;
     div.querySelector('[data-id]').addEventListener('click', () => {
       doMarkViewed(loc.id);
-      mainNav('setai');
-      selectSet(loc.set_id, set?.name);
+      goToLocation(loc.id, '');
     });
     div.querySelector('[data-mark]').addEventListener('click', e => { e.stopPropagation(); doMarkViewed(loc.id); });
     wrap.appendChild(div);
