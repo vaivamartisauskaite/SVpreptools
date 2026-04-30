@@ -13,6 +13,61 @@ const sbClient = supabase.createClient(window.CFG.SUPABASE_URL, window.CFG.SUPAB
   }
 });
 
+// ── icons (mirrors the IC object from the original Apps Script HTML) ──
+const IC = {
+  milestone:        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18.172 6a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg>',
+  circleDotDashed:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.1 2.18a9.93 9.93 0 0 1 3.8 0"/><path d="M17.6 3.71a9.95 9.95 0 0 1 2.69 2.7"/><path d="M21.82 10.1a9.93 9.93 0 0 1 0 3.8"/><path d="M20.29 17.6a9.95 9.95 0 0 1-2.7 2.69"/><path d="M13.9 21.82a9.94 9.94 0 0 1-3.8 0"/><path d="M6.4 20.29a9.95 9.95 0 0 1-2.69-2.7"/><path d="M2.18 13.9a9.93 9.93 0 0 1 0-3.8"/><path d="M3.71 6.4a9.95 9.95 0 0 1 2.7-2.69"/><circle cx="12" cy="12" r="1"/></svg>',
+  squarePen:        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>',
+  mapPinPlus:       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728"/><circle cx="12" cy="10" r="3"/><path d="M16 18h6"/><path d="M19 15v6"/></svg>',
+  mapPin:           '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  bell:             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  circleCheckBig:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
+  squareCheckBig:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  scanEye:          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-11.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 11.888 0"/></svg>',
+  user:             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  close:            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  send:             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"/><path d="M6 12h16"/></svg>',
+  mapPlus:          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 19-1.106-.552a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0l4.212 2.106a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619V12"/><path d="M15 5.764V12"/><path d="M18 15v6"/><path d="M21 18h-6"/><path d="M9 3.236v15"/></svg>',
+  paperclip:        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>',
+  pencilLine:       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
+  messageWarning:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
+  // Smaller variants used in cards/badges
+  pencilLineSmall:  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
+  cameraSmall:      '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>',
+  paperclipSmall:   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>',
+  // Status/priority icons used in badges (matches getStatusIcon in original)
+  statusPatvirtinta:    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
+  statusSiuloma:        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+  statusAtrinkta:       '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  statusScoutuota:      '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-11.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 11.888 0"/></svg>',
+  statusAtmesta:        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>',
+  // Heart icons for like button (filled = liked)
+  heartFilled:      '<svg width="13" height="13" viewBox="0 0 13 13" fill="#D4537E" stroke="#D4537E" stroke-width="0.5"><path d="M6.5 11C6.5 11 1.5 7.5 1.5 4.5C1.5 3 2.8 2 4 2C5 2 6 2.5 6.5 3.3C7 2.5 8 2 9 2C10.2 2 11.5 3 11.5 4.5C11.5 7.5 6.5 11 6.5 11Z"/></svg>',
+  heartEmpty:       '<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6.5 11C6.5 11 1.5 7.5 1.5 4.5C1.5 3 2.8 2 4 2C5 2 6 2.5 6.5 3.3C7 2.5 8 2 9 2C10.2 2 11.5 3 11.5 4.5C11.5 7.5 6.5 11 6.5 11Z"/></svg>',
+  // CSV / data icons
+  download:         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  upload:           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  zap:              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  calendar:         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  refreshCw:        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
+  imagePh:          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+  // Diff symbols (for CSV preview)
+  plusBig:          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+  minusBig:         '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+  rotate:           '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>'
+};
+
+function getStatusIcon(s){
+  const m = {
+    'Patvirtinta':      IC.statusPatvirtinta,
+    'Scoutuota':        IC.statusScoutuota,
+    'Atrinkta scoutui': IC.statusAtrinkta,
+    'Siūloma':          IC.statusSiuloma,
+    'Atmesta':          IC.statusAtmesta
+  };
+  return m[s] || '';
+}
+
 // ── small helpers ─────────────────────────────────────
 const $  = (id) => document.getElementById(id);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -473,7 +528,7 @@ function renderSetList() {
     div.dataset.setid = set.id;
     div.dataset.idx = idx;
     div.innerHTML = `<span class="si-n" id="sn-${idx}">${escHtml(name)}</span>
-      <div class="si-acts"><button class="si-edit" data-idx="${idx}">✎</button></div>
+      <div class="si-acts"><button class="si-edit" data-idx="${idx}">${IC.pencilLineSmall}</button></div>
       <span class="si-c">${count}</span>`;
     div.onclick = (e) => {
       if (e.target.classList.contains('si-edit')) return;
@@ -576,12 +631,6 @@ function getBadgeCls(status) {
 function getPriCls(p) {
   return ({ 'Pagrindinis':'b-pgr','Atsarginis':'b-ats','Žemas prioritetas':'b-zem' })[p] || 'b-zem';
 }
-function getStatusIcon(s) {
-  const m = {
-    'Patvirtinta': '✓', 'Scoutuota': '👁', 'Atrinkta scoutui': '✓', 'Siūloma': '?', 'Atmesta': '⊘'
-  };
-  return m[s] || '';
-}
 
 // ── cards ─────────────────────────────────────────────
 function renderCards(locs) {
@@ -607,7 +656,7 @@ function buildCard(loc) {
 
   const pCls = getPriCls(loc.priority);
   const sCls = getBadgeCls(loc.status);
-  const heart = loc.userLiked ? '♥' : '♡';
+  const heart = loc.userLiked ? IC.heartFilled : IC.heartEmpty;
 
   card.innerHTML = `
     <div class="card-top">
@@ -618,7 +667,7 @@ function buildCard(loc) {
             <div class="loc-name">${escHtml(loc.variant_name)}</div>
             <div class="ct-acts">
               <button class="like-btn ${loc.userLiked?'liked':''}" data-id="${loc.id}">${heart} <span>${loc.likeCount||0}</span></button>
-              <button class="icon-btn" data-id="${loc.id}" data-action="edit">✎ <span class="btn-lbl">Redaguoti</span></button>
+              <button class="icon-btn" data-id="${loc.id}" data-action="edit">${IC.pencilLine} <span class="btn-lbl">Redaguoti</span></button>
             </div>
           </div>
           <div class="loc-meta">
@@ -627,11 +676,11 @@ function buildCard(loc) {
           </div>
           <div class="badge-row">
             <span class="badge ${pCls} bc" data-action="pri">${escHtml(loc.priority||'—')} ▾</span>
-            <span class="badge ${sCls} bc" data-action="stat">${getStatusIcon(loc.status)} ${escHtml(loc.status||'—')} ▾</span>
+            <span class="badge ${sCls} bc" data-action="stat" style="display:inline-flex;align-items:center;gap:4px">${getStatusIcon(loc.status)} ${escHtml(loc.status||'—')} ▾</span>
           </div>
           <div class="loc-links">
-            ${loc.maps_url ? `<a class="loc-link" href="${escHtml(loc.maps_url)}" target="_blank" onclick="event.stopPropagation()">📍 Google Maps</a>` : ''}
-            ${loc.drive_url ? `<button class="loc-link" data-action="gallery">📸 Nuotraukų galerija</button>` : ''}
+            ${loc.maps_url ? `<a class="loc-link" href="${escHtml(loc.maps_url)}" target="_blank" onclick="event.stopPropagation()">${IC.mapPin} Google Maps</a>` : ''}
+            ${loc.drive_url ? `<button class="loc-link" data-action="gallery">${IC.cameraSmall} Nuotraukų galerija</button>` : ''}
           </div>
         </div>
       </div>
@@ -653,10 +702,10 @@ function buildCard(loc) {
       <div class="cin-wrap">
         <div class="cin-row">
           <input class="cin" id="ci-${loc.id}" placeholder="Rašyti komentarą...">
-          <button class="cin-attach" data-id="${loc.id}">📎</button>
-          <button class="cin-send" data-id="${loc.id}">➤</button>
+          <button class="cin-attach" data-id="${loc.id}">${IC.paperclip}</button>
+          <button class="cin-send" data-id="${loc.id}">${IC.send}</button>
         </div>
-        <div class="attach-preview" id="ap-${loc.id}"><span id="ap-name-${loc.id}"></span><button class="attach-rm" data-id="${loc.id}">×</button></div>
+        <div class="attach-preview" id="ap-${loc.id}"><span id="ap-name-${loc.id}"></span><button class="attach-rm" data-id="${loc.id}">${IC.close}</button></div>
         <div class="c-progress" id="cp-${loc.id}"><div class="c-progress-bar-wrap"><div class="c-progress-bar" id="cpb-${loc.id}"></div></div><span class="c-progress-label" id="cpl-${loc.id}"></span></div>
         <input type="file" id="fi-${loc.id}" style="display:none">
       </div>
@@ -713,7 +762,7 @@ async function renderThumbs(locId, photos, driveUrl) {
     if (photos[i]) {
       const img = document.createElement('img');
       img.src = photos[i].thumbUrl;
-      img.onerror = function() { this.parentNode.innerHTML = '🖼'; };
+      img.onerror = function() { this.parentNode.innerHTML = IC.imagePh; };
       div.appendChild(img);
       div.addEventListener('click', e => { e.stopPropagation(); openGalleryAt(locId, photos[i].id); });
     }
@@ -749,7 +798,7 @@ function commentHtml(cm) {
     if (isImg) {
       attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank"><img src="https://drive.google.com/thumbnail?id=${cm.attachment_drive_id}&sz=w400" style="width:120px;height:80px;object-fit:cover;border-radius:6px;margin-top:6px"></a>`;
     } else {
-      attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank">📎 ${escHtml(cm.attachment_name||'Priedas')}</a>`;
+      attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank">${IC.paperclipSmall} ${escHtml(cm.attachment_name||'Priedas')}</a>`;
     }
   }
   return `<div class="comment"><div class="cav">${escHtml(ini)}</div>
@@ -849,7 +898,7 @@ async function doLike(locId) {
   if (card) {
     const btn = card.querySelector('.like-btn');
     btn.classList.toggle('liked', loc.userLiked);
-    btn.innerHTML = (loc.userLiked?'♥':'♡') + ' <span>' + loc.likeCount + '</span>';
+    btn.innerHTML = (loc.userLiked?IC.heartFilled:IC.heartEmpty) + ' <span>' + loc.likeCount + '</span>';
   }
 }
 
@@ -987,8 +1036,8 @@ function renderActivityList(data) {
       thumbUrl = S.drivePhotos[loc.id][0].thumbUrl;
     }
     const thumb = thumbUrl
-      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-c&quot;>!</div>'"></div>`
-      : `<div class="ai-ic ic-c">!</div>`;
+      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-c&quot;>${IC.messageWarning.replace(/"/g,'&quot;')}</div>'"></div>`
+      : `<div class="ai-ic ic-c">${IC.messageWarning}</div>`;
 
     const div = document.createElement('div');
     div.className = 'ai' + (isRead?' read':'');
@@ -1109,8 +1158,8 @@ async function loadNewLocations() {
     const photos = S.drivePhotos[loc.id];
     const thumbUrl = (photos && photos[0]) ? photos[0].thumbUrl : '';
     const thumb = thumbUrl
-      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-n&quot;>📍</div>'"></div>`
-      : `<div class="ai-ic ic-n">📍</div>`;
+      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-n&quot;>${IC.mapPinPlus.replace(/"/g,'&quot;')}</div>'"></div>`
+      : `<div class="ai-ic ic-n">${IC.mapPinPlus}</div>`;
 
     const div = document.createElement('div');
     div.className = 'ai'; div.id = 'ni-'+loc.id;
@@ -1160,6 +1209,7 @@ function openAddModal() {
   const sel = $('aset');
   sel.innerHTML = S.sets.map(s => `<option value="${s.id}" ${s.id===S.currentSetId?'selected':''}>${escHtml(s.name)}</option>`).join('') +
     '<option value="new">+ Pridėti naują setą...</option>';
+  // Note: select <option> elements cannot contain SVG icons — keep the plain "+" prefix here.
   $('modal-add').classList.add('open');
 }
 function closeAddModal() { $('modal-add').classList.remove('open'); }
@@ -1400,7 +1450,7 @@ function renderGroupedView(status, wrapId) {
       if (loc.drive_url) {
         let items = '';
         for (let i=0; i<3; i++) {
-          if (photos[i]) items += `<div class="rc-thumb" data-photo="${photos[i].id}" data-loc="${loc.id}"><img src="${photos[i].thumbUrl}" onerror="this.parentNode.innerHTML='🖼'"></div>`;
+          if (photos[i]) items += `<div class="rc-thumb" data-photo="${photos[i].id}" data-loc="${loc.id}"><img src="${photos[i].thumbUrl}" onerror="this.parentNode.innerHTML='${IC.imagePh.replace(/'/g,'&#39;')}'"></div>`;
           else items += `<div class="rc-thumb rc-thumb-blank"></div>`;
         }
         thumbs = `<div class="rc-thumbs">${items}</div>`;
@@ -1413,15 +1463,15 @@ function renderGroupedView(status, wrapId) {
           ${loc.address?`<div class="rc-addr">${escHtml(loc.address)}</div>`:''}
           <div class="rc-meta-row">
             ${loc.distance_km?`<span class="rc-dist">${loc.distance_km<15?'Vilnius':'±'+loc.distance_km+' km'}</span>`:''}
-            ${loc.maps_url?`<a class="loc-link" href="${escHtml(loc.maps_url)}" target="_blank" onclick="event.stopPropagation()">📍 Maps</a>`:''}
+            ${loc.maps_url?`<a class="loc-link" href="${escHtml(loc.maps_url)}" target="_blank" onclick="event.stopPropagation()">${IC.mapPin} Maps</a>`:''}
           </div>
           <div class="rc-badges">
             <span class="badge ${getPriCls(loc.priority)}">${escHtml(loc.priority||'—')}</span>
-            <span class="badge ${getBadgeCls(loc.status)}">${escHtml(loc.status||'—')}</span>
+            <span class="badge ${getBadgeCls(loc.status)}" style="display:inline-flex;align-items:center;gap:4px">${getStatusIcon(loc.status)} ${escHtml(loc.status||'—')}</span>
           </div>
         </div>
         <div class="rc-actions" style="align-self:center;margin-left:8px">
-          <button class="icon-btn" data-edit="${loc.id}">✎ <span class="btn-lbl">Redaguoti</span></button>
+          <button class="icon-btn" data-edit="${loc.id}">${IC.pencilLine} <span class="btn-lbl">Redaguoti</span></button>
         </div>`;
       row.querySelectorAll('.rc-thumb[data-photo]').forEach(el => {
         el.addEventListener('click', e => { e.stopPropagation(); openGalleryAt(el.dataset.loc, el.dataset.photo); });
@@ -1651,7 +1701,7 @@ const MODAL_HTML = `
 
 <div class="modal-ov" id="modal-gal" onclick="if(event.target===this)closeGallery()">
   <div class="gal-modal" onclick="event.stopPropagation()">
-    <div class="gal-hdr"><span class="gal-title" id="galTitle">Nuotraukų galerija</span><button class="gal-close" onclick="closeGallery()">×</button></div>
+    <div class="gal-hdr"><span class="gal-title" id="galTitle">Nuotraukų galerija</span><button class="gal-close" onclick="closeGallery()">${IC.close}</button></div>
     <div class="gal-body">
       <div class="gal-photo-section">
         <div class="gal-img" id="galMainImg"><div class="gal-img-ph">Pasirinkite nuotrauką</div></div>
@@ -1662,8 +1712,8 @@ const MODAL_HTML = `
         <div class="gs-inp-wrap">
           <textarea class="gs-cin" id="galCin" placeholder="Komentaras prie šios nuotraukos..." rows="3"></textarea>
           <div class="gs-btns">
-            <button class="gs-attach-btn" onclick="document.getElementById('galFileInput').click()">📎</button>
-            <button class="gs-send" onclick="sendPhotoComment()">➤</button>
+            <button class="gs-attach-btn" onclick="document.getElementById('galFileInput').click()">${IC.paperclip}</button>
+            <button class="gs-send" onclick="sendPhotoComment()">${IC.send}</button>
           </div>
           <input type="file" id="galFileInput" style="display:none">
         </div>
@@ -1685,8 +1735,8 @@ const MODAL_HTML = `
     <div class="settings-section">
       <div class="settings-section-label">Pranešimų tipas:</div>
       <div class="digest-options">
-        <div class="digest-option" id="digest-opt-iskart" onclick="selectDigest('IŠKART')">⚡ Iškart</div>
-        <div class="digest-option" id="digest-opt-kasdien" onclick="selectDigest('KASDIEN')">📅 Kasdien (santrauka)</div>
+        <div class="digest-option" id="digest-opt-iskart" onclick="selectDigest('IŠKART')">${IC.zap} Iškart</div>
+        <div class="digest-option" id="digest-opt-kasdien" onclick="selectDigest('KASDIEN')">${IC.calendar} Kasdien (santrauka)</div>
       </div>
     </div>
     <div class="settings-row" style="border-top:1px solid #eef2ee;border-bottom:none;padding-top:12px"><button class="btn-x" onclick="signOut()">Atsijungti</button></div>
@@ -1704,15 +1754,15 @@ const MODAL_HTML = `
     <div class="fr">
       <label style="font-weight:600;color:#1a1a18">Eksportas</label>
       <div class="csv-btn-row">
-        <button class="add-btn" onclick="exportCsv('sets')">↓ Setų sąrašas</button>
-        <button class="add-btn" onclick="exportCsv('locations')">↓ Lokacijos</button>
+        <button class="add-btn" onclick="exportCsv('sets')">${IC.download} Setų sąrašas</button>
+        <button class="add-btn" onclick="exportCsv('locations')">${IC.download} Lokacijos</button>
       </div>
     </div>
     <div class="fr">
       <label style="font-weight:600;color:#1a1a18;margin-top:14px">Importas</label>
       <div class="csv-btn-row">
-        <button class="add-btn" onclick="document.getElementById('csv-import-sets').click()">↑ Setų sąrašas</button>
-        <button class="add-btn" onclick="document.getElementById('csv-import-locs').click()">↑ Lokacijos</button>
+        <button class="add-btn" onclick="document.getElementById('csv-import-sets').click()">${IC.upload} Setų sąrašas</button>
+        <button class="add-btn" onclick="document.getElementById('csv-import-locs').click()">${IC.upload} Lokacijos</button>
       </div>
       <input type="file" id="csv-import-sets" accept=".csv" style="display:none" onchange="importCsv('sets', this.files[0])">
       <input type="file" id="csv-import-locs" accept=".csv" style="display:none" onchange="importCsv('locations', this.files[0])">
@@ -1738,6 +1788,22 @@ function cancelCsvImport() { _csvPending = null; $('csv-diff-area').style.displa
 
 // ── CSV (after MODAL_HTML defined; see csv.js for impl) ──
 // Wired in csv.js — keeps app.js shorter.
+
+// ── populate icons in HTML buttons defined statically ───
+(function fillStaticIcons() {
+  const map = {
+    'btn-add-variant':     IC.mapPlus,
+    'btn-mark-all-viewed': IC.squareCheckBig,
+    'btn-mark-all-act':    IC.squareCheckBig
+  };
+  Object.keys(map).forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      const slot = btn.querySelector('.btn-ic');
+      if (slot) slot.innerHTML = map[id];
+    }
+  });
+})();
 
 // ── kick off ─────────────────────────────────────────
 init();
