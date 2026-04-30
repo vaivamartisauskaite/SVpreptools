@@ -136,14 +136,132 @@ async function loadApp(session) {
   }
   S.user.name = km.member.name || S.user.email;
   S.user.member = km.member;
-
   $('userName').textContent = S.user.name;
 
-  // load initial bundle (sets + first set's locations)
+  // Restore cached Drive thumbnails from localStorage. They might be stale
+  // but show instantly; the background prefetch refreshes them.
+  loadPhotoCacheFromLocal();
+
+  // Show "Kantrybė – dorybė" after 4s if still loading.
+  const subTimer = setTimeout(() => {
+    const sub = document.getElementById('loadingSub');
+    if (sub) sub.style.display = 'block';
+  }, 4000);
+
   await loadInitialBundle();
+  clearTimeout(subTimer);
 
   $('loading').style.display = 'none';
   $('appShell').style.display = 'flex';
+
+  // Background: load all locations + prefetch all Drive folders so
+  // every panel (Pranešimai, Naujos, status views) has thumbnails ready.
+  prefetchEverythingInBackground();
+}
+
+const PHOTO_CACHE_KEY = 'locapp_photo_cache_v1';
+const PHOTO_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+
+function loadPhotoCacheFromLocal() {
+  try {
+    const raw = localStorage.getItem(PHOTO_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > PHOTO_CACHE_MAX_AGE_MS) {
+      localStorage.removeItem(PHOTO_CACHE_KEY);
+      return;
+    }
+    if (parsed.photos) Object.assign(S.drivePhotos, parsed.photos);
+  } catch (e) { /* ignore corrupted */ }
+}
+
+function savePhotoCacheToLocal() {
+  try {
+    localStorage.setItem(PHOTO_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      photos: S.drivePhotos
+    }));
+  } catch (e) {
+    // localStorage full or disabled — non-fatal
+  }
+}
+
+async function prefetchEverythingInBackground() {
+  // Load every location (so Pranešimai/Naujos can match referenced IDs)
+  if (!S.allLoaded) await loadAllLocations();
+
+  // Find all locations that have a drive_url but no cached photos yet.
+  const urlMap = {};
+  S.locations.forEach(l => {
+    if (l.drive_url && !S.drivePhotos[l.id]) urlMap[l.id] = l.drive_url;
+  });
+  if (!Object.keys(urlMap).length) return;
+
+  // Batch in chunks of 25 to keep each request reasonable.
+  const ids = Object.keys(urlMap);
+  const CHUNK = 25;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = {};
+    ids.slice(i, i+CHUNK).forEach(id => slice[id] = urlMap[id]);
+    try {
+      const r = await gs.post('photosBatch', { urlMap: slice });
+      if (r.ok) {
+        Object.assign(S.drivePhotos, r.photos);
+        savePhotoCacheToLocal();
+      }
+    } catch (e) { /* keep going on errors */ }
+  }
+}
+
+async function refreshCurrent() {
+  const btn = event && event.currentTarget;
+  if (btn) btn.classList.add('spinning');
+
+  try {
+    // What view is currently active?
+    const activeView = document.querySelector('.view.act');
+    const viewId = activeView ? activeView.id : 'v-setai';
+
+    if (viewId === 'v-setai') {
+      const activePanel = document.querySelector('.panel.act');
+      const panelId = activePanel ? activePanel.id : '';
+      if (panelId === 'panel-set') {
+        // Re-fetch current set's locations + their photos.
+        if (S.currentSetId) {
+          delete S.loadedSets[S.currentSet];
+          await loadSetLocations(S.currentSetId, S.currentSet);
+          // Bust the cached photos for these locations so we get fresh ones.
+          const setLocs = S.locations.filter(l => l.set_id === S.currentSetId);
+          const urlMap = {};
+          setLocs.forEach(l => { if (l.drive_url) urlMap[l.id] = l.drive_url; });
+          if (Object.keys(urlMap).length) {
+            const r = await gs.post('photosBatch', { urlMap, force: true });
+            if (r.ok) { Object.assign(S.drivePhotos, r.photos); savePhotoCacheToLocal(); }
+          }
+          if (S.subview === 'k') renderCards(setLocs);
+          else renderSantrauka();
+          renderSetList();
+        }
+      } else if (panelId === 'panel-naujos') {
+        await loadNewLocations();
+      } else if (panelId === 'panel-aktyvumas') {
+        await loadActivity();
+      }
+    } else {
+      // status views — reload all locations and re-render the active tab
+      S.allLoaded = false;
+      await loadAllLocations();
+      const tabId = viewId.replace('v-', '');
+      renderTabById(tabId);
+    }
+    refreshNewBadge();
+    refreshActivityBadge();
+    showToast('Atnaujinta');
+  } catch (e) {
+    showToast('Klaida atnaujinant');
+  } finally {
+    if (btn) btn.classList.remove('spinning');
+  }
 }
 
 // ── state ─────────────────────────────────────────────
@@ -815,6 +933,42 @@ async function loadActivity() {
   if (error) { wrap.innerHTML = '<div class="empty-state">Klaida</div>'; return; }
   if (!data.length) { wrap.innerHTML = '<div class="empty-state"><p>Naujų pranešimų nėra</p></div>'; return; }
 
+  // Make sure we have location records for all referenced locations.
+  // Activity events from other team members may reference locations
+  // we haven't loaded yet (their sets weren't opened in this session).
+  const missingLocIds = [...new Set(data
+    .map(ev => ev.location_id)
+    .filter(id => id && !S.locations.find(l => l.id === id))
+  )];
+  if (missingLocIds.length) {
+    const { data: locs } = await sbClient
+      .from('loc_locations').select('*').in('id', missingLocIds);
+    if (locs) {
+      locs.forEach(l => { l.likeCount = 0; l.userLiked = false; });
+      S.locations = S.locations.concat(locs);
+    }
+  }
+
+  // Prefetch thumbnails for any referenced location that doesn't have
+  // them cached yet. Activity feed shows thumbnails inline.
+  const urlMap = {};
+  data.forEach(ev => {
+    if (!ev.location_id) return;
+    const loc = S.locations.find(l => l.id === ev.location_id);
+    if (loc && loc.drive_url && !S.drivePhotos[loc.id]) {
+      urlMap[loc.id] = loc.drive_url;
+    }
+  });
+  if (Object.keys(urlMap).length) {
+    const r = await gs.post('photosBatch', { urlMap });
+    if (r.ok) Object.assign(S.drivePhotos, r.photos);
+  }
+
+  renderActivityList(data);
+}
+
+function renderActivityList(data) {
+  const wrap = $('aktWrap');
   wrap.innerHTML = '<div class="nv-hdr"><span class="nv-title">Aktyvumas</span></div>';
   data.forEach(ev => {
     const isRead = (ev.read_by||[]).includes(S.user.email);
@@ -823,12 +977,18 @@ async function loadActivity() {
     const sub = activitySub(ev);
     const time = fmtDateTime(ev.created_at);
     const photoFileId = (ev.data && ev.data.photoFileId) || '';
-    let thumb = '';
-    if (loc && S.drivePhotos[loc.id] && S.drivePhotos[loc.id][0]) {
-      thumb = `<div class="ai-thumb"><img src="${S.drivePhotos[loc.id][0].thumbUrl}" onerror="this.style.display='none'"></div>`;
-    } else {
-      thumb = `<div class="ai-ic ic-c">!</div>`;
+
+    // For photo_comment events, prefer the specific photo; otherwise
+    // use the first thumbnail we have for the location.
+    let thumbUrl = '';
+    if (photoFileId) {
+      thumbUrl = `https://drive.google.com/thumbnail?id=${photoFileId}&sz=w240`;
+    } else if (loc && S.drivePhotos[loc.id] && S.drivePhotos[loc.id][0]) {
+      thumbUrl = S.drivePhotos[loc.id][0].thumbUrl;
     }
+    const thumb = thumbUrl
+      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-c&quot;>!</div>'"></div>`
+      : `<div class="ai-ic ic-c">!</div>`;
 
     const div = document.createElement('div');
     div.className = 'ai' + (isRead?' read':'');
@@ -933,13 +1093,29 @@ async function loadNewLocations() {
   setBadge('badge-n', fresh.length);
   if (!fresh.length) { wrap.innerHTML = '<div class="empty-state"><p>Visos lokacijos peržiūrėtos</p></div>'; return; }
 
+  // Prefetch thumbnails so the cards have photos right away.
+  const urlMap = {};
+  fresh.forEach(loc => {
+    if (loc.drive_url && !S.drivePhotos[loc.id]) urlMap[loc.id] = loc.drive_url;
+  });
+  if (Object.keys(urlMap).length) {
+    const r = await gs.post('photosBatch', { urlMap });
+    if (r.ok) Object.assign(S.drivePhotos, r.photos);
+  }
+
   wrap.innerHTML = '<div class="nv-hdr"><span class="nv-title">Naujos lokacijos</span></div>';
   fresh.forEach(loc => {
     const set = S.sets.find(s => s.id === loc.set_id);
+    const photos = S.drivePhotos[loc.id];
+    const thumbUrl = (photos && photos[0]) ? photos[0].thumbUrl : '';
+    const thumb = thumbUrl
+      ? `<div class="ai-thumb"><img src="${thumbUrl}" onerror="this.parentNode.innerHTML='<div class=&quot;ai-ic ic-n&quot;>📍</div>'"></div>`
+      : `<div class="ai-ic ic-n">📍</div>`;
+
     const div = document.createElement('div');
     div.className = 'ai'; div.id = 'ni-'+loc.id;
-    div.innerHTML = `<div class="ai-ic ic-n">📍</div>
-      <div class="ai-body">
+    div.innerHTML = thumb +
+      `<div class="ai-body">
         <div class="ai-title">${escHtml(loc.variant_name)}</div>
         <div class="ai-sub">${escHtml(set?.name||'')} ${loc.priority?' · '+escHtml(loc.priority):''} ${loc.status?' · '+escHtml(loc.status):''}</div>
         <div class="ai-time">Įkėlė: ${escHtml(loc.added_by_email||'')} · ${fmtDateTime(loc.created_at)}</div>
