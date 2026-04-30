@@ -79,6 +79,12 @@ function showToast(msg){
   const t=$('toast'); t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2400);
 }
+function setLoadingStage(label, pct) {
+  const stage = document.getElementById('loadingStage');
+  const bar = document.getElementById('loadingProgress');
+  if (stage) stage.textContent = label || '';
+  if (bar && pct != null) bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+}
 function fmtDateTime(iso){
   if(!iso) return '';
   const d = new Date(iso);
@@ -180,6 +186,7 @@ async function signOut() {
 
 async function loadApp(session) {
   S.user.email = session.user.email.toLowerCase();
+  setLoadingStage('Tikriname vartotoją...', 10);
 
   // verify in Komanda via Apps Script
   const km = await gs.get('komanda', { email: S.user.email });
@@ -192,6 +199,7 @@ async function loadApp(session) {
   S.user.name = km.member.name || S.user.email;
   S.user.member = km.member;
   $('userName').textContent = S.user.name;
+  setLoadingStage('Atkuriame nuotraukų atmintį...', 25);
 
   // Restore cached Drive thumbnails from localStorage. They might be stale
   // but show instantly; the background prefetch refreshes them.
@@ -205,6 +213,7 @@ async function loadApp(session) {
 
   await loadInitialBundle();
   clearTimeout(subTimer);
+  setLoadingStage('Beveik baigta...', 95);
 
   $('loading').style.display = 'none';
   $('appShell').style.display = 'flex';
@@ -340,12 +349,14 @@ let _selectSetCallback = null;
 
 // ── initial load ──────────────────────────────────────
 async function loadInitialBundle() {
+  setLoadingStage('Kraunami setai...', 35);
   // sets ordered by order_index
   const { data: sets, error: e1 } = await sbClient
     .from('loc_sets').select('*').order('order_index');
   if (e1) { console.error(e1); return; }
   S.sets = sets;
 
+  setLoadingStage('Skaičiuojami variantai...', 50);
   // counts per set (one query)
   const { data: locStub, error: e2 } = await sbClient
     .from('loc_locations').select('id, set_id');
@@ -359,11 +370,13 @@ async function loadInitialBundle() {
 
   // first set's full locations
   if (sets.length) {
+    setLoadingStage('Kraunamas pirmas setas...', 65);
     S.currentSet = sets[0].name;
     S.currentSetId = sets[0].id;
     await loadSetLocations(sets[0].id, sets[0].name);
   }
 
+  setLoadingStage('Tikrinami pranešimai...', 85);
   // new locations badge
   await refreshNewBadge();
   await refreshActivityBadge();
@@ -400,14 +413,26 @@ async function loadSetLocations(setId, setName) {
   S.locationCounts[setName] = data.length;
   S.loadedSets[setName] = true;
 
-  // prefetch thumbs for first ~8
+  // Kick off thumbnail prefetch in the background — don't await.
+  // Cards render with spinners in the thumb column; thumbs fill in
+  // as the batch returns. Avoids blocking the initial loading screen.
   const urlMap = {};
   data.slice(0, 8).forEach(l => {
     if (l.drive_url && !S.drivePhotos[l.id]) urlMap[l.id] = l.drive_url;
   });
   if (Object.keys(urlMap).length) {
-    const r = await gs.post('photosBatch', { urlMap });
-    if (r.ok) Object.assign(S.drivePhotos, r.photos);
+    gs.post('photosBatch', { urlMap }).then(r => {
+      if (r.ok) {
+        Object.assign(S.drivePhotos, r.photos);
+        // re-render any visible thumb columns that were waiting
+        Object.keys(r.photos).forEach(locId => {
+          const loc = S.locations.find(l => l.id === locId);
+          if (loc && document.getElementById('thumbs-'+locId)) {
+            renderThumbs(locId, r.photos[locId], loc.drive_url);
+          }
+        });
+      }
+    }).catch(() => {});
   }
 }
 
