@@ -68,6 +68,33 @@ function getStatusIcon(s){
   return m[s] || '';
 }
 
+// ── komanda cache (email → display name) ───────────────
+const _komandaByEmail = {};
+
+async function loadKomandaCache() {
+  // The current user we already have from loadApp.
+  if (S.user.email && S.user.name) {
+    _komandaByEmail[S.user.email] = S.user.name;
+  }
+  // Fetch the rest from Apps Script in one go.
+  try {
+    const r = await gs.get('komandaAll', {});
+    if (r && r.ok && Array.isArray(r.team)) {
+      r.team.forEach(m => {
+        if (m.email) _komandaByEmail[m.email.toLowerCase()] = m.name || m.email;
+      });
+    }
+  } catch (e) { /* non-fatal — falls back to gmail prefix */ }
+}
+
+function displayName(email) {
+  if (!email) return '';
+  const e = email.toLowerCase();
+  if (_komandaByEmail[e]) return _komandaByEmail[e];
+  // Pretty fallback: show only the part before @, no domain.
+  return email.split('@')[0];
+}
+
 // ── small helpers ─────────────────────────────────────
 const $  = (id) => document.getElementById(id);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -200,6 +227,10 @@ async function loadApp(session) {
   S.user.member = km.member;
   $('userName').textContent = S.user.name;
   setLoadingStage('Atkuriame nuotraukų atmintį...', 25);
+
+  // Load Komanda display names in the background — used to render
+  // notification author names instead of bare emails.
+  loadKomandaCache();
 
   // Restore cached Drive thumbnails from localStorage. They might be stale
   // but show instantly; the background prefetch refreshes them.
@@ -816,18 +847,23 @@ async function loadComments(locId) {
 }
 
 function commentHtml(cm) {
-  const ini = (cm.author_name || cm.author_email || '?').substring(0,2).toUpperCase();
+  const author = cm.author_name || displayName(cm.author_email);
+  const ini = (author || '?').substring(0,2).toUpperCase();
   let attach = '';
   if (cm.attachment_drive_id) {
-    const isImg = /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(cm.attachment_name || '');
+    const name = cm.attachment_name || 'Priedas';
+    const isImg = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(name);
     if (isImg) {
-      attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank"><img src="https://drive.google.com/thumbnail?id=${cm.attachment_drive_id}&sz=w400" style="width:120px;height:80px;object-fit:cover;border-radius:6px;margin-top:6px"></a>`;
+      // Image attachment — render as a thumbnail. If Drive can't render
+      // (e.g. HEIC sometimes), fall back to a paperclip link.
+      const fallback = `<a class=&quot;cattach&quot; href=&quot;https://drive.google.com/file/d/${cm.attachment_drive_id}/view&quot; target=&quot;_blank&quot;>${IC.paperclipSmall.replace(/"/g,'&quot;')} ${escHtml(name).replace(/"/g,'&quot;')}</a>`;
+      attach = `<a class="cattach cattach-img" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px"><img src="https://drive.google.com/thumbnail?id=${cm.attachment_drive_id}&sz=w400" style="max-width:200px;max-height:140px;object-fit:cover;border-radius:6px;display:block" onerror="this.parentNode.outerHTML='${fallback}'"></a>`;
     } else {
-      attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank">${IC.paperclipSmall} ${escHtml(cm.attachment_name||'Priedas')}</a>`;
+      attach = `<a class="cattach" href="https://drive.google.com/file/d/${cm.attachment_drive_id}/view" target="_blank">${IC.paperclipSmall} ${escHtml(name)}</a>`;
     }
   }
   return `<div class="comment"><div class="cav">${escHtml(ini)}</div>
-    <div><span class="cauth">${escHtml(cm.author_name || cm.author_email)}</span>
+    <div><span class="cauth">${escHtml(author)}</span>
     <span class="ctime">${fmtDateTime(cm.created_at)}</span>
     <div class="ctext">${escHtml(cm.message)}</div>${attach}</div></div>`;
 }
@@ -1003,14 +1039,14 @@ async function loadActivity() {
   const { data, error } = await sbClient
     .from('loc_activity').select('*')
     .neq('actor_email', S.user.email)
-    .order('created_at', { ascending: false }).limit(60);
+    .order('created_at', { ascending: false }).limit(120);
   if (error) { wrap.innerHTML = '<div class="empty-state">Klaida</div>'; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><p>Naujų pranešimų nėra</p></div>'; return; }
+  // Filter out events the current user has already read.
+  const unread = (data||[]).filter(ev => !(ev.read_by||[]).includes(S.user.email));
+  if (!unread.length) { wrap.innerHTML = '<div class="empty-state"><p>Naujų pranešimų nėra</p></div>'; return; }
 
   // Make sure we have location records for all referenced locations.
-  // Activity events from other team members may reference locations
-  // we haven't loaded yet (their sets weren't opened in this session).
-  const missingLocIds = [...new Set(data
+  const missingLocIds = [...new Set(unread
     .map(ev => ev.location_id)
     .filter(id => id && !S.locations.find(l => l.id === id))
   )];
@@ -1024,9 +1060,9 @@ async function loadActivity() {
   }
 
   // Prefetch thumbnails for any referenced location that doesn't have
-  // them cached yet. Activity feed shows thumbnails inline.
+  // them cached yet.
   const urlMap = {};
-  data.forEach(ev => {
+  unread.forEach(ev => {
     if (!ev.location_id) return;
     const loc = S.locations.find(l => l.id === ev.location_id);
     if (loc && loc.drive_url && !S.drivePhotos[loc.id]) {
@@ -1038,14 +1074,13 @@ async function loadActivity() {
     if (r.ok) Object.assign(S.drivePhotos, r.photos);
   }
 
-  renderActivityList(data);
+  renderActivityList(unread);
 }
 
 function renderActivityList(data) {
   const wrap = $('aktWrap');
   wrap.innerHTML = '<div class="nv-hdr"><span class="nv-title">Aktyvumas</span></div>';
   data.forEach(ev => {
-    const isRead = (ev.read_by||[]).includes(S.user.email);
     const loc = S.locations.find(l => l.id === ev.location_id);
     const title = activityTitle(ev, loc);
     const sub = activitySub(ev);
@@ -1065,7 +1100,7 @@ function renderActivityList(data) {
       : `<div class="ai-ic ic-c">${IC.messageWarning}</div>`;
 
     const div = document.createElement('div');
-    div.className = 'ai' + (isRead?' read':'');
+    div.className = 'ai';
     div.id = 'ai-'+ev.id;
     div.innerHTML = thumb +
       `<div class="ai-body">
@@ -1074,15 +1109,16 @@ function renderActivityList(data) {
         <div class="ai-time">${time}</div>
         <div class="ai-btns">
           <button class="ai-btn" data-act="goto">Peržiūrėti</button>
-          <button class="ai-btn" data-act="read">Pažymėti kaip skaityta</button>
+          <button class="ai-btn" data-act="read">Pažymėti kaip skaitytą</button>
         </div>
       </div>`;
     div.querySelector('[data-act="goto"]').addEventListener('click', () => {
-      markActivityRead(ev.id);
+      markActivityRead(ev.id, /*removeFromList*/ true);
       goToLocation(ev.location_id, photoFileId);
     });
     div.querySelector('[data-act="read"]').addEventListener('click', e => {
-      e.stopPropagation(); markActivityRead(ev.id);
+      e.stopPropagation();
+      markActivityRead(ev.id, /*removeFromList*/ true);
     });
     wrap.appendChild(div);
   });
@@ -1100,18 +1136,32 @@ function activityTitle(ev, loc) {
   };
   return titles[ev.type] || ev.type;
 }
+
 function activitySub(ev) {
-  const a = ev.data && ev.data.author || ev.actor_email;
-  if (ev.type === 'status_change') return `${a}: ${ev.data?.oldStatus||''} → ${ev.data?.newStatus||''}`;
-  if (ev.type === 'comment' || ev.type === 'photo_comment') return `${a}: "${(ev.data?.message||'').substring(0,80)}"`;
+  const author = (ev.data && ev.data.author) || displayName(ev.actor_email);
+  if (ev.type === 'status_change') return `${author}: ${ev.data?.oldStatus||''} → ${ev.data?.newStatus||''}`;
+  if (ev.type === 'comment' || ev.type === 'photo_comment') return `${author}: "${(ev.data?.message||'').substring(0,80)}"`;
   if (ev.type === 'field_update' && ev.data?.changes) {
-    return a + ' atnaujino: ' + Object.keys(ev.data.changes).join(', ');
+    return author + ' atnaujino: ' + Object.keys(ev.data.changes).join(', ');
   }
-  return a + '';
+  if (ev.type === 'new_location') return author + ' pridėjo naują variantą';
+  return author;
 }
 
-async function markActivityRead(eventId) {
-  const el = $('ai-'+eventId); if (el) el.classList.add('read');
+async function markActivityRead(eventId, removeFromList) {
+  const el = $('ai-'+eventId);
+  if (el && removeFromList) {
+    el.style.transition = 'opacity .25s';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.remove();
+      // If no events left, show empty state.
+      const wrap = $('aktWrap');
+      if (wrap && !wrap.querySelector('.ai')) {
+        wrap.innerHTML = '<div class="empty-state"><p>Naujų pranešimų nėra</p></div>';
+      }
+    }, 260);
+  }
   // append email to read_by array
   const { data } = await sbClient.from('loc_activity').select('read_by').eq('id', eventId).single();
   if (!data) return;
@@ -1192,7 +1242,7 @@ async function loadNewLocations() {
       `<div class="ai-body">
         <div class="ai-title">${escHtml(loc.variant_name)}</div>
         <div class="ai-sub">${escHtml(set?.name||'')} ${loc.priority?' · '+escHtml(loc.priority):''} ${loc.status?' · '+escHtml(loc.status):''}</div>
-        <div class="ai-time">Įkėlė: ${escHtml(loc.added_by_email||'')} · ${fmtDateTime(loc.created_at)}</div>
+        <div class="ai-time">Įkėlė: ${escHtml(displayName(loc.added_by_email))} · ${fmtDateTime(loc.created_at)}</div>
         <div class="ai-btns"><button class="ai-btn" data-id="${loc.id}" data-set="${loc.set_id}">Peržiūrėti</button><button class="ai-btn" data-mark="${loc.id}">Pažymėti kaip peržiūrėtą</button></div>
       </div>`;
     div.querySelector('[data-id]').addEventListener('click', () => {
@@ -1545,16 +1595,29 @@ async function openGalleryAt(locId, startPhotoId) {
 
   let photos = S.drivePhotos[locId];
   if (!photos) {
-    if (!loc.drive_url) { $('galMainImg').innerHTML = '<div class="gal-img-ph">Drive nenurodytas</div>'; return; }
-    $('galMainImg').innerHTML = '<div class="gal-img-ph"><div class="spinner"></div></div>';
+    if (!loc.drive_url) { setGalPlaceholder('Drive nenurodytas'); return; }
+    setGalPlaceholder('<div class="spinner"></div>', true);
     const r = await gs.get('drivePhotos', { url: loc.drive_url });
     if (r.ok) photos = S.drivePhotos[locId] = r.photos;
-    else { $('galMainImg').innerHTML = '<div class="gal-img-ph">Klaida</div>'; return; }
+    else { setGalPlaceholder('Klaida'); return; }
   }
-  if (!photos || !photos.length) { $('galMainImg').innerHTML = '<div class="gal-img-ph">Nuotraukų nerasta</div>'; return; }
+  if (!photos || !photos.length) { setGalPlaceholder('Nuotraukų nerasta'); return; }
   renderGalleryStrip(locId, photos);
   const first = startPhotoId ? photos.find(p => p.id === startPhotoId) : photos[0];
   if (first) selectGalPhoto(locId, first.id);
+}
+
+// Set placeholder text inside galMainImg without removing the nav buttons.
+function setGalPlaceholder(html, asHtml) {
+  const main = $('galMainImg');
+  if (!main) return;
+  main.querySelectorAll('img, .gal-img-ph').forEach(el => el.remove());
+  const ph = document.createElement('div');
+  ph.className = 'gal-img-ph';
+  if (asHtml) ph.innerHTML = html; else ph.textContent = html;
+  main.insertBefore(ph, main.querySelector('.gal-nav'));
+  // Hide nav arrows when there's no real image.
+  main.querySelectorAll('.gal-nav').forEach(b => b.style.display = 'none');
 }
 
 function renderGalleryStrip(locId, photos) {
@@ -1572,11 +1635,70 @@ async function selectGalPhoto(locId, fileId) {
   S.currentGalFileId = fileId;
   $$('.gs-th').forEach(t => t.classList.remove('act'));
   $('gth-'+fileId)?.classList.add('act');
-  $('galMainImg').innerHTML = `<img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w1200" onerror="this.outerHTML='<div class=&quot;gal-img-ph&quot;>Nepavyko užkrauti</div>'">`;
+
+  // Update only the placeholder/img inside galMainImg, preserving nav buttons.
+  const main = $('galMainImg');
+  // Remove any prior placeholder or image (but not the nav buttons)
+  main.querySelectorAll('img, .gal-img-ph').forEach(el => el.remove());
+  const img = document.createElement('img');
+  img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
+  img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain';
+  img.onerror = function() {
+    img.remove();
+    const ph = document.createElement('div');
+    ph.className = 'gal-img-ph';
+    ph.textContent = 'Nepavyko užkrauti';
+    main.insertBefore(ph, main.querySelector('.gal-nav'));
+  };
+  main.insertBefore(img, main.querySelector('.gal-nav'));
+
   loadPhotoComments(fileId);
+  updateGalNavState();
+}
+
+function updateGalNavState() {
+  const photos = S.drivePhotos[S.currentGalLocationId] || [];
+  const cur = photos.findIndex(p => p.id === S.currentGalFileId);
+  const prev = $('galMainImg')?.querySelector('.gal-nav-prev');
+  const next = $('galMainImg')?.querySelector('.gal-nav-next');
+  if (!prev || !next) return;
+  if (photos.length <= 1) {
+    prev.style.display = 'none';
+    next.style.display = 'none';
+  } else {
+    prev.style.display = '';
+    next.style.display = '';
+    prev.style.opacity = cur <= 0 ? '0.4' : '1';
+    next.style.opacity = cur >= photos.length - 1 ? '0.4' : '1';
+    prev.disabled = cur <= 0;
+    next.disabled = cur >= photos.length - 1;
+  }
 }
 
 function closeGallery() { $('modal-gal').classList.remove('open'); }
+
+// Move gallery selection by ±1 (or any delta).
+function navGallery(delta) {
+  const photos = S.drivePhotos[S.currentGalLocationId];
+  if (!photos || !photos.length) return;
+  const cur = photos.findIndex(p => p.id === S.currentGalFileId);
+  if (cur === -1) return;
+  let next = cur + delta;
+  if (next < 0) next = 0;
+  if (next >= photos.length) next = photos.length - 1;
+  if (next !== cur) selectGalPhoto(S.currentGalLocationId, photos[next].id);
+}
+
+// Keyboard navigation when gallery is open.
+document.addEventListener('keydown', (e) => {
+  const gal = document.getElementById('modal-gal');
+  if (!gal || !gal.classList.contains('open')) return;
+  // Don't intercept arrows while typing in the comment textarea.
+  if (document.activeElement && document.activeElement.id === 'galCin') return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); navGallery(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); navGallery(1); }
+  if (e.key === 'Escape')     { e.preventDefault(); closeGallery(); }
+});
 
 async function loadPhotoComments(fileId) {
   const c = $('galComs');
@@ -1729,7 +1851,11 @@ const MODAL_HTML = `
     <div class="gal-hdr"><span class="gal-title" id="galTitle">Nuotraukų galerija</span><button class="gal-close" onclick="closeGallery()">${IC.close}</button></div>
     <div class="gal-body">
       <div class="gal-photo-section">
-        <div class="gal-img" id="galMainImg"><div class="gal-img-ph">Pasirinkite nuotrauką</div></div>
+        <div class="gal-img" id="galMainImg">
+          <div class="gal-img-ph">Pasirinkite nuotrauką</div>
+          <button class="gal-nav gal-nav-prev" onclick="navGallery(-1)" aria-label="Ankstesnė"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button class="gal-nav gal-nav-next" onclick="navGallery(1)" aria-label="Kita"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
         <div class="gal-strip" id="galStrip"></div>
       </div>
       <div class="gal-coms-wrap">
