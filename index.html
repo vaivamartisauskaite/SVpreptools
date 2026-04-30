@@ -802,10 +802,9 @@ function renderNauji(newOnes) {
       + '<span class="nauji-cnt">' + bNew.length + ' nauji</span></div></div><div class="grid" style="padding-top:0">';
     bNew.forEach(function(r) {
       var photos = r._photos || [];
-      var ph = photos.find(function(p){ return p.is_primary; }) || photos[0];
       var name = (r.actors && r.actors.first_name) || '?';
       var agId = (r.actors && r.actors.agency_id) || 'x';
-      var img = photoOrPlaceholder(ph, name, agId);
+      var img = photoOrPlaceholder(photos, name, agId);
       var bst = r.status === 'yes' ? '<div class="badge b-t">Taip</div>' : r.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
       html += '<div class="card isnew" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + '<div class="card-name">' + esc(name) + '</div></div>';
     });
@@ -814,12 +813,47 @@ function renderNauji(newOnes) {
   document.getElementById('mainArea').innerHTML = html;
 }
 
-// Photo with broken-image fallback to colored placeholder
-function photoOrPlaceholder(ph, name, agId) {
-  if (!ph) return '<div class="card-ph" style="background:' + hsl(agId) + '">' + esc(name) + '</div>';
-  var url = pUrl(ph.storage_path);
-  var fallback = '<div class=&quot;card-ph&quot; style=&quot;background:' + hsl(agId) + '&quot;>' + esc(name) + '</div>';
-  return '<img class="card-photo" src="' + url + '" loading="lazy" alt="' + esc(name) + '" onerror="this.outerHTML=\'' + fallback.replace(/'/g, "\\'") + '\'">';
+// Photo with cascading fallback. Takes the full photos array — if the primary
+// fails to load, falls through to next, next, etc. Only after exhausting all
+// photos does it show the colored placeholder. Avoids inline onerror with
+// quote-laden HTML by using a registry + helper function.
+var _photoCascades = {};
+
+function photoOrPlaceholder(photos, name, agId, cls, clickAttr) {
+  cls = cls || 'card-photo';
+  var phCls = cls === 'photo-main' ? 'photo-main-ph' : 'card-ph';
+  var phContent = cls === 'photo-main' ? '' : esc(name);
+  // No photos at all → placeholder immediately
+  if (!photos || !photos.length) {
+    return '<div class="' + phCls + '" style="background:' + hsl(agId) + '">' + phContent + '</div>';
+  }
+  // Sort primary first
+  var sorted = photos.slice().sort(function(a, b){ return (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0); });
+  var urls = sorted.map(function(p){ return pUrl(p.storage_path); }).filter(Boolean);
+  if (!urls.length) {
+    return '<div class="' + phCls + '" style="background:' + hsl(agId) + '">' + phContent + '</div>';
+  }
+  var id = 'ph-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  _photoCascades[id] = { urls: urls, idx: 0, name: esc(name), bg: hsl(agId), cls: cls };
+  return '<img class="' + cls + '" id="' + id + '" src="' + urls[0] + '" loading="lazy" alt="' + esc(name) + '"'
+    + (clickAttr || '')
+    + ' onerror="photoCascadeFail(\'' + id + '\')">';
+}
+
+// Walk to next photo URL on error; if exhausted, swap to colored placeholder.
+function photoCascadeFail(id) {
+  var img = document.getElementById(id);
+  var ctx = _photoCascades[id];
+  if (!img || !ctx) return;
+  ctx.idx++;
+  if (ctx.idx < ctx.urls.length) {
+    img.src = ctx.urls[ctx.idx];
+    return;
+  }
+  var phCls = ctx.cls === 'photo-main' ? 'photo-main-ph' : 'card-ph';
+  var phContent = ctx.cls === 'photo-main' ? '' : ctx.name;
+  img.outerHTML = '<div class="' + phCls + '" style="background:' + ctx.bg + '">' + phContent + '</div>';
+  delete _photoCascades[id];
 }
 
 function markNaujiRead() {
@@ -914,10 +948,9 @@ function renderGrid() {
 function cardHtml(a) {
   var sel = a.basket_actor_id === S.selectedBaId ? ' sel' : '';
   var isNew = a.is_new ? ' isnew' : '';
-  var ph = a.photos && a.photos.find(function(p){ return p.is_primary; });
   var name = (a.actor && a.actor.first_name) || '?';
   var agId = (a.actor && a.actor.agency_id) || 'x';
-  var img = photoOrPlaceholder(ph, name, agId);
+  var img = photoOrPlaceholder(a.photos || [], name, agId);
   var bst = a.status === 'yes' ? '<div class="badge b-t">Taip</div>' : a.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
   var cmt = a.comment_count > 0 ? '<div class="cmt-dot">' + a.comment_count + '</div>' : '';
   var ntag = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
@@ -1046,10 +1079,9 @@ async function showOverview(type, btn) {
           html += '<div class="grid-sm">';
           filt.forEach(function(r) {
             var photos = r._photos || [];
-            var ph = photos.find(function(p){ return p.is_primary; }) || photos[0];
             var name = (r.actors && r.actors.first_name) || '?';
             var agId = (r.actors && r.actors.agency_id) || 'x';
-            var img = photoOrPlaceholder(ph, name, agId);
+            var img = photoOrPlaceholder(photos, name, agId);
             html += '<div class="card" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + '<div class="card-name">' + esc(name) + '</div></div>';
           });
           html += '</div>';
@@ -1100,9 +1132,7 @@ async function openActor(baId) {
   } catch(e) {}
   var sT = ba.status === 'yes'   ? 's-t' : '';
   var sM = ba.status === 'maybe' ? 's-m' : '';
-  var mainImg = mainPh
-    ? '<img class="photo-main" src="' + pUrl(mainPh.storage_path) + '" alt="' + esc((actor && actor.first_name) || '') + '" onclick="openGallery(0)" onerror="this.onerror=null;this.outerHTML=\'<div class=&quot;photo-main-ph&quot; style=&quot;background:' + hsl((actor && actor.agency_id) || 'x') + '&quot;></div>\'">'
-    : '<div class="photo-main-ph" style="background:' + hsl((actor && actor.agency_id) || 'x') + '"></div>';
+  var mainImg = photoOrPlaceholder(allPh, (actor && actor.first_name) || '', (actor && actor.agency_id) || 'x', 'photo-main', ' onclick="openGallery(0)"');
   var thumbs = restPh.slice(0, 9).map(function(p, i){
     return '<img class="pgrid-cell" src="' + pUrl(p.storage_path) + '" alt="" onclick="openGallery(' + (i + 1) + ')" onerror="this.style.background=\'' + hsl((actor && actor.agency_id) || 'x') + '\';this.removeAttribute(\'src\')">';
   }).join('');
