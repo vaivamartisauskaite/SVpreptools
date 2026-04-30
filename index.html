@@ -685,7 +685,7 @@ function nText(n) {
   var a = esc(n.actor_name || ''), b = esc(n.basket_name || ''), by = esc(n.triggered_by || '');
   var loc = b ? ' (' + b + ')' : '';
   if (n.type === 'new_actors_batch') return 'Pridėti <strong>' + (n.count || '') + '</strong> nauji kandidatai';
-  if (n.type === 'new_comment')  return '<strong>' + by + '</strong> pakomentuvo <strong>' + a + '</strong>' + loc;
+  if (n.type === 'new_comment')  return '<strong>' + by + '</strong> pakomentavo <strong>' + a + '</strong>' + loc;
   if (n.type === 'status_change') {
     var ns2 = (n.meta && n.meta.new_status === 'yes') ? 'Taip' : (n.meta && n.meta.new_status === 'maybe') ? 'Galbūt' : (n.meta && n.meta.new_status) || '';
     return 'Statusas pakeistas — <strong>' + a + '</strong>: ' + ns2 + loc;
@@ -793,7 +793,7 @@ async function loadNauji() {
 }
 
 function renderNauji(newOnes) {
-  var html = '<div class="mhead"><div><div class="mh-title">Nauji kandidatai</div><div class="mh-sub">' + newOnes.length + ' neperžiūrėti</div></div>'
+  var html = '<div class="mhead"><div><div class="mh-title">Nauji kandidatai</div><div class="mh-sub">' + newOnes.length + ' kiti</div></div>'
     + (newOnes.length ? '<button class="fl" onclick="markNaujiRead()">Žymėti kaip peržiūrėta</button>' : '') + '</div>';
   if (!newOnes.length) { html += '<div class="empty-state">Naujų kandidatų nėra</div>'; document.getElementById('mainArea').innerHTML = html; return; }
   S.baskets.forEach(function(basket) {
@@ -942,7 +942,7 @@ function renderGrid() {
   }
   if (f === 'all' || f === 'taip')   { if (taip.length)    html += '<div class="sec-lbl">Taip · ' + taip.length + '</div><div class="grid">' + taip.map(cardHtml).join('') + '</div>'; }
   if (f === 'all' || f === 'galbut') { if (galbut.length)  html += '<div class="sec-lbl">Galbūt · ' + galbut.length + '</div><div class="grid">' + galbut.map(cardHtml).join('') + '</div>'; }
-  if (f === 'all')                   { if (pending.length) html += '<div class="sec-lbl">Neperžiūrėti · ' + pending.length + '</div><div class="grid">' + pending.map(cardHtml).join('') + '</div>'; }
+  if (f === 'all')                   { if (pending.length) html += '<div class="sec-lbl">Kiti · ' + pending.length + '</div><div class="grid">' + pending.map(cardHtml).join('') + '</div>'; }
   if (!actors.length) html += '<div class="empty-state">Kandidatų nerasta.</div>';
   document.getElementById('mainArea').innerHTML = html;
 }
