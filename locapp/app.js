@@ -36,19 +36,41 @@ function uuid(){
 }
 
 // ── Apps Script proxy ─────────────────────────────────
+// GET uses JSONP (script tag) to bypass CORS. POST uses fetch with
+// text/plain content-type (counts as "simple request", no preflight).
+let _jsonpCounter = 0;
 const gs = {
-  async get(action, params={}) {
-    const u = new URL(window.CFG.APPS_SCRIPT_URL);
-    u.searchParams.set('action', action);
-    Object.keys(params).forEach(k => u.searchParams.set(k, params[k]));
-    const r = await fetch(u.toString());
-    return r.json();
+  get(action, params={}) {
+    return new Promise((resolve, reject) => {
+      const cbName = '__gscb_' + (++_jsonpCounter) + '_' + Date.now();
+      const u = new URL(window.CFG.APPS_SCRIPT_URL);
+      u.searchParams.set('action', action);
+      Object.keys(params).forEach(k => u.searchParams.set(k, params[k]));
+      u.searchParams.set('callback', cbName);
+
+      const script = document.createElement('script');
+      const cleanup = () => {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        clearTimeout(timer);
+      };
+      const timer = setTimeout(() => { cleanup(); reject(new Error('Apps Script timeout')); }, 30000);
+
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('Apps Script load error')); };
+      script.src = u.toString();
+      document.head.appendChild(script);
+    });
   },
   async post(action, body={}) {
     const r = await fetch(window.CFG.APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // avoid CORS preflight
-      body: JSON.stringify({ action, secret: window.CFG.SHARED_SECRET, ...body })
+      // text/plain avoids CORS preflight (it's a "simple request")
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, secret: window.CFG.SHARED_SECRET, ...body }),
+      // Don't include credentials — Apps Script doesn't expect them and
+      // it would force a preflight.
+      credentials: 'omit'
     });
     return r.json();
   }
