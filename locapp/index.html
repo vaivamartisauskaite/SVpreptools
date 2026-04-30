@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LocScout — Sugauti Vanagą</title>
+  <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hY3NwTVNGVAAAAABzYXdzY3RybAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmSdkQA9QICwPUB0LIGepSKOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAABxjcHJ0AAABDAAAAAx3dHB0AAABGAAAABRyWFlaAAABLAAAABRnWFlaAAABQAAAABRiWFlaAAABVAAAABRyVFJDAAABaAAAAGBnVFJDAAABaAAAAGBiVFJDAAABaAAAAGBkZXNjAAAAAAAAAAV1UkdCAAAAAAAAAAAAAAAAdGV4dAAAAABDQzAAWFlaIAAAAAAAAPNUAAEAAAABFslYWVogAAAAAAAAb6AAADjyAAADj1hZWiAAAAAAAABilgAAt4kAABjaWFlaIAAAAAAAACSgAAAPhQAAtsRjdXJ2AAAAAAAAACoAAAB8APgBnAJ1A4MEyQZOCBIKGAxiDvQRzxT2GGocLiBDJKwpai5+M+s5sz/WRldNNlR2XBdkHWyGdVZ+jYgskjacq6eMstu+mcrH12Xkd/H5////2wBDAAkGBwgHBgkICAgKCgkLDhcPDg0NDhwUFREXIh4jIyEeICAlKjUtJScyKCAgLj8vMjc5PDw8JC1CRkE6RjU7PDn/2wBDAQoKCg4MDhsPDxs5JiAmOTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTn/wAARCAAgACADASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAABAYAAgcD/8QAJxAAAQMEAQMDBQAAAAAAAAAAAQIDBAAFERIxBiFBExRxIlFhgZH/xAAYAQACAwAAAAAAAAAAAAAAAAACAwABBf/EABwRAQACAgMBAAAAAAAAAAAAAAEAAgMREhMxIf/aAAwDAQACEQMRAD8AR0JUtQShJUonAAGSTRVztsu1yRHmtFp4tpc1JBIChkZx5/FXschES8wZC3iyhp9Cy4E7aAHnHmtd6ytI6ngojNPx23Ur9xHdAyl9OqsgEfqmttMxcWHsop6TFKlGRbVcJkV2VHhvOsNZ3WlOQMDJ+cDnHFB0URpJKY7b1dcolmRZmY8V5nY6BTat8k8fSRk9+x5pcrtDkuwpbMpkgOsrS4gkZAIORUTcKlmr8Y23VEXpy5W71hJUtiKNGmVhHouKBKwQoE8qPz2zxSlLXHckLVFYUwx21bU5uR28qwM/yib3d5l8uC501aVOqAACU4SkDgAfagKoIWS/J0eT/9k=">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#d1dbd0;color:#1a1a18;height:100vh;overflow:hidden}
@@ -303,6 +304,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .signin-btn:hover{background:#f5f8f5}
 .signin-error{font-size:12px;color:#791F1F;margin-top:12px;padding:8px 12px;background:#FCEBEB;border-radius:6px;display:none}
 .signin-error.show{display:block}
+.refresh-btn{padding:5px 8px}
+.refresh-btn.spinning svg{animation:spin .7s linear infinite}
 .diff-list{max-height:300px;overflow-y:auto;border:1px solid #dce6db;border-radius:6px;padding:6px;margin:8px 0;background:#fafafa}
 .diff-item{font-size:11px;padding:4px 8px;border-bottom:1px solid #eef2ee;color:#1a1a18}
 .diff-item:last-child{border-bottom:none}
@@ -312,7 +315,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </style>
 </head>
 <body>
-<div class="loading" id="loading"><div class="spinner"></div><span>Kraunama...</span></div>
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div style="text-align:center">
+    <div id="loadingMain">Kraunama...</div>
+    <div id="loadingSub" style="font-size:11px;color:#888;margin-top:6px;font-style:italic;display:none">Kantrybė – dorybė</div>
+  </div>
+</div>
 
 <div class="signin-screen" id="signinScreen" style="display:none">
   <div class="signin-card">
@@ -360,31 +369,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <div><h2 id="setTitle"></h2><p id="setDesc"></p></div>
           </div>
           <div class="ph-right">
+            <button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
             <div class="vtoggle">
               <button class="vb act" id="vbk" onclick="subview('k')">Kortelės</button>
               <button class="vb" id="vbs" onclick="subview('s')">Santrauka</button>
             </div>
-            <button class="add-btn" onclick="openAddModal()">+ <span class="btn-lbl">Pridėti variantą</span></button>
+            <button class="add-btn" onclick="openAddModal()" id="btn-add-variant"><span class="btn-ic"></span><span class="btn-lbl">Pridėti variantą</span></button>
           </div>
         </div>
         <div class="cards-area" id="cardsArea"><div class="empty-state"><p>Pasirinkite setą kairėje</p></div></div>
         <div class="san-area" id="sanArea"></div>
       </div>
       <div class="panel" id="panel-naujos">
-        <div class="panel-hdr"><div class="ph-left"><h2>Naujos lokacijos</h2><p>Dar neperžiūrėtos</p></div><div class="ph-right"><button class="add-btn" onclick="markAllViewedFn()">✓ Pažymėti visas</button></div></div>
+        <div class="panel-hdr"><div class="ph-left"><h2>Naujos lokacijos</h2><p>Dar neperžiūrėtos</p></div><div class="ph-right">
+          <button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+          <button class="add-btn" onclick="markAllViewedFn()" id="btn-mark-all-viewed"><span class="btn-ic"></span><span class="btn-lbl">Pažymėti visas</span></button>
+        </div></div>
         <div class="list-panel-wrap" id="naujosWrap"></div>
       </div>
       <div class="panel" id="panel-aktyvumas">
-        <div class="panel-hdr"><div class="ph-left"><h2>Aktyvumas</h2><p>Nauji komentarai ir pakeitimai</p></div><div class="ph-right"><button class="add-btn" onclick="markAllActivity()">✓ Pažymėti viską</button></div></div>
+        <div class="panel-hdr"><div class="ph-left"><h2>Aktyvumas</h2><p>Nauji komentarai ir pakeitimai</p></div><div class="ph-right">
+          <button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+          <button class="add-btn" onclick="markAllActivity()" id="btn-mark-all-act"><span class="btn-ic"></span><span class="btn-lbl">Pažymėti viską</span></button>
+        </div></div>
         <div class="list-panel-wrap" id="aktWrap"></div>
       </div>
     </div>
   </div>
 
-  <div class="view fullview" id="v-scoutuota"><div class="panel-hdr"><div class="ph-left"><h2>Scoutuota</h2><p>Visos lokacijos su statusu „Scoutuota"</p></div></div><div class="list-wrap" id="scoutuotaWrap"></div></div>
-  <div class="view fullview" id="v-atrinkta"><div class="panel-hdr"><div class="ph-left"><h2>Atrinkta scoutui</h2><p>Visos lokacijos su statusu „Atrinkta scoutui"</p></div></div><div class="list-wrap" id="atrinktaWrap"></div></div>
-  <div class="view fullview" id="v-pat"><div class="panel-hdr"><div class="ph-left"><h2>Patvirtinti setai</h2><p>Visos lokacijos su statusu „Patvirtinta"</p></div></div><div class="list-wrap" id="patWrap"></div></div>
-  <div class="view fullview" id="v-nepat"><div class="panel-hdr"><div class="ph-left"><h2>Nepatvirtinti setai</h2><p>Setai, kurių lokacijos nepatvirtintos</p></div></div><div class="list-wrap" id="nepatWrap"></div></div>
+  <div class="view fullview" id="v-scoutuota"><div class="panel-hdr"><div class="ph-left"><h2>Scoutuota</h2><p>Visos lokacijos su statusu „Scoutuota"</p></div><div class="ph-right"><button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button></div></div><div class="list-wrap" id="scoutuotaWrap"></div></div>
+  <div class="view fullview" id="v-atrinkta"><div class="panel-hdr"><div class="ph-left"><h2>Atrinkta scoutui</h2><p>Visos lokacijos su statusu „Atrinkta scoutui"</p></div><div class="ph-right"><button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button></div></div><div class="list-wrap" id="atrinktaWrap"></div></div>
+  <div class="view fullview" id="v-pat"><div class="panel-hdr"><div class="ph-left"><h2>Patvirtinti setai</h2><p>Visos lokacijos su statusu „Patvirtinta"</p></div><div class="ph-right"><button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button></div></div><div class="list-wrap" id="patWrap"></div></div>
+  <div class="view fullview" id="v-nepat"><div class="panel-hdr"><div class="ph-left"><h2>Nepatvirtinti setai</h2><p>Setai, kurių lokacijos nepatvirtintos</p></div><div class="ph-right"><button class="icon-btn refresh-btn" onclick="refreshCurrent()" title="Atnaujinti"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button></div></div><div class="list-wrap" id="nepatWrap"></div></div>
 </div>
 
 <!-- Modals injected by inject-modals.js to keep this file scrollable -->
