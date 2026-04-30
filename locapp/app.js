@@ -1191,17 +1191,28 @@ async function goToLocation(locId, photoFileId) {
   if (!loc) return showToast('Lokacija nerasta');
   mainNav('setai');
   const set = S.sets.find(s => s.id === loc.set_id);
+  // Force Kortelės subview — the card body can only be expanded
+  // there. Santrauka view has no card_DOM elements.
+  if (S.subview !== 'k') subview('k');
   const after = () => {
-    if (photoFileId) openGalleryAt(locId, photoFileId);
-    else {
-      const body = $('cb-'+locId);
-      if (body && !body.classList.contains('open')) toggleBody(locId);
-      const card = $('card-'+locId);
-      if (card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (photoFileId) {
+      openGalleryAt(locId, photoFileId);
+      return;
     }
+    // Make sure the cards are rendered for the target set so the
+    // body element exists, then expand it.
+    if (S.subview !== 'k') subview('k');
+    const body = $('cb-'+locId);
+    if (body && !body.classList.contains('open')) toggleBody(locId);
+    const card = $('card-'+locId);
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'center' });
   };
-  if (S.currentSetId === loc.set_id && $('card-'+locId)) after();
-  else { _selectSetCallback = after; selectSet(loc.set_id, set?.name); }
+  if (S.currentSetId === loc.set_id && $('card-'+locId)) {
+    after();
+  } else {
+    _selectSetCallback = after;
+    selectSet(loc.set_id, set?.name);
+  }
 }
 
 // ── new locations ────────────────────────────────────
