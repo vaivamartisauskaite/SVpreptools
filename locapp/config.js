@@ -8,7 +8,7 @@ window.CFG = {
   SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyc21zY3Jibnp0dGdwenJxenh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzMzNTIsImV4cCI6MjA5MzA0OTM1Mn0.C1Qm2GpxJdkXqiWqehB0INWC8j4jyPyRDiE7W5lkiuA",  // Settings → API → anon public
 
   // Apps Script web app /exec URL (deploy from WebApp.gs)
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxoeW6traswUK6i-QAfWLK7hFbWEawtlT5--SLEwBYXFjcdokq4WYR-nJjWwy2qnLoZ/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyITUkMsSZVboQ_8yUT1Qw9tfpkpIaeVVn6RogzNate-tCBaZ4uYeMb2zNiWASXYyqU/exec",
 
   // Same shared secret as in WebApp.gs (SHARED_SECRET)
   SHARED_SECRET: "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",
