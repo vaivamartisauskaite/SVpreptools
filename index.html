@@ -485,6 +485,12 @@ function startApp() {
 
 // ── Load data ──────────────────────────────────────────────────────────────
 async function loadData() {
+  // Preserve current view state so Atnaujinti reloads what the user was looking at,
+  // not always Pranešimai. Previously switchView() only handled 2 views and reset
+  // activeBasketId, which made the refresh button effectively a "go home" button.
+  var prevView   = S.view;
+  var prevBaId   = S.activeBasketId;
+  var prevSelBa  = S.selectedBaId;
   setSyncTxt('↻ Kraunama…');
   try {
     var projs = await sb('/rest/v1/projects?select=id,name&order=created_at.desc&limit=1');
@@ -496,7 +502,18 @@ async function loadData() {
     S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count&order=basket_date.asc,name.asc');
     renderSidebar();
     updateBadges();
-    switchView(S.view || 'pranesimai');
+    // Route to the view the user had open
+    if (prevView === 'basket' && prevBaId && S.baskets.some(function(b){ return b.id === prevBaId; })) {
+      S.selectedBaId = prevSelBa;
+      await selectBasket(prevBaId);
+    } else if (prevView === 'patvirtinti' || prevView === 'galbut' || prevView === 'nepatvirtinti') {
+      var tabId = prevView === 'patvirtinti' ? 'tabPatv' : prevView === 'galbut' ? 'tabGalb' : 'tabNepa';
+      showOverview(prevView, document.getElementById(tabId));
+    } else if (prevView === 'nauji') {
+      switchView('nauji');
+    } else {
+      switchView('pranesimai');
+    }
     setSyncTxt('↻ Atnaujinti');
   } catch(e) { setSyncTxt('⚠ Klaida'); showToast('Klaida: ' + e.message); }
 }
@@ -522,6 +539,15 @@ async function updateBadges() {
     var unread = ns.filter(function(n){ return !(n.read_by || []).includes(S.username); }).length;
     var b = document.getElementById('pranBadge');
     b.textContent = unread; b.style.display = unread ? '' : 'none';
+  } catch(e) {}
+  // Nauji kandidatai badge — count basket_actors not in seenActors set.
+  // Always-visible badge, not just when the tab is open.
+  try {
+    if (!S.baskets || !S.baskets.length) return;
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id');
+    var newCount = rows.filter(function(r){ return !S.seenActors.has(r.id); }).length;
+    var nb = document.getElementById('naukBadge');
+    if (nb) { nb.textContent = newCount; nb.style.display = newCount ? '' : 'none'; }
   } catch(e) {}
 }
 
@@ -802,7 +828,7 @@ function setFilter(f) { S.filter = f; renderGrid(); }
 function dismissNew() {
   S.basketActors.filter(function(a){ return a.is_new; }).forEach(function(a){ S.seenActors.add(a.basket_actor_id); a.is_new = false; });
   localStorage.setItem('seenActors', JSON.stringify(Array.from(S.seenActors)));
-  renderGrid(); showToast('Pažymėta kaip peržiūrėta');
+  renderGrid(); updateBadges(); showToast('Pažymėta kaip peržiūrėta');
 }
 
 // ── Overview tabs ──────────────────────────────────────────────────────────
@@ -956,7 +982,9 @@ function commentHtml(c, baId) {
   if (c.attachment_path) {
     var attUrl = ATT_BASE + c.attachment_path;
     if (isImageFile(c.attachment_name)) {
-      attHtml = '<div class="cmt-att-img"><img src="' + esc(attUrl) + '" alt="' + esc(c.attachment_name || '') + '" loading="lazy" onclick="openImageViewer(\'' + esc(attUrl).replace(/'/g,"\\'") + '\')"></div>';
+      var safeUrl = esc(attUrl).replace(/'/g,"\\'");
+      var safeName = esc(c.attachment_name || '');
+      attHtml = '<div class="cmt-att-img" id="att-' + c.id + '"><img src="' + esc(attUrl) + '" alt="' + safeName + '" loading="lazy" onclick="openImageViewer(\'' + safeUrl + '\')" onerror="imgAttFallback(\'' + c.id + '\',\'' + safeUrl + '\',\'' + safeName + '\')"></div>';
     } else {
       attHtml = '<div class="cmt-att-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>'
         + '<a href="' + esc(attUrl) + '" target="_blank" rel="noopener" download="' + esc(c.attachment_name || '') + '">' + esc(c.attachment_name || 'Priedas') + '</a></div>';
@@ -996,6 +1024,14 @@ function openImageViewer(url) {
   updateGal();
   document.getElementById('gallery').style.display = 'flex';
   document.addEventListener('keydown', galKey);
+}
+
+// If a comment image fails to load (e.g. private bucket, missing file),
+// replace with a paperclip link so user still has a way to access it.
+function imgAttFallback(commentId, url, name) {
+  var el = document.getElementById('att-' + commentId);
+  if (!el) return;
+  el.outerHTML = '<div class="cmt-att-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg><a href="' + url + '" target="_blank" rel="noopener" download="' + name + '">' + name + '</a></div>';
 }
 
 function cvR(lbl, val, last) {
