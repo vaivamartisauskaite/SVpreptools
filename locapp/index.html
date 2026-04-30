@@ -176,7 +176,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .gal-close{font-size:11px;padding:4px 8px;border:1px solid #b8c4b7;border-radius:6px;background:transparent;color:#5f5e5a;cursor:pointer;display:flex;align-items:center}
 .gal-body{display:flex;flex-direction:column;overflow:hidden;flex:1}
 .gal-photo-section{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
-.gal-img{flex:1;background:#eef2ee;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:200px;touch-action:pan-y;user-select:none}
+.gal-img{flex:1;background:#eef2ee;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:200px;touch-action:pan-y;user-select:none;position:relative}
+.gal-nav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid #b8c4b7;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1a1a18;z-index:5;transition:background .15s,transform .15s;font-family:inherit;padding:0}
+.gal-nav:hover{background:#fff;transform:translateY(-50%) scale(1.05)}
+.gal-nav:active{transform:translateY(-50%) scale(.95)}
+.gal-nav-prev{left:10px}
+.gal-nav-next{right:10px}
+@media(max-width:600px){
+  .gal-nav{width:34px;height:34px}
+  .gal-nav-prev{left:6px}
+  .gal-nav-next{right:6px}
+}
 .gal-img img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none}
 .gal-img-ph{color:#888;font-size:12px;text-align:center;padding:20px;line-height:1.8}
 .gal-strip{display:flex;gap:5px;padding:7px 10px;border-top:1px solid #b8c4b7;overflow-x:auto;flex-shrink:0;background:#d1dbd0}
