@@ -1650,7 +1650,7 @@ async function _fetchActorPhotosForEmail(baId) {
 
 async function sendNotifEmails(type, data) {
   try {
-    var users = await sb('/rest/v1/app_users?select=name,email,pref_actors,pref_comments,pref_info,pref_videos,pref_status,frequency');
+    var users = await sb('/rest/v1/app_users?select=name,email,token,pref_actors,pref_comments,pref_info,pref_videos,pref_status,frequency');
     if (!users || !users.length) return;
     var prefMap = {
       new_comment:      'pref_comments',
@@ -1658,21 +1658,31 @@ async function sendNotifEmails(type, data) {
       info_update:      'pref_info',
       new_video:        'pref_videos',
       new_actors_batch: 'pref_actors',
-      new_char_refs:    'pref_actors' // share pref_actors flag for now (no separate column yet)
+      new_char_refs:    'pref_actors'
     };
     var prefKey = prefMap[type]; if (!prefKey) return;
 
-    // Fetch actor photos once if we have a baId
+    // Fetch actor photos once (shared across all recipients)
     var photoUrls = [];
     if (data.baId) photoUrls = await _fetchActorPhotosForEmail(data.baId);
     if (type === 'new_char_refs' && data.refUrls && data.refUrls.length) photoUrls = data.refUrls.slice(0, 3);
+    // For new_actors_batch, try to grab first photo from any actor in this basket
+    if (type === 'new_actors_batch' && !photoUrls.length && data.basketId) {
+      try {
+        var baPh = await sb('/rest/v1/basket_actors?basket_id=eq.' + data.basketId + '&select=actor_id&limit=5');
+        var aids = baPh.map(function(r){ return r.actor_id; }).filter(Boolean);
+        if (aids.length) {
+          var phs = await sb('/rest/v1/actor_photos?actor_id=in.(' + aids.join(',') + ')&select=storage_path,is_primary&order=is_primary.desc&limit=3');
+          photoUrls = phs.map(function(p){ return PHOTO_BASE + p.storage_path; });
+        }
+      } catch(e) {}
+    }
 
-    var actorName = data.actorName || '';
+    var actorName  = data.actorName  || '';
     var basketName = data.basketName || '';
-    var agencyId = data.agencyId || '';
-    var APP_URL = 'https://vaivamartisauskaite.github.io/SVpreptools/';
+    var agencyId   = data.agencyId   || '';
+    var BASE_APP   = 'https://vaivamartisauskaite.github.io/SVpreptools/';
 
-    // Subject lines (mirror LocScout: "Sugauti Vanagą LOC // {title}")
     var titleByType = {
       new_comment:      'Naujas komentaras — ' + actorName,
       status_change:    'Statusas pakeistas — ' + actorName,
@@ -1682,61 +1692,62 @@ async function sendNotifEmails(type, data) {
       new_char_refs:    'Pridėtos references — ' + basketName
     };
     var titleText = titleByType[type] || type;
-    var subject = 'Sugauti Vanagą CAST // ' + titleText;
+    var subject   = 'Sugauti Vanagą CAST // ' + titleText;
 
-    // Body content per type
+    // Build content block (same for all users — only the CTA URL differs per user)
     var content = '';
+    content += _emailPhotoStrip(photoUrls); // always show photo strip at top
+
     if (type === 'new_comment') {
-      content += _emailPhotoStrip(photoUrls);
       var rows = [];
       if (basketName) rows.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
-      if (agencyId) rows.push(['Aktoriaus ID', esc(agencyId)]);
+      if (agencyId)   rows.push(['Aktoriaus ID', esc(agencyId)]);
       content += _emailInfoGrid(rows);
       content += _emailCommentBlock(data.author || '', data.message || '');
     } else if (type === 'status_change') {
-      content += _emailPhotoStrip(photoUrls);
       var rows2 = [];
-      if (basketName) rows2.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
-      if (agencyId) rows2.push(['Aktoriaus ID', esc(agencyId)]);
-      if (data.changedBy) rows2.push(['Pakeitė', esc(data.changedBy)]);
+      if (basketName)   rows2.push(['Veikėjas',    '<strong>' + esc(basketName) + '</strong>']);
+      if (agencyId)     rows2.push(['Aktoriaus ID', esc(agencyId)]);
+      if (data.changedBy) rows2.push(['Pakeitė',   esc(data.changedBy)]);
       content += _emailInfoGrid(rows2);
       content += _emailStatusPill(data.oldStatus || 'pending', data.newStatus || '');
     } else if (type === 'info_update') {
-      content += _emailPhotoStrip(photoUrls);
       var rows3 = [];
-      if (basketName) rows3.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
-      if (agencyId) rows3.push(['Aktoriaus ID', esc(agencyId)]);
-      if (data.changedBy) rows3.push(['Atnaujino', esc(data.changedBy)]);
+      if (basketName)     rows3.push(['Veikėjas',    '<strong>' + esc(basketName) + '</strong>']);
+      if (agencyId)       rows3.push(['Aktoriaus ID', esc(agencyId)]);
+      if (data.changedBy) rows3.push(['Atnaujino',   esc(data.changedBy)]);
       content += _emailInfoGrid(rows3);
     } else if (type === 'new_video') {
-      content += _emailPhotoStrip(photoUrls);
       var rows4 = [];
-      if (basketName) rows4.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
-      if (agencyId) rows4.push(['Aktoriaus ID', esc(agencyId)]);
-      if (data.changedBy) rows4.push(['Pridėjo', esc(data.changedBy)]);
+      if (basketName)     rows4.push(['Veikėjas',    '<strong>' + esc(basketName) + '</strong>']);
+      if (agencyId)       rows4.push(['Aktoriaus ID', esc(agencyId)]);
+      if (data.changedBy) rows4.push(['Pridėjo',     esc(data.changedBy)]);
       content += _emailInfoGrid(rows4);
       content += '<p style="font-size:13px;color:#1a1a18;margin:0 0 16px;">Pridėtas naujas video — peržiūrėkite CastApp\'e.</p>';
     } else if (type === 'new_char_refs') {
-      content += _emailPhotoStrip(photoUrls);
       var rows5 = [];
       if (basketName) rows5.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
       rows5.push(['Pridėta', '<strong>' + (data.count || 1) + '</strong> reference' + ((data.count || 1) === 1 ? '' : 's')]);
       if (data.author) rows5.push(['Pridėjo', esc(data.author)]);
       content += _emailInfoGrid(rows5);
     } else if (type === 'new_actors_batch') {
-      content += '<p style="font-size:13px;color:#1a1a18;margin:0 0 16px;">Pridėti <strong>' + (data.count || '') + '</strong> nauji kandidatai.</p>';
+      var rows6 = [];
+      if (basketName) rows6.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
+      rows6.push(['Pridėta', '<strong>' + (data.count || '') + '</strong> naujų kandidatų']);
+      content += _emailInfoGrid(rows6);
     } else {
       content += '<p style="font-size:13px;color:#1a1a18;">' + esc(titleText) + '</p>';
     }
 
-    var bodyHtml = _emailWrap(titleText, content, APP_URL, 'Peržiūrėti CastApp');
-
     for (var i = 0; i < users.length; i++) {
       var u = users[i];
       if (!u.email || !u.email.trim()) continue;
-      if (u.name === S.username) continue;        // don't email self
-      if (!u[prefKey]) continue;                   // user disabled this notif type
-      if (u.frequency === 'kasdien') continue;     // digest user — handled separately
+      if (u.name === S.username) continue;
+      if (!u[prefKey]) continue;
+      if (u.frequency === 'kasdien') continue;
+      // Per-user deep link using their unique token
+      var userUrl = u.token ? BASE_APP + '?t=' + u.token : BASE_APP;
+      var bodyHtml = _emailWrap(titleText, content, userUrl, 'Peržiūrėti CastApp');
       try {
         await fetch(EMAIL_FN_URL, {
           method: 'POST',
