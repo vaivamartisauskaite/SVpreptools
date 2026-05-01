@@ -1733,7 +1733,7 @@ async function sendNotifEmails(type, data) {
 
     for (var i = 0; i < users.length; i++) {
       var u = users[i];
-      if (!u.email) continue;
+      if (!u.email || !u.email.trim()) continue;
       if (u.name === S.username) continue;        // don't email self
       if (!u[prefKey]) continue;                   // user disabled this notif type
       if (u.frequency === 'kasdien') continue;     // digest user — handled separately
