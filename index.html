@@ -2140,8 +2140,15 @@ async function showOverview(type, btn) {
     var groups = []; // { atrBasketId, displayName, navBasketId }
     S.baskets.forEach(function(b){
       if (!b.is_atrinkti && b.atrinkti_basket_id) {
+        // Parent character with a paired atrinkti basket. Display the parent's
+        // name; pull rows from the atrinkti pair; clicks navigate to parent.
         groups.push({ atrBasketId: b.atrinkti_basket_id, displayName: b.name, navBasketId: b.id });
-      } else if (b.is_atrinkti && b.is_atrinkti_orphan) {
+      } else if (b.is_atrinkti_orphan) {
+        // Orphan atrinkti — the basket itself IS the atrinkti, no parent in
+        // S.baskets. Its name was already stripped of the suffix by
+        // detectAtrinkti(), so use it directly. Note: orphans have
+        // is_atrinkti=FALSE (they stay visible in sidebar), so this branch
+        // must NOT additionally require is_atrinkti=true.
         groups.push({ atrBasketId: b.id, displayName: b.name, navBasketId: b.id });
       }
     });
