@@ -2130,9 +2130,35 @@ async function showOverview(type, btn) {
   closePanel(); closeSidebar(); renderSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id,status,basket_id,hidden,is_manual,actors(id,first_name,agency_id)');
+    // Build the list of atrinkti basket IDs to fetch from. Two paths produce
+    // entries here, mirroring exactly what populates the "Atrinkti kastingui"
+    // section inside basket views:
+    //   (a) parents with a paired atrinkti basket → fetch from atrinkti basket
+    //   (b) orphan atrinkti baskets (no parent)   → fetch from the basket itself
+    // Iterating S.baskets in its natural (sidebar) order ensures the tab
+    // groups characters in the same order the user expects.
+    var groups = []; // { atrBasketId, displayName, navBasketId }
+    S.baskets.forEach(function(b){
+      if (!b.is_atrinkti && b.atrinkti_basket_id) {
+        groups.push({ atrBasketId: b.atrinkti_basket_id, displayName: b.name, navBasketId: b.id });
+      } else if (b.is_atrinkti && b.is_atrinkti_orphan) {
+        groups.push({ atrBasketId: b.id, displayName: b.name, navBasketId: b.id });
+      }
+    });
+
+    if (!groups.length) {
+      document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
+        + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Atrinkti kastingui · Visi veikėjai</div>'
+        + '<div style="font-size:13px;color:#888780;padding:20px 0">Nėra atrinktų — agentūra dar nesukūrė "atrinkti" skilčių, arba sinchronizacija nepaleista.</div>'
+        + '</div>';
+      return;
+    }
+
+    var atrBasketIds = groups.map(function(g){ return g.atrBasketId; });
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + atrBasketIds.join(',') + ')&removed_from_agency=eq.false&select=id,status,basket_id,hidden,is_manual,actors(id,first_name,agency_id)');
     if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
-    // Photos separately
+
+    // Photos — bulk fetch by actor_id
     var actorIds = Array.from(new Set(rows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
     var pMap = {};
     if (actorIds.length) {
@@ -2143,63 +2169,34 @@ async function showOverview(type, btn) {
 
     var html = '<div class="ov-wrap">';
     html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Atrinkti kastingui · Visi veikėjai</div>';
-    // Source: every atrinkti basket. Render grouped by its parent character
-    // (or its own stripped name if it's an orphan with no parent). Each card
-    // navigates to the parent character (atrinkti baskets are not visible
-    // standalone in the sidebar).
-    var atrinktiBaskets = S.baskets.filter(function(b){ return b.is_atrinkti; });
-    if (!atrinktiBaskets.length) {
-      html += '<div style="font-size:13px;color:#888780;padding:20px 0">Nėra atrinktų — agentūra dar nesukūrė "atrinkti" skilčių, arba sinchronizacija nepaleista.</div>';
-    } else {
-      // Group rendering order matches sidebar: iterate non-atrinkti parents
-      // first, then orphans. For each parent, if it has an atrinkti pair, show
-      // those candidates under the parent's name.
-      var rendered = new Set();
-      // Parents with paired atrinkti
-      S.baskets.filter(function(b){ return !b.is_atrinkti && b.atrinkti_basket_id; }).forEach(function(parent){
-        var atrId = parent.atrinkti_basket_id;
-        var atrRows = rows.filter(function(r){ return r.basket_id === atrId; });
-        rendered.add(atrId);
-        html += '<div class="ov-char-lbl">' + parent.name.toUpperCase() + '</div>';
-        if (atrRows.length) {
-          html += '<div class="grid-sm">';
-          atrRows.forEach(function(r){
-            var photos = r._photos || [];
-            var name = (r.actors && r.actors.first_name) || '?';
-            var agId = (r.actors && r.actors.agency_id) || 'x';
-            var img = photoOrPlaceholder(photos, name, agId);
-            var hidCls = r.hidden ? ' is-hidden' : '';
-            var manCls = r.is_manual ? ' has-manual' : '';
-            var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
-            // Card status badge (Taip/Galbūt) for quick scanning
-            var stBadge = r.status === 'yes' ? '<div class="card-stat t" title="Taip">✓</div>' : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>' : '';
-            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + parent.id + '\')">' + img + manBadge + stBadge + '<div class="card-name">' + esc(name) + '</div></div>';
-          });
-          html += '</div>';
-        } else {
-          html += '<div class="ov-empty">Atrinkti skiltis tuščia</div>';
-        }
+
+    var anyRendered = false;
+    groups.forEach(function(g){
+      var atrRows = rows.filter(function(r){ return r.basket_id === g.atrBasketId; });
+      // Skip characters with empty atrinkti section — matches basket view,
+      // where the "Atrinkti kastingui" section doesn't appear when empty.
+      if (!atrRows.length) return;
+      anyRendered = true;
+      html += '<div class="ov-char-lbl">' + esc(g.displayName.toUpperCase()) + '</div>';
+      html += '<div class="grid-sm">';
+      atrRows.forEach(function(r){
+        var photoArr = r._photos || [];
+        var name = (r.actors && r.actors.first_name) || '?';
+        var agId = (r.actors && r.actors.agency_id) || 'x';
+        var img = photoOrPlaceholder(photoArr, name, agId);
+        var hidCls = r.hidden ? ' is-hidden' : '';
+        var manCls = r.is_manual ? ' has-manual' : '';
+        var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
+        // Status chip on each card so the user can see at a glance which
+        // atrinkti candidates are already Taip/Galbūt vs unreviewed.
+        var stBadge = r.status === 'yes' ? '<div class="card-stat t" title="Taip">✓</div>' : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>' : '';
+        html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + g.navBasketId + '\')">' + img + manBadge + stBadge + '<div class="card-name">' + esc(name) + '</div></div>';
       });
-      // Orphan atrinkti (no parent basket). Their display name had the suffix
-      // stripped at detectAtrinkti() time, so just use b.name.
-      atrinktiBaskets.filter(function(b){ return b.is_atrinkti_orphan && !rendered.has(b.id); }).forEach(function(orphan){
-        var orphanRows = rows.filter(function(r){ return r.basket_id === orphan.id; });
-        if (!orphanRows.length) return;
-        html += '<div class="ov-char-lbl">' + orphan.name.toUpperCase() + '</div>';
-        html += '<div class="grid-sm">';
-        orphanRows.forEach(function(r){
-          var photos = r._photos || [];
-          var name = (r.actors && r.actors.first_name) || '?';
-          var agId = (r.actors && r.actors.agency_id) || 'x';
-          var img = photoOrPlaceholder(photos, name, agId);
-          var hidCls = r.hidden ? ' is-hidden' : '';
-          var manCls = r.is_manual ? ' has-manual' : '';
-          var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
-          var stBadge = r.status === 'yes' ? '<div class="card-stat t" title="Taip">✓</div>' : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>' : '';
-          html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + orphan.id + '\')">' + img + manBadge + stBadge + '<div class="card-name">' + esc(name) + '</div></div>';
-        });
-        html += '</div>';
-      });
+      html += '</div>';
+    });
+
+    if (!anyRendered) {
+      html += '<div style="font-size:13px;color:#888780;padding:20px 0">Atrinkti skiltys tuščios visiems veikėjams.</div>';
     }
     document.getElementById('mainArea').innerHTML = html + '</div>';
   } catch(e) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti<br><small style="font-size:10px;color:#aaa;display:block;margin-top:6px">' + esc(e.message) + '</small></div>'; }
