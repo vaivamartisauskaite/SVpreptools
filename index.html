@@ -1150,6 +1150,19 @@ async function selectBasket(id) {
         if (m._in_atrinkti) return true;
         return !(m.actor && atrActorIds.has(m.actor.id));
       });
+      // Comment count merge (Task 6): for each atrinkti-displayed row that
+      // has a twin in the parent basket, sum both rows' comment counts so
+      // the card badge reflects the merged thread total.
+      var parentRowsByActor = {};
+      bas.filter(function(b){ return b.basket_id === id; }).forEach(function(b){
+        if (b.actors && b.actors.id) parentRowsByActor[b.actors.id] = b;
+      });
+      mapped.forEach(function(m){
+        if (m._in_atrinkti && m.actor && m.actor.id) {
+          var twin = parentRowsByActor[m.actor.id];
+          if (twin) m.comment_count += (twin.comments || []).length;
+        }
+      });
     }
 
     S.basketActors = mapped;
@@ -1832,7 +1845,21 @@ async function openActor(baId) {
   S.galPhotos = [mainPh].concat(restPh).filter(Boolean).map(function(p){ return pUrl(p.storage_path); });
   var comments = [];
   try {
-    comments = await sb('/rest/v1/comments?basket_actor_id=eq.' + baId + '&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
+    // Comment merge (Task 6): when current basket has a paired atrinkti and
+    // the candidate exists in both rows, fetch comments from both basket_actor
+    // rows and merge chronologically. The user sees one unified thread.
+    var commentBaIds = [baId];
+    if (basket && basket.atrinkti_basket_id && actor && actor.id) {
+      try {
+        var pairBids = [basket.id, basket.atrinkti_basket_id];
+        var twins = await sb('/rest/v1/basket_actors?basket_id=in.(' + pairBids.join(',') + ')&actor_id=eq.' + actor.id + '&select=id');
+        twins.forEach(function(t){ if (t.id !== baId) commentBaIds.push(t.id); });
+      } catch(e) {}
+    }
+    var cmFilter = commentBaIds.length > 1
+      ? ('basket_actor_id=in.(' + commentBaIds.join(',') + ')')
+      : ('basket_actor_id=eq.' + baId);
+    comments = await sb('/rest/v1/comments?' + cmFilter + '&select=id,basket_actor_id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
     ba.comment_count = comments.length;
   } catch(e) {}
   var sT = ba.status === 'yes'   ? 's-t' : '';
