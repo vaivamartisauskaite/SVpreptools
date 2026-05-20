@@ -21,6 +21,11 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .tb-tab:hover{background:#d6d4cd;color:#1a1a18}
 .tb-tab.act{background:#fff;color:#534AB7;border-bottom-color:#fff;z-index:2}
 .tb-tab svg{width:13px;height:13px;flex-shrink:0}
+/* Aktorių deriniai tab — distinct purple background to draw attention.
+   Inactive state stays visually distinct; active state takes the full purple. */
+.tb-tab.tab-highlight{background:#EDE9F8;color:#534AB7;border-color:#C9C0EC}
+.tb-tab.tab-highlight:hover{background:#DDD5F2;color:#3a3286}
+.tb-tab.tab-highlight.act{background:#534AB7;color:#fff;border-color:#534AB7;border-bottom-color:#534AB7}
 .tb-right{display:flex;align-items:center;gap:8px;padding-bottom:8px;margin-left:auto;flex-shrink:0}
 .tb-sync{font-size:10px;color:#534AB7;border:0.5px solid #534AB7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;transition:background 0.12s;white-space:nowrap}
 .tb-sync:hover{background:#f0eeff}
@@ -119,6 +124,10 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 /* Manual (moved/copied inside app) marker */
 .card-manual{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;background:#534AB7;color:#fff;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;border:none;cursor:help}
 .card-manual svg{width:11px;height:11px}
+/* Atrinkti tab — small status badge in the bottom-right of each card */
+.card-stat{position:absolute;bottom:24px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1}
+.card-stat.t{background:#EAF3DE;color:#27500A;border:0.5px solid #BFD79C}
+.card-stat.m{background:#FFF4D6;color:#A06000;border:0.5px solid #E8C97A}
 .card.has-manual .cmt-dot{right:30px}
 .ph-manual{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#534AB7;background:#f0eeff;border:0.5px solid #534AB7;border-radius:10px;padding:1px 7px;margin-top:4px;cursor:help}
 .ph-manual svg{width:10px;height:10px}
@@ -611,19 +620,15 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
       <span class="tb-title-light">Aktorių atranka</span>
     </div>
     <div class="tb-nav">
-      <button class="tb-tab" id="tabPatv" onclick="showOverview('patvirtinti',this)">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
-        <span class="tab-lbl">Patvirtinti</span>
+      <button class="tb-tab" id="tabVisi" onclick="showVisiKandidatai(this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+        <span class="tab-lbl">Visi kandidatai</span>
       </button>
-      <button class="tb-tab" id="tabGalb" onclick="showOverview('galbut',this)">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-        <span class="tab-lbl">Galbūt</span>
+      <button class="tb-tab" id="tabAtrinkti" onclick="showOverview('atrinkti',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="tab-lbl">Atrinkti kastingui</span>
       </button>
-      <button class="tb-tab" id="tabNepa" onclick="showOverview('nepatvirtinti',this)">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"/><path d="M13.9 21.818a10 10 0 0 1-3.8 0"/><path d="M17.609 3.72a10 10 0 0 1 2.69 2.7"/><path d="M2.182 13.9a10 10 0 0 1 0-3.8"/><path d="M20.28 17.61a10 10 0 0 1-2.7 2.69"/><path d="M21.818 10.1a10 10 0 0 1 0 3.8"/><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"/><path d="m6.163 21.117-2.906.85a1 1 0 0 1-1.236-1.169l.965-2.98"/></svg>
-        <span class="tab-lbl">Nepatvirtinti</span>
-      </button>
-      <button class="tb-tab" id="tabBoards" onclick="showBoardsView(this)">
+      <button class="tb-tab tab-highlight" id="tabBoards" onclick="showBoardsView(this)">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="tab-lbl">Aktorių deriniai</span>
       </button>
@@ -686,7 +691,11 @@ var S = {
   projectId: null, baskets: [],
   view: 'pranesimai',
   activeBasketId: null, basketActors: [],
-  seenActors: new Set(JSON.parse(localStorage.getItem('seenActors') || '[]')),
+  // Per-user seen state for new candidates. Empty at boot; hydrated by
+  // loadSeenActors() once the username is known, then kept in sync as the
+  // user marks things seen. Persisted server-side in basket_actors.seen_by
+  // (text[]), so the state is consistent across devices for the same user.
+  seenActors: new Set(),
   filter: 'all', selectedBaId: null,
   galPhotos: [], galIdx: 0,
   infoModalBaId: null,
@@ -731,6 +740,7 @@ window.onload = async function() {
     S.userEmail = u.email || '';
     S.userId    = u.id;
     S.userToken = u.token;
+    await loadSeenActors(); // hydrate per-user seen state from server
     startApp();
   } catch(e) {
     showInvalid('Nepavyko prisijungti. Patikrinkite interneto ryšį.<br><small>' + e.message + '</small>');
@@ -754,6 +764,49 @@ function startApp() {
   }
   loadData();
   startRealtime();
+}
+
+// ── Per-user seen state (server-side) ──────────────────────────────────────
+// On first login, hydrates S.seenActors from basket_actors.seen_by where
+// the username is present. Also one-time migrates any legacy localStorage
+// seen-IDs to the server so cross-device users don't lose their progress.
+async function loadSeenActors() {
+  if (!S.username) return;
+  try {
+    // 1. Migrate legacy localStorage → server (runs once; clears the key after)
+    var legacyRaw = localStorage.getItem('seenActors');
+    if (legacyRaw) {
+      try {
+        var legacy = JSON.parse(legacyRaw);
+        if (Array.isArray(legacy) && legacy.length) {
+          await sb('/rest/v1/rpc/mark_actors_seen', {
+            method: 'POST',
+            body: JSON.stringify({ ba_ids: legacy, uname: S.username })
+          });
+        }
+      } catch(e) {}
+      localStorage.removeItem('seenActors');
+    }
+    // 2. Hydrate runtime cache from the seen_by column
+    var enc = encodeURIComponent('{' + S.username + '}');
+    var rows = await sb('/rest/v1/basket_actors?seen_by=cs.' + enc + '&select=id');
+    if (Array.isArray(rows)) rows.forEach(function(r){ S.seenActors.add(r.id); });
+  } catch(e) {
+    // Non-fatal — app still works, "is_new" highlights may be temporarily stale
+  }
+}
+
+// Bulk mark seen on the server (atomic via RPC). Always updates the local
+// cache afterwards so the UI reflects the new state without a round-trip.
+async function markActorsSeen(baIds) {
+  if (!baIds || !baIds.length || !S.username) return;
+  try {
+    await sb('/rest/v1/rpc/mark_actors_seen', {
+      method: 'POST',
+      body: JSON.stringify({ ba_ids: baIds, uname: S.username })
+    });
+  } catch(e) {}
+  baIds.forEach(function(id){ S.seenActors.add(id); });
 }
 
 // ── Load data ──────────────────────────────────────────────────────────────
@@ -797,9 +850,8 @@ async function loadData() {
     } else if (prevView === 'basket' && prevBaId && S.baskets.some(function(b){ return b.id === prevBaId; })) {
       S.selectedBaId = prevSelBa;
       await selectBasket(prevBaId);
-    } else if (prevView === 'patvirtinti' || prevView === 'galbut' || prevView === 'nepatvirtinti') {
-      var tabId = prevView === 'patvirtinti' ? 'tabPatv' : prevView === 'galbut' ? 'tabGalb' : 'tabNepa';
-      showOverview(prevView, document.getElementById(tabId));
+    } else if (prevView === 'atrinkti') {
+      showOverview('atrinkti', document.getElementById('tabAtrinkti'));
     } else if (prevView === 'deriniai') {
       showBoardsView(document.getElementById('tabBoards'));
     } else if (prevView === 'nauji') {
@@ -1294,12 +1346,13 @@ function photoCascadeFail(id) {
   delete _photoCascades[id];
 }
 
-function markNaujiRead() {
+async function markNaujiRead() {
+  var ids = [];
   document.querySelectorAll('.card.isnew').forEach(function(c) {
     var m = c.getAttribute('onclick').match(/jumpToActor\('([^']+)'/);
-    if (m) S.seenActors.add(m[1]);
+    if (m) ids.push(m[1]);
   });
-  localStorage.setItem('seenActors', JSON.stringify(Array.from(S.seenActors)));
+  if (ids.length) await markActorsSeen(ids);
   document.getElementById('naukBadge').style.display = 'none';
   showToast('Pažymėta kaip peržiūrėta'); loadNauji();
 }
@@ -1307,7 +1360,11 @@ function markNaujiRead() {
 // ── Select basket ──────────────────────────────────────────────────────────
 async function selectBasket(id) {
   S.view = 'basket'; S.activeBasketId = id; S.selectedBaId = null;
+  // Clear all topbar tabs, then keep Visi kandidatai highlighted — the
+  // user is browsing characters, which is what the Visi tab represents.
   document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('act'); });
+  var tabVisi = document.getElementById('tabVisi');
+  if (tabVisi) tabVisi.classList.add('act');
   closePanel(); renderSidebar(); closeSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
@@ -1800,12 +1857,9 @@ function toggleShowHidden() {
   document.getElementById('tbShowHidden').classList.toggle('act', S.showHidden);
   document.getElementById('tbShowHidden').title = S.showHidden ? 'Slėpti paslėptus kandidatus' : 'Rodyti paslėptus kandidatus';
   // Re-render current view
-  if      (S.view === 'basket')                                   renderGrid();
-  else if (S.view === 'patvirtinti' || S.view === 'galbut' || S.view === 'nepatvirtinti') {
-    var tabId = S.view === 'patvirtinti' ? 'tabPatv' : S.view === 'galbut' ? 'tabGalb' : 'tabNepa';
-    showOverview(S.view, document.getElementById(tabId));
-  }
-  else if (S.view === 'nauji')                                    loadNauji();
+  if      (S.view === 'basket')   renderGrid();
+  else if (S.view === 'atrinkti') showOverview('atrinkti', document.getElementById('tabAtrinkti'));
+  else if (S.view === 'nauji')    loadNauji();
 }
 
 // ── Move / Copy candidate ──────────────────────────────────────────────────
@@ -1905,9 +1959,11 @@ async function confirmMove() {
     showToast('Nepavyko atlikti: ' + (e.message || ''));
   }
 }
-function dismissNew() {
-  S.basketActors.filter(function(a){ return a.is_new; }).forEach(function(a){ S.seenActors.add(a.basket_actor_id); a.is_new = false; });
-  localStorage.setItem('seenActors', JSON.stringify(Array.from(S.seenActors)));
+async function dismissNew() {
+  var newOnes = S.basketActors.filter(function(a){ return a.is_new; });
+  var ids = newOnes.map(function(a){ return a.basket_actor_id; });
+  if (ids.length) await markActorsSeen(ids);
+  newOnes.forEach(function(a){ a.is_new = false; });
   renderGrid(); updateBadges(); showToast('Pažymėta kaip peržiūrėta');
 }
 
@@ -1996,7 +2052,40 @@ function openRefGallery(idx) {
 
 
 // ── Overview tabs ──────────────────────────────────────────────────────────
+//
+// Visi kandidatai (tabVisi):
+//   Entry point into the basket browsing mode. Selects the first non-atrinkti
+//   basket so the user lands on a populated grid; switching between characters
+//   from there is done via the sidebar.
+//
+// Atrinkti kastingui (tabAtrinkti):
+//   Aggregate view of every candidate already in an atrinkti basket, grouped
+//   by character. Mirrors the previous "Patvirtinti" tab's structure but
+//   filters by "in atrinkti basket" rather than "status=yes". Includes
+//   orphan atrinkti (no parent basket) under their stripped name.
+
+async function showVisiKandidatai(btn) {
+  document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('act'); });
+  if (btn) btn.classList.add('act');
+  document.getElementById('sbPran').classList.remove('act');
+  document.getElementById('sbNauji').classList.remove('act');
+  // Pick the first non-atrinkti basket. Orphan atrinkti baskets (shown in
+  // sidebar with stripped name) are eligible too — they ARE characters.
+  var firstBasket = S.baskets.find(function(b){ return !b.is_atrinkti || b.is_atrinkti_orphan; });
+  if (firstBasket) {
+    await selectBasket(firstBasket.id);
+    // selectBasket clears tab .act on every tab — re-apply to Visi so it
+    // stays visually highlighted while the user browses characters.
+    btn && btn.classList.add('act');
+  } else {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nėra veikėjų. Paleiskite sinchronizaciją iš naršyklės plėtinio.</div>';
+  }
+}
+
 async function showOverview(type, btn) {
+  // type === 'atrinkti' is the only supported overview type now (was previously
+  // patvirtinti / galbut / nepatvirtinti — those tabs were removed).
+  if (type !== 'atrinkti') return;
   S.view = type; S.activeBasketId = null; S.selectedBaId = null;
   document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('act'); });
   if (btn) btn.classList.add('act');
@@ -2017,26 +2106,28 @@ async function showOverview(type, btn) {
     rows.forEach(function(r){ r._photos = (r.actors && pMap[r.actors.id]) || []; });
 
     var html = '<div class="ov-wrap">';
-    if (type === 'patvirtinti' || type === 'galbut') {
-      var ts = type === 'patvirtinti' ? 'yes' : 'maybe';
-      var lbl = type === 'patvirtinti' ? 'Patvirtinti aktoriai' : 'Galbūt kandidatai';
-      html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">' + lbl + ' · Visi veikėjai</div>';
-      // Iterate parent baskets only; atrinkti baskets are merged below
-      S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
-        var ownRows = rows.filter(function(r){ return r.basket_id === basket.id && r.status === ts; });
-        var filt = ownRows;
-        // If basket has paired atrinkti, merge in atrinkti rows (atrinkti wins for dups)
-        if (basket.atrinkti_basket_id) {
-          var atrRows = rows.filter(function(r){ return r.basket_id === basket.atrinkti_basket_id && r.status === ts; });
-          var atrActorIds = new Set();
-          atrRows.forEach(function(r){ if (r.actors && r.actors.id) atrActorIds.add(r.actors.id); });
-          var ownDeduped = ownRows.filter(function(r){ return !(r.actors && atrActorIds.has(r.actors.id)); });
-          filt = atrRows.concat(ownDeduped);
-        }
-        html += '<div class="ov-char-lbl">' + basket.name.toUpperCase() + '</div>';
-        if (filt.length) {
+    html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Atrinkti kastingui · Visi veikėjai</div>';
+    // Source: every atrinkti basket. Render grouped by its parent character
+    // (or its own stripped name if it's an orphan with no parent). Each card
+    // navigates to the parent character (atrinkti baskets are not visible
+    // standalone in the sidebar).
+    var atrinktiBaskets = S.baskets.filter(function(b){ return b.is_atrinkti; });
+    if (!atrinktiBaskets.length) {
+      html += '<div style="font-size:13px;color:#888780;padding:20px 0">Nėra atrinktų — agentūra dar nesukūrė "atrinkti" skilčių, arba sinchronizacija nepaleista.</div>';
+    } else {
+      // Group rendering order matches sidebar: iterate non-atrinkti parents
+      // first, then orphans. For each parent, if it has an atrinkti pair, show
+      // those candidates under the parent's name.
+      var rendered = new Set();
+      // Parents with paired atrinkti
+      S.baskets.filter(function(b){ return !b.is_atrinkti && b.atrinkti_basket_id; }).forEach(function(parent){
+        var atrId = parent.atrinkti_basket_id;
+        var atrRows = rows.filter(function(r){ return r.basket_id === atrId; });
+        rendered.add(atrId);
+        html += '<div class="ov-char-lbl">' + parent.name.toUpperCase() + '</div>';
+        if (atrRows.length) {
           html += '<div class="grid-sm">';
-          filt.forEach(function(r) {
+          atrRows.forEach(function(r){
             var photos = r._photos || [];
             var name = (r.actors && r.actors.first_name) || '?';
             var agId = (r.actors && r.actors.agency_id) || 'x';
@@ -2044,35 +2135,35 @@ async function showOverview(type, btn) {
             var hidCls = r.hidden ? ' is-hidden' : '';
             var manCls = r.is_manual ? ' has-manual' : '';
             var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
-            // Navigate to the PARENT basket (atrinkti baskets aren't visible standalone)
-            var navBasketId = basket.id;
-            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + navBasketId + '\')">' + img + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
+            // Card status badge (Taip/Galbūt) for quick scanning
+            var stBadge = r.status === 'yes' ? '<div class="card-stat t" title="Taip">✓</div>' : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>' : '';
+            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + parent.id + '\')">' + img + manBadge + stBadge + '<div class="card-name">' + esc(name) + '</div></div>';
           });
           html += '</div>';
-        } else html += '<div class="ov-empty">' + (type === 'patvirtinti' ? 'Nėra patvirtintų' : 'Nėra') + '</div>';
+        } else {
+          html += '<div class="ov-empty">Atrinkti skiltis tuščia</div>';
+        }
       });
-    } else {
-      html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Veikėjai be patvirtinto aktoriaus</div>';
-      var any = false;
-      S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
-        // For "no approved" check, consider both parent and atrinkti
-        var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
-        var hasYes = rows.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0 && r.status === 'yes'; }).length > 0;
-        if (hasYes) return;
-        any = true;
-        // Count unique candidates across the pair (dedup by actor_id)
-        var pairRows = rows.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0; });
-        var seenAct = new Set();
-        pairRows.forEach(function(r){ if (r.actors && r.actors.id) seenAct.add(r.actors.id); });
-        var tot = seenAct.size;
-        var revAct = new Set();
-        pairRows.forEach(function(r){ if ((r.status === 'yes' || r.status === 'maybe') && r.actors && r.actors.id) revAct.add(r.actors.id); });
-        var rev = revAct.size;
-        html += '<div class="ov-row-txt" onclick="selectBasket(\'' + basket.id + '\')">'
-          + '<div class="ov-char">' + basket.name.toUpperCase() + '</div>'
-          + '<div class="ov-stat">' + tot + ' kandidatai · ' + rev + ' peržiūrėta</div></div>';
+      // Orphan atrinkti (no parent basket). Their display name had the suffix
+      // stripped at detectAtrinkti() time, so just use b.name.
+      atrinktiBaskets.filter(function(b){ return b.is_atrinkti_orphan && !rendered.has(b.id); }).forEach(function(orphan){
+        var orphanRows = rows.filter(function(r){ return r.basket_id === orphan.id; });
+        if (!orphanRows.length) return;
+        html += '<div class="ov-char-lbl">' + orphan.name.toUpperCase() + '</div>';
+        html += '<div class="grid-sm">';
+        orphanRows.forEach(function(r){
+          var photos = r._photos || [];
+          var name = (r.actors && r.actors.first_name) || '?';
+          var agId = (r.actors && r.actors.agency_id) || 'x';
+          var img = photoOrPlaceholder(photos, name, agId);
+          var hidCls = r.hidden ? ' is-hidden' : '';
+          var manCls = r.is_manual ? ' has-manual' : '';
+          var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
+          var stBadge = r.status === 'yes' ? '<div class="card-stat t" title="Taip">✓</div>' : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>' : '';
+          html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + orphan.id + '\')">' + img + manBadge + stBadge + '<div class="card-name">' + esc(name) + '</div></div>';
+        });
+        html += '</div>';
       });
-      if (!any) html += '<div style="font-size:13px;color:#888780;padding:20px 0">Visi veikėjai turi patvirtintą aktorių 🎉</div>';
     }
     document.getElementById('mainArea').innerHTML = html + '</div>';
   } catch(e) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti<br><small style="font-size:10px;color:#aaa;display:block;margin-top:6px">' + esc(e.message) + '</small></div>'; }
