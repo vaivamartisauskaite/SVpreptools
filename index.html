@@ -153,8 +153,11 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .brd-act-btn.archived{background:#f4f3ee;color:#888780;font-style:italic}
 
 .brd-scroll{flex:1;overflow-y:auto;padding:6px 14px 80px}
-.brd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:start}
-.brd-cat{background:#fff;border:0.5px solid #e6e4dc;border-radius:6px;padding:10px;cursor:grab;position:relative}
+/* Puzzle grid: fixed column count for stable cell positions; responsive scales count */
+.brd-grid{display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px;align-items:start}
+@media (max-width: 1000px){.brd-grid{grid-template-columns:repeat(4, minmax(0, 1fr))}}
+@media (max-width: 600px){.brd-grid{grid-template-columns:repeat(3, minmax(0, 1fr))}}
+.brd-cat{background:#fff;border:0.5px solid #e6e4dc;border-radius:6px;padding:8px;cursor:grab;position:relative}
 .brd-cat:hover{border-color:#c8c5b8}
 .brd-cat.dragging{opacity:0.4}
 .brd-cat.drop-target{border-color:#534AB7;background:#f0eeff}
@@ -163,21 +166,27 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .brd-cat-rm{flex-shrink:0;width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:14px;line-height:1;opacity:0;transition:opacity 0.1s}
 .brd-cat:hover .brd-cat-rm{opacity:1}
 .brd-cat-rm:hover{background:#fbe9e9;color:#a73a3a}
-.brd-picks{display:flex;flex-direction:column;gap:6px;min-height:60px}
-.brd-pick{display:flex;align-items:center;gap:8px;padding:4px;border-radius:4px;cursor:pointer;position:relative}
-.brd-pick:hover{background:#f4f3ee}
-.brd-pick-ph{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e6e4dc}
-.brd-pick-ph-fb{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px;flex-shrink:0}
-.brd-pick-nm{flex:1;font-size:12px;color:#3a3a35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.brd-pick-st{flex-shrink:0;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase}
-.brd-pick-st.t{background:#d4ecd4;color:#2a6b2a}
-.brd-pick-st.m{background:#ffe9c9;color:#8a5a1a}
-.brd-pick-rm{flex-shrink:0;width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:13px;line-height:1;opacity:0;transition:opacity 0.1s}
-.brd-pick:hover .brd-pick-rm{opacity:1}
-.brd-pick-rm:hover{background:#fbe9e9;color:#a73a3a}
-.brd-add-pick{font-size:10px;color:#534AB7;padding:5px 8px;border:0.5px dashed #d3d1c7;border-radius:4px;cursor:pointer;text-align:center;margin-top:4px;background:#fafaf7;display:flex;align-items:center;justify-content:center;gap:4px}
+/* Empty cells in the puzzle grid — invisible by default, visible only while dragging */
+.brd-cell-empty{min-height:80px;border:1px dashed transparent;border-radius:6px;transition:border-color 0.12s,background 0.12s}
+.brd-grid.dragging .brd-cell-empty{border-color:#d3d1c7;background:rgba(83,74,183,0.03)}
+.brd-grid.dragging .brd-cell-empty.drop-target{border-color:#534AB7;background:#f0eeff}
+/* Picks layout inside a category — rectangular photo + name below, same style as patvirtinti/galbut */
+.brd-picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:5px;margin-bottom:6px}
+.brd-pick-card{border-radius:5px;overflow:hidden;border:0.5px solid #d3d1c7;position:relative;cursor:pointer;background:#fff;transition:border-color 0.12s,box-shadow 0.12s}
+.brd-pick-card:hover{border-color:#534AB7;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.brd-pick-card-ph{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#e6e4dc}
+.brd-pick-card-ph-fb{width:100%;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;color:rgba(255,255,255,0.85);font-weight:600;font-size:14px}
+.brd-pick-card-nm{padding:4px 6px 5px;font-size:10px;font-weight:500;background:#f5f4f0;color:#1a1a18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.brd-pick-card-rm{position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.1s}
+.brd-pick-card:hover .brd-pick-card-rm{opacity:1}
+.brd-pick-card-rm:hover{background:#a73a3a}
+.brd-pick-card-st{position:absolute;bottom:24px;left:4px;font-size:7px;padding:2px 4px;border-radius:3px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
+.brd-pick-card-st.t{background:#d4ecd4;color:#2a6b2a}
+.brd-pick-card-st.m{background:#ffe9c9;color:#8a5a1a}
+.brd-pick-missing{font-size:10px;color:#a3a39a;font-style:italic;padding:6px;text-align:center;border:0.5px dashed #e6e4dc;border-radius:4px}
+.brd-add-pick{font-size:10px;color:#534AB7;padding:5px 8px;border:0.5px dashed #d3d1c7;border-radius:4px;cursor:pointer;text-align:center;background:#fafaf7;display:flex;align-items:center;justify-content:center;gap:4px}
 .brd-add-pick:hover{background:#f0eeff;border-color:#534AB7;border-style:solid}
-.brd-add-cat-card{background:#fafaf7;border:0.5px dashed #d3d1c7;border-radius:6px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:120px;font-size:11px;color:#534AB7;gap:6px}
+.brd-add-cat-card{background:#fafaf7;border:0.5px dashed #d3d1c7;border-radius:6px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:60px;font-size:11px;color:#534AB7;gap:6px;margin-top:14px}
 .brd-add-cat-card:hover{border-color:#534AB7;border-style:solid;background:#f0eeff}
 
 .brd-comments{position:sticky;bottom:0;background:#fff;border-top:0.5px solid #d3d1c7;padding:10px 18px;flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,0.04)}
@@ -2106,7 +2115,7 @@ async function selectBoard(boardId) {
   try {
     var board = S.boards.find(function(b){ return b.id === boardId; });
     if (!board) { renderBoardsEmpty(); return; }
-    var cats = await sb('/rest/v1/board_categories?board_id=eq.' + boardId + '&select=id,basket_id,position&order=position.asc,created_at.asc');
+    var cats = await sb('/rest/v1/board_categories?board_id=eq.' + boardId + '&select=id,basket_id,position,cell_index&order=cell_index.asc.nullslast,position.asc,created_at.asc');
     var picks = [];
     if (cats.length) {
       picks = await sb('/rest/v1/board_picks?board_category_id=in.(' + cats.map(function(c){ return c.id; }).join(',') + ')&select=id,board_category_id,basket_actor_id,position,added_by,created_at&order=position.asc,created_at.asc');
@@ -2152,6 +2161,16 @@ function renderBoard() {
     picksByCat[p.board_category_id].push(p);
   });
 
+  // Map cell_index → category for puzzle-grid placement
+  var byCell = {};
+  var maxIdx = -1;
+  d.categories.forEach(function(c){
+    var ci = (c.cell_index != null ? c.cell_index : (c.position || 0));
+    c.cell_index = ci; // normalize
+    byCell[ci] = c;
+    if (ci > maxIdx) maxIdx = ci;
+  });
+
   var html = '<div class="brd-wrap">';
   // Header
   html += '<div class="brd-head">'
@@ -2172,14 +2191,23 @@ function renderBoard() {
     + (isOwner ? '<button class="brd-act-btn danger" onclick="deleteBoardConfirm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Ištrinti</button>' : '')
     + '</div></div>';
 
-  // Categories grid
-  html += '<div class="brd-scroll"><div class="brd-grid">';
-  d.categories.forEach(function(cat){
+  // Puzzle grid: render cells 0..maxIdx in order. Each cell either holds a
+  // category card or an empty placeholder (drop target, invisible until drag).
+  html += '<div class="brd-scroll"><div class="brd-grid" id="brdGrid">';
+  for (var i = 0; i <= maxIdx; i++) {
+    var cat = byCell[i];
+    if (!cat) {
+      // Empty cell — drop target during drag
+      html += '<div class="brd-cell-empty" data-cell-idx="' + i + '"'
+        + (isOwner ? ' ondragover="onCatDragOver(event)" ondragleave="onCatDragLeave(event)" ondrop="onCatDropEmpty(event,' + i + ')"' : '')
+        + '></div>';
+      continue;
+    }
     var basket = basketsById[cat.basket_id];
     var catName = basket ? basket.name.toUpperCase() : '(pašalintas veikėjas)';
     var picksHere = picksByCat[cat.id] || [];
-    html += '<div class="brd-cat" data-cat-id="' + cat.id + '"'
-      + (isOwner ? ' draggable="true" ondragstart="onCatDragStart(event,\'' + cat.id + '\')" ondragover="onCatDragOver(event)" ondrop="onCatDrop(event,\'' + cat.id + '\')" ondragend="onCatDragEnd(event)"' : '')
+    html += '<div class="brd-cat" data-cat-id="' + cat.id + '" data-cell-idx="' + i + '"'
+      + (isOwner ? ' draggable="true" ondragstart="onCatDragStart(event,\'' + cat.id + '\')" ondragover="onCatDragOver(event)" ondragleave="onCatDragLeave(event)" ondrop="onCatDrop(event,\'' + cat.id + '\')" ondragend="onCatDragEnd(event)"' : '')
       + '>'
       + '<div class="brd-cat-head"><span class="brd-cat-name">' + esc(catName) + '</span>'
       + (isOwner ? '<span class="brd-cat-rm" onclick="event.stopPropagation();removeCategoryFromBoard(\'' + cat.id + '\')" title="Pašalinti veikėją iš derinio">×</span>' : '')
@@ -2187,29 +2215,39 @@ function renderBoard() {
     html += '<div class="brd-picks">';
     picksHere.forEach(function(p){
       var info = d.baInfo[p.basket_actor_id];
-      if (!info) { html += '<div class="brd-pick" style="color:#a3a39a;font-size:11px;font-style:italic">(kandidatas pašalintas)</div>'; return; }
+      if (!info) { html += '<div class="brd-pick-missing">(pašalintas)</div>'; return; }
       var name = (info.actor && info.actor.first_name) || '?';
       var agId = (info.actor && info.actor.agency_id) || 'x';
       var photo = (info.photos && info.photos[0]) || null;
+      // Photo or colored fallback with first letter — matches patvirtinti/galbut card style
       var photoHtml = photo
-        ? '<img class="brd-pick-ph" src="' + pUrl(photo.storage_path) + '" onerror="this.outerHTML=\'<div class=\\\'brd-pick-ph-fb\\\' style=\\\'background:' + hsl(agId) + '\\\'>' + esc(name.charAt(0).toUpperCase()) + '</div>\'">'
-        : '<div class="brd-pick-ph-fb" style="background:' + hsl(agId) + '">' + esc(name.charAt(0).toUpperCase()) + '</div>';
-      var stBadge = info.status === 'yes' ? '<span class="brd-pick-st t">Taip</span>' : info.status === 'maybe' ? '<span class="brd-pick-st m">Galbūt</span>' : '';
-      html += '<div class="brd-pick" onclick="boardPickClick(\'' + p.basket_actor_id + '\',\'' + (info.basket_id || '') + '\')">'
-        + photoHtml + '<span class="brd-pick-nm">' + esc(name) + '</span>'
+        ? '<img class="brd-pick-card-ph" src="' + pUrl(photo.storage_path) + '" onerror="this.outerHTML=\'<div class=\\\'brd-pick-card-ph-fb\\\' style=\\\'background:' + hsl(agId) + '\\\'>' + esc(name.charAt(0).toUpperCase()) + '</div>\'">'
+        : '<div class="brd-pick-card-ph-fb" style="background:' + hsl(agId) + '">' + esc(name.charAt(0).toUpperCase()) + '</div>';
+      var stBadge = info.status === 'yes' ? '<span class="brd-pick-card-st t">Taip</span>' : info.status === 'maybe' ? '<span class="brd-pick-card-st m">Galbūt</span>' : '';
+      html += '<div class="brd-pick-card" onclick="boardPickClick(\'' + p.basket_actor_id + '\',\'' + (info.basket_id || '') + '\')">'
+        + photoHtml
         + stBadge
-        + (isOwner ? '<span class="brd-pick-rm" onclick="event.stopPropagation();removePickFromCategory(\'' + p.id + '\')" title="Pašalinti">×</span>' : '')
+        + '<div class="brd-pick-card-nm">' + esc(name) + '</div>'
+        + (isOwner ? '<span class="brd-pick-card-rm" onclick="event.stopPropagation();removePickFromCategory(\'' + p.id + '\')" title="Pašalinti">×</span>' : '')
         + '</div>';
     });
+    html += '</div>';
     if (isOwner) {
-      html += '<div class="brd-add-pick" onclick="openPickPicker(\'' + cat.id + '\',\'' + cat.basket_id + '\')">+ Pridėti kandidatą</div>';
+      html += '<div class="brd-add-pick" onclick="openPickPicker(\'' + cat.id + '\',\'' + cat.basket_id + '\')">+ Pridėti</div>';
     }
-    html += '</div></div>'; // .brd-picks, .brd-cat
-  });
-  if (isOwner) {
-    html += '<div class="brd-add-cat-card" onclick="addCategoryPrompt()">+ Pridėti veikėją</div>';
+    html += '</div>'; // .brd-cat
   }
-  html += '</div></div>'; // .brd-grid, .brd-scroll
+  html += '</div>'; // .brd-grid
+
+  // "+ Pridėti veikėją" — only when there are baskets not yet on the board
+  if (isOwner) {
+    var existingBasketIds = new Set(d.categories.map(function(c){ return c.basket_id; }));
+    var available = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !existingBasketIds.has(bk.id); });
+    if (available.length > 0) {
+      html += '<div class="brd-add-cat-card" onclick="addCategoryPrompt()">+ Pridėti veikėją (' + available.length + ' likę)</div>';
+    }
+  }
+  html += '</div>'; // .brd-scroll
 
   // Sticky comments at the bottom
   html += '<div class="brd-comments">';
@@ -2263,7 +2301,7 @@ async function createBoard() {
     var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti; });
     if (parentBaskets.length) {
       var catRows = parentBaskets.map(function(bk, i){
-        return { board_id: newBoard.id, basket_id: bk.id, position: i };
+        return { board_id: newBoard.id, basket_id: bk.id, position: i, cell_index: i };
       });
       await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
     }
@@ -2334,7 +2372,12 @@ async function copyBoardAsTemplate() {
     // Copy categories preserving order — but NOT picks (template = empty)
     if (d.categories.length) {
       var catRows = d.categories.map(function(c, i){
-        return { board_id: newBoard.id, basket_id: c.basket_id, position: c.position != null ? c.position : i };
+        return {
+          board_id: newBoard.id,
+          basket_id: c.basket_id,
+          position: c.position != null ? c.position : i,
+          cell_index: c.cell_index != null ? c.cell_index : i
+        };
       });
       await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
     }
@@ -2369,10 +2412,14 @@ async function addCategoryPrompt() {
   if (isNaN(idx) || idx < 0 || idx >= available.length) { showToast('Netinkamas pasirinkimas'); return; }
   var basket = available[idx];
   try {
-    var maxPos = d.categories.reduce(function(m, c){ return Math.max(m, c.position || 0); }, -1);
+    // Find the next empty cell (smallest non-occupied index, starting at 0).
+    // If the grid is densely packed, append at the end.
+    var occupied = new Set(d.categories.map(function(c){ return c.cell_index != null ? c.cell_index : c.position; }));
+    var newCell = 0;
+    while (occupied.has(newCell)) newCell++;
     await sb('/rest/v1/board_categories', {
       method: 'POST',
-      body: JSON.stringify({ board_id: d.board.id, basket_id: basket.id, position: maxPos + 1 })
+      body: JSON.stringify({ board_id: d.board.id, basket_id: basket.id, position: newCell, cell_index: newCell })
     });
     await selectBoard(d.board.id);
     showToast('Pridėta');
@@ -2473,45 +2520,70 @@ async function removePickFromCategory(pickId) {
   } catch(e) { showToast('Nepavyko'); }
 }
 
-// ── Category drag-drop ─────────────────────────────────────────────────────
+// ── Category drag-drop (puzzle grid: swap on occupied, move to empty) ─────
 var _catDragId = null;
 function onCatDragStart(e, catId) {
   _catDragId = catId;
   if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.add('dragging');
+  // Activate the empty-cell drop targets across the grid
+  var grid = document.getElementById('brdGrid');
+  if (grid) grid.classList.add('dragging');
   if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
 }
 function onCatDragOver(e) {
   e.preventDefault();
-  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
   if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.add('drop-target');
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 }
+function onCatDragLeave(e) {
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.remove('drop-target');
+}
 async function onCatDrop(e, targetCatId) {
+  // Drop onto another CATEGORY card → swap cell_indexes
   e.preventDefault();
-  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.remove('drop-target');
   if (!_catDragId || _catDragId === targetCatId) { _catDragId = null; return; }
   var d = S.boardData; if (!d) return;
-  var srcIdx = d.categories.findIndex(function(c){ return c.id === _catDragId; });
-  var tgtIdx = d.categories.findIndex(function(c){ return c.id === targetCatId; });
-  if (srcIdx < 0 || tgtIdx < 0) { _catDragId = null; return; }
-  var moved = d.categories.splice(srcIdx, 1)[0];
-  var insertAt = srcIdx < tgtIdx ? tgtIdx : tgtIdx;
-  d.categories.splice(insertAt, 0, moved);
-  d.categories.forEach(function(c, i){ c.position = i; });
+  var src = d.categories.find(function(c){ return c.id === _catDragId; });
+  var tgt = d.categories.find(function(c){ return c.id === targetCatId; });
+  if (!src || !tgt) { _catDragId = null; return; }
+  // Swap their cell_index values
+  var srcCell = src.cell_index, tgtCell = tgt.cell_index;
+  src.cell_index = tgtCell;
+  tgt.cell_index = srcCell;
+  // Re-sort for render
+  d.categories.sort(function(a, b){ return a.cell_index - b.cell_index; });
   renderBoard();
-  // Persist new positions in parallel
   try {
-    await Promise.all(d.categories.map(function(c){
-      return sb('/rest/v1/board_categories?id=eq.' + c.id, {
-        method: 'PATCH', body: JSON.stringify({ position: c.position })
-      });
-    }));
+    await Promise.all([
+      sb('/rest/v1/board_categories?id=eq.' + src.id, { method: 'PATCH', body: JSON.stringify({ cell_index: src.cell_index }) }),
+      sb('/rest/v1/board_categories?id=eq.' + tgt.id, { method: 'PATCH', body: JSON.stringify({ cell_index: tgt.cell_index }) })
+    ]);
   } catch(err) { showToast('Tvarkos pakeisti nepavyko'); selectBoard(d.board.id); }
   _catDragId = null;
+  var grid = document.getElementById('brdGrid'); if (grid) grid.classList.remove('dragging');
+}
+async function onCatDropEmpty(e, targetCellIdx) {
+  // Drop onto an EMPTY CELL → move dragged category there, leaving its old cell empty
+  e.preventDefault();
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.remove('drop-target');
+  if (!_catDragId) return;
+  var d = S.boardData; if (!d) return;
+  var src = d.categories.find(function(c){ return c.id === _catDragId; });
+  if (!src) { _catDragId = null; return; }
+  src.cell_index = targetCellIdx;
+  d.categories.sort(function(a, b){ return a.cell_index - b.cell_index; });
+  renderBoard();
+  try {
+    await sb('/rest/v1/board_categories?id=eq.' + src.id, { method: 'PATCH', body: JSON.stringify({ cell_index: targetCellIdx }) });
+  } catch(err) { showToast('Perkėlimas nepavyko'); selectBoard(d.board.id); }
+  _catDragId = null;
+  var grid = document.getElementById('brdGrid'); if (grid) grid.classList.remove('dragging');
 }
 function onCatDragEnd(e) {
   if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.remove('dragging');
-  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  document.querySelectorAll('.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  var grid = document.getElementById('brdGrid'); if (grid) grid.classList.remove('dragging');
   _catDragId = null;
 }
 
