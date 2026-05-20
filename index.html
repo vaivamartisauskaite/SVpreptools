@@ -688,7 +688,7 @@ var ADMIN_HASH   = 'e1f72e6cf1bc3c62ca7577066fd27bf5439bb0de6b9184a062687296cc50
 // ── State ──────────────────────────────────────────────────────────────────
 var S = {
   username: '', userEmail: '', userId: null, userToken: '',
-  projectId: null, baskets: [],
+  projectId: null, baskets: [], allBaskets: [],
   view: 'pranesimai',
   activeBasketId: null, basketActors: [],
   // Per-user seen state for new candidates. Empty at boot; hydrated by
@@ -825,7 +825,12 @@ async function loadData() {
       setSyncTxt('↻ Atnaujinti'); return;
     }
     S.projectId = projs[0].id;
-    S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&removed_from_agency=eq.false&select=id,name,basket_date,actor_count,sort_order&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    // Fetch ALL baskets (including agency-removed ones) into S.allBaskets so
+    // detectAtrinkti can pair an active basket with a removed sibling whose
+    // refs/comments still live in DB. S.baskets remains the active set used
+    // everywhere else (sidebar, grid, etc.).
+    S.allBaskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order,removed_from_agency&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    S.baskets = S.allBaskets.filter(function(b){ return !b.removed_from_agency; });
     detectAtrinkti();
     await computeAllBasketCounts();
     renderSidebar();
@@ -872,37 +877,64 @@ function setSyncTxt(t) { document.getElementById('syncBtn').textContent = t; }
 // parent and atrinkti are shown only in the Atrinkti section.
 function detectAtrinkti() {
   var re = /^(.+?)\s+atrinkt(?:i|os)\s*$/i;
-  // Build a lowercase-name → basket map for parent lookup
+  // Build lowercase-name → basket map from the FULL pool (active + removed).
+  // This way we can pair an active basket with a removed sibling and still
+  // load refs/comments from that removed side — they're still in DB even
+  // though the basket itself is hidden from the rest of the UI.
+  var pool = S.allBaskets || S.baskets;
   var byName = {};
-  S.baskets.forEach(function(b){ byName[b.name.trim().toLowerCase()] = b; });
-  // Reset any prior pairing flags (re-runs cleanly on reload)
-  S.baskets.forEach(function(b){
+  pool.forEach(function(b){ byName[b.name.trim().toLowerCase()] = b; });
+  // Reset flags on ALL baskets in the pool (since pairing assigns flags on
+  // both sides). Active baskets keep their flags visible; removed baskets
+  // get flags too but aren't shown.
+  pool.forEach(function(b){
     b.is_atrinkti = false;
     b.is_atrinkti_orphan = false;
     b.parent_basket_id = null;
     b.atrinkti_basket_id = null;
     b.atrinkti_count = 0;
+    b.removed_pair_id = null;
     // Restore original name in case of re-run after a prior orphan rename
     if (b.original_name) b.name = b.original_name;
   });
+  // Pass 1: for each ACTIVE basket whose name matches the atrinkti pattern,
+  // find its parent (active OR removed) and wire up the pairing.
   S.baskets.forEach(function(b){
     var m = b.name.match(re);
     if (!m) return;
     var parentRoot = m[1].trim();
     var parent = byName[parentRoot.toLowerCase()];
     if (parent && parent.id !== b.id) {
-      // Paired: merge into parent (basket is hidden from sidebar)
-      b.is_atrinkti = true;
-      b.parent_basket_id = parent.id;
-      parent.atrinkti_basket_id = b.id;
+      if (!parent.removed_from_agency) {
+        // Standard pair — both active. Atrinkti hidden in sidebar; merged
+        // into parent's basket view.
+        b.is_atrinkti = true;
+        b.parent_basket_id = parent.id;
+        parent.atrinkti_basket_id = b.id;
+      } else {
+        // Active atrinkti, removed parent. Display as orphan in sidebar
+        // (stripped name), but remember the removed parent's id so refs
+        // and comments from there merge in.
+        b.is_atrinkti_orphan = true;
+        b.original_name = b.name;
+        b.name = parentRoot;
+        b.removed_pair_id = parent.id;
+      }
     } else {
-      // Orphan: no parent exists in this project. Strip "atrinkti" suffix
-      // from the displayed name so the user sees just "Vėžys" instead of
-      // "Vėžys atrinkti". The basket stays visible in the sidebar but is
-      // rendered with all candidates in the "Atrinkti kastingui" section.
+      // True orphan: no parent in the pool at all.
       b.is_atrinkti_orphan = true;
       b.original_name = b.name;
       b.name = parentRoot;
+    }
+  });
+  // Pass 2: for each ACTIVE non-atrinkti basket, look for a REMOVED atrinkti
+  // sibling whose data should still merge into this view.
+  S.baskets.forEach(function(b){
+    if (b.is_atrinkti || b.is_atrinkti_orphan || b.atrinkti_basket_id) return;
+    var baseName = b.name.trim().toLowerCase();
+    var sib = byName[baseName + ' atrinkti'] || byName[baseName + ' atrinktos'];
+    if (sib && sib.id !== b.id && sib.removed_from_agency) {
+      b.removed_pair_id = sib.id;
     }
   });
 }
@@ -1394,9 +1426,13 @@ async function selectBasket(id) {
     var actorIds = bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean);
     var photos = [];
     if (actorIds.length) photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=id,actor_id,storage_path,is_primary&order=is_primary.desc');
-    // References merge across pair (refs live on whichever basket they were
-    // uploaded to; we show union). Comments also merged across pair.
-    var refBasketIds = atrId ? [id, atrId] : [id];
+    // References and basket-level ref-thread comments merge across the entire
+    // pair, including any sibling basket that the agency has since removed
+    // (removed_pair_id) — the basket is hidden but its uploaded refs and
+    // comments still live in DB and must remain visible in the merged view.
+    var refBasketIds = [id];
+    if (parentBasket && parentBasket.atrinkti_basket_id) refBasketIds.push(parentBasket.atrinkti_basket_id);
+    if (parentBasket && parentBasket.removed_pair_id)    refBasketIds.push(parentBasket.removed_pair_id);
     try {
       var refs = await sb('/rest/v1/character_refs?basket_id=in.(' + refBasketIds.join(',') + ')&select=id,basket_id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
       S.charRefs[id] = refs;
