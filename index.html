@@ -152,11 +152,11 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .brd-act-btn.danger:hover{background:#fbe9e9;border-color:#d77;color:#a73a3a}
 .brd-act-btn.archived{background:#f4f3ee;color:#888780;font-style:italic}
 
-.brd-scroll{flex:1;overflow-y:auto;padding:6px 14px 80px}
-/* Puzzle grid: fixed column count for stable cell positions; responsive scales count */
-.brd-grid{display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px;align-items:start}
-@media (max-width: 1000px){.brd-grid{grid-template-columns:repeat(4, minmax(0, 1fr))}}
-@media (max-width: 600px){.brd-grid{grid-template-columns:repeat(3, minmax(0, 1fr))}}
+.brd-scroll{flex:1;overflow-y:auto;overflow-x:auto;padding:6px 14px 80px}
+/* Puzzle grid: ALWAYS 6 columns. Cells have a min width so photos remain
+   legible; on narrow viewports the whole grid scrolls horizontally rather
+   than reflowing — keeps cell positions stable as a true 2D puzzle board. */
+.brd-grid{display:grid;grid-template-columns:repeat(6, minmax(120px, 1fr));gap:8px;align-items:start;min-width:760px}
 .brd-cat{background:#fff;border:0.5px solid #e6e4dc;border-radius:6px;padding:8px;cursor:grab;position:relative}
 .brd-cat:hover{border-color:#c8c5b8}
 .brd-cat.dragging{opacity:0.4}
@@ -2170,6 +2170,16 @@ function renderBoard() {
     byCell[ci] = c;
     if (ci > maxIdx) maxIdx = ci;
   });
+  // How many cells to render. Goal: always have at least one full row of
+  // empty drop targets BELOW the last occupied row so categories can be
+  // dragged into "below" positions. Math:
+  //   - Round up to fill the row that contains maxIdx
+  //   - Add one extra full row (6 cells) of slack
+  //   - Floor at 2 rows total so empty boards still show a board
+  var BRD_COLS = 6;
+  var endOfLastRow = Math.ceil((maxIdx + 1) / BRD_COLS) * BRD_COLS;
+  var totalCells = endOfLastRow + BRD_COLS;
+  if (totalCells < BRD_COLS * 2) totalCells = BRD_COLS * 2;
 
   var html = '<div class="brd-wrap">';
   // Header
@@ -2191,10 +2201,12 @@ function renderBoard() {
     + (isOwner ? '<button class="brd-act-btn danger" onclick="deleteBoardConfirm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Ištrinti</button>' : '')
     + '</div></div>';
 
-  // Puzzle grid: render cells 0..maxIdx in order. Each cell either holds a
-  // category card or an empty placeholder (drop target, invisible until drag).
+  // Puzzle grid: render cells 0..totalCells-1 in order. Each cell either
+  // holds a category card or an empty placeholder (drop target, invisible
+  // until drag). The extra row beyond maxIdx provides drop space "below"
+  // the last occupied row.
   html += '<div class="brd-scroll"><div class="brd-grid" id="brdGrid">';
-  for (var i = 0; i <= maxIdx; i++) {
+  for (var i = 0; i < totalCells; i++) {
     var cat = byCell[i];
     if (!cat) {
       // Empty cell — drop target during drag
@@ -2412,11 +2424,14 @@ async function addCategoryPrompt() {
   if (isNaN(idx) || idx < 0 || idx >= available.length) { showToast('Netinkamas pasirinkimas'); return; }
   var basket = available[idx];
   try {
-    // Find the next empty cell (smallest non-occupied index, starting at 0).
-    // If the grid is densely packed, append at the end.
-    var occupied = new Set(d.categories.map(function(c){ return c.cell_index != null ? c.cell_index : c.position; }));
-    var newCell = 0;
-    while (occupied.has(newCell)) newCell++;
+    // Place new category AFTER the last occupied cell — this preserves any
+    // intentional gaps the user has created in the puzzle grid. To fill a
+    // specific gap, drag an existing category into it.
+    var maxIdx = d.categories.reduce(function(m, c){
+      var ci = (c.cell_index != null ? c.cell_index : c.position);
+      return ci > m ? ci : m;
+    }, -1);
+    var newCell = maxIdx + 1;
     await sb('/rest/v1/board_categories', {
       method: 'POST',
       body: JSON.stringify({ board_id: d.board.id, basket_id: basket.id, position: newCell, cell_index: newCell })
