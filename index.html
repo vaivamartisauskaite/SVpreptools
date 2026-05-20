@@ -170,8 +170,10 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .brd-cell-empty{min-height:80px;border:1px dashed transparent;border-radius:6px;transition:border-color 0.12s,background 0.12s}
 .brd-grid.dragging .brd-cell-empty{border-color:#d3d1c7;background:rgba(83,74,183,0.03)}
 .brd-grid.dragging .brd-cell-empty.drop-target{border-color:#534AB7;background:#f0eeff}
-/* Picks layout inside a category — rectangular photo + name below, same style as patvirtinti/galbut */
-.brd-picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:5px;margin-bottom:6px}
+/* Picks layout inside a category — fixed 2 columns, picks shrink to fit
+   category width. 3+ picks wrap to additional rows DOWN, never overflow
+   horizontally into the next grid cell. */
+.brd-picks{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:5px;margin-bottom:6px}
 .brd-pick-card{border-radius:5px;overflow:hidden;border:0.5px solid #d3d1c7;position:relative;cursor:pointer;background:#fff;transition:border-color 0.12s,box-shadow 0.12s}
 .brd-pick-card:hover{border-color:#534AB7;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 .brd-pick-card-ph{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#e6e4dc}
@@ -2186,7 +2188,7 @@ function renderBoard() {
         : '<div class="brd-title" style="cursor:default">' + esc(b.name) + (b.archived ? ' <span class="brd-act-btn archived" style="font-size:9px;padding:2px 6px">archyvuotas</span>' : '') + '</div>')
     + '<div class="brd-author">' + esc(b.author_name) + '</div></div>'
     + '<div class="brd-actions">'
-    + '<button class="brd-act-btn" onclick="copyBoardAsTemplate()" title="Sukuria naują derinį pagal šio struktūrą — be picks">'
+    + '<button class="brd-act-btn" onclick="copyBoardAsTemplate()" title="Sukuria naują derinį pagal šio struktūrą — kartu su kandidatų pasirinkimais">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>'
     +   'Kopijuoti kaip šabloną</button>'
     + (isOwner ? '<button class="brd-act-btn" onclick="archiveBoardToggle()">'
@@ -2377,7 +2379,10 @@ async function copyBoardAsTemplate() {
       body: JSON.stringify({ project_id: S.projectId, name: name.trim(), author_name: S.username })
     });
     var newBoard = Array.isArray(rows) ? rows[0] : rows;
-    // Copy categories preserving order — but NOT picks (template = empty)
+    // Copy categories preserving cell_index/position. Capture inserted rows
+    // (return=representation) so we can map old → new category IDs by shared
+    // basket_id, then duplicate picks under the new categories.
+    var idMap = {}; // old_category_id → new_category_id
     if (d.categories.length) {
       var catRows = d.categories.map(function(c, i){
         return {
@@ -2387,9 +2392,39 @@ async function copyBoardAsTemplate() {
           cell_index: c.cell_index != null ? c.cell_index : i
         };
       });
-      await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
+      var newCats = await sb('/rest/v1/board_categories', {
+        method: 'POST',
+        body: JSON.stringify(catRows)
+      });
+      newCats = Array.isArray(newCats) ? newCats : (newCats ? [newCats] : []);
+      // Build basket_id → new category id map, then resolve old category id
+      var newByBasket = {};
+      newCats.forEach(function(nc){ newByBasket[nc.basket_id] = nc.id; });
+      d.categories.forEach(function(c){
+        if (newByBasket[c.basket_id]) idMap[c.id] = newByBasket[c.basket_id];
+      });
     }
-    showToast('Šablonas sukurtas');
+    // Copy picks — same basket_actor_id, mapped category id, attributed to the copier
+    if (d.picks && d.picks.length) {
+      var pickRows = d.picks
+        .filter(function(p){ return idMap[p.board_category_id] && p.basket_actor_id; })
+        .map(function(p){
+          return {
+            board_category_id: idMap[p.board_category_id],
+            basket_actor_id: p.basket_actor_id,
+            position: p.position != null ? p.position : 0,
+            added_by: S.username
+          };
+        });
+      if (pickRows.length) {
+        await sb('/rest/v1/board_picks', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify(pickRows)
+        });
+      }
+    }
+    showToast('Sukurta kopija');
     await loadBoards();
     S.activeBoardId = newBoard.id;
     renderSidebar();
