@@ -170,10 +170,12 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .brd-cell-empty{min-height:80px;border:1px dashed transparent;border-radius:6px;transition:border-color 0.12s,background 0.12s}
 .brd-grid.dragging .brd-cell-empty{border-color:#d3d1c7;background:rgba(83,74,183,0.03)}
 .brd-grid.dragging .brd-cell-empty.drop-target{border-color:#534AB7;background:#f0eeff}
-/* Picks layout inside a category — fixed 2 columns, picks shrink to fit
-   category width. 3+ picks wrap to additional rows DOWN, never overflow
-   horizontally into the next grid cell. */
-.brd-picks{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:5px;margin-bottom:6px}
+/* Picks layout inside a category — auto-fill so picks pack horizontally first.
+   The CATEGORY itself widens via grid-column: span N (computed per pick count
+   in renderBoard) so 6 picks land side by side across 3 grid cells rather
+   than stacking 3 rows deep inside one cell. When the category can't expand
+   right (last column), picks wrap downward naturally as a fallback. */
+.brd-picks{display:grid;grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));gap:5px;margin-bottom:6px}
 .brd-pick-card{border-radius:5px;overflow:hidden;border:0.5px solid #d3d1c7;position:relative;cursor:pointer;background:#fff;transition:border-color 0.12s,box-shadow 0.12s}
 .brd-pick-card:hover{border-color:#534AB7;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 .brd-pick-card-ph{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#e6e4dc}
@@ -1102,13 +1104,15 @@ async function onNotifClick(id, ev) {
       var sec = document.getElementById('rcSection');
       if (sec) sec.classList.add('open');
     }, 300);
-  } else if ((n.type === 'new_board' || n.type === 'new_board_comment') && n.board_id) {
-    // Open the boards view and select the referenced board. showBoardsView
-    // loads the boards list, then we explicitly select the target board.
-    var tabBoards = document.getElementById('tabBoards');
-    await showBoardsView(tabBoards);
-    if (S.boards.some(function(b){ return b.id === n.board_id; })) {
-      await selectBoard(n.board_id);
+  } else if ((n.type === 'new_board' || n.type === 'new_board_comment')) {
+    // board_id may live on the column (if migration applied) or in meta (always)
+    var bId = n.board_id || (n.meta && n.meta.board_id);
+    if (bId) {
+      var tabBoards = document.getElementById('tabBoards');
+      await showBoardsView(tabBoards);
+      if (S.boards.some(function(b){ return b.id === bId; })) {
+        await selectBoard(bId);
+      }
     }
   } else if (n.basket_actor_id && navBasketId) {
     jumpToActor(n.basket_actor_id, navBasketId);
@@ -1158,16 +1162,28 @@ async function markAllRead() {
 
 async function createNotif(type, data) {
   if (!S.projectId) return;
+  var payload = {
+    project_id: S.projectId, type: type,
+    basket_id: data.basketId || null, basket_actor_id: data.baId || null,
+    board_id: data.boardId || null,
+    actor_name: data.actorName || null, basket_name: data.basketName || null,
+    count: data.count || 1, triggered_by: S.username, meta: data.meta || {}
+  };
   try {
-    await sb('/rest/v1/notifications', { method: 'POST', body: JSON.stringify({
-      project_id: S.projectId, type: type,
-      basket_id: data.basketId || null, basket_actor_id: data.baId || null,
-      board_id: data.boardId || null,
-      actor_name: data.actorName || null, basket_name: data.basketName || null,
-      count: data.count || 1, triggered_by: S.username, meta: data.meta || {}
-    })});
+    var res = await sb('/rest/v1/notifications', { method: 'POST', body: JSON.stringify(payload) });
     updateBadges();
-  } catch(e) {}
+    return res;
+  } catch(e) {
+    // If the board_id column doesn't exist yet (migration not applied), retry
+    // without it — meta still carries the board_id for routing/digest use.
+    if (payload.board_id) {
+      try {
+        delete payload.board_id;
+        await sb('/rest/v1/notifications', { method: 'POST', body: JSON.stringify(payload) });
+        updateBadges();
+      } catch(e2) {}
+    }
+  }
 }
 
 // ── Nauji kandidatai ───────────────────────────────────────────────────────
@@ -2240,7 +2256,11 @@ function renderBoard() {
   // until drag). The extra row beyond maxIdx provides drop space "below"
   // the last occupied row.
   html += '<div class="brd-scroll"><div class="brd-grid" id="brdGrid">';
+  // Track cells consumed by spanning categories so we don't render empty
+  // drop-targets where a wider category already sits.
+  var skipUntil = -1;
   for (var i = 0; i < totalCells; i++) {
+    if (i < skipUntil) continue;
     var cat = byCell[i];
     if (!cat) {
       // Empty cell — drop target during drag
@@ -2252,7 +2272,17 @@ function renderBoard() {
     var basket = basketsById[cat.basket_id];
     var catName = basket ? basket.name.toUpperCase() : '(pašalintas veikėjas)';
     var picksHere = picksByCat[cat.id] || [];
-    html += '<div class="brd-cat" data-cat-id="' + cat.id + '" data-cell-idx="' + i + '"'
+    // Compute horizontal span: 2 picks per natural cell-width, capped by the
+    // number of columns remaining in the current row. When there isn't enough
+    // horizontal room, span is reduced and the picks wrap downward inside the
+    // category card instead.
+    var col = i % 6;
+    var maxSpan = 6 - col;
+    var desiredSpan = Math.max(1, Math.ceil(picksHere.length / 2));
+    var span = Math.min(desiredSpan, maxSpan);
+    skipUntil = i + span;
+    var spanStyle = span > 1 ? ' style="grid-column: span ' + span + ';"' : '';
+    html += '<div class="brd-cat" data-cat-id="' + cat.id + '" data-cell-idx="' + i + '" data-span="' + span + '"' + spanStyle
       + (isOwner ? ' draggable="true" ondragstart="onCatDragStart(event,\'' + cat.id + '\')" ondragover="onCatDragOver(event)" ondragleave="onCatDragLeave(event)" ondrop="onCatDrop(event,\'' + cat.id + '\')" ondragend="onCatDragEnd(event)"' : '')
       + '>'
       + '<div class="brd-cat-head"><span class="brd-cat-name">' + esc(catName) + '</span>'
@@ -2352,7 +2382,9 @@ async function createBoard() {
       await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
     }
     showToast('Sukurtas');
-    await createNotif('new_board', { boardId: newBoard.id, meta: { board_name: newBoard.name } });
+    // board_id stored in meta as the canonical reference (works even if the
+    // notifications.board_id column migration hasn't been applied yet).
+    await createNotif('new_board', { boardId: newBoard.id, meta: { board_id: newBoard.id, board_name: newBoard.name } });
     await loadBoards();
     S.activeBoardId = newBoard.id;
     renderSidebar();
@@ -2696,8 +2728,9 @@ async function submitBoardComment() {
       list.insertAdjacentHTML('beforeend', brdCommentHtml(newCmt));
       list.scrollTop = list.scrollHeight;
     }
-    // Fire notification for the team (filtered by pref_boards on the digest side)
-    await createNotif('new_board_comment', { boardId: d.board.id, meta: { board_name: d.board.name } });
+    // Fire notification for the team — board_id and comment text included
+    // in meta so the digest can render the comment without joining tables.
+    await createNotif('new_board_comment', { boardId: d.board.id, meta: { board_id: d.board.id, board_name: d.board.name, text: content } });
   } catch(e) { showToast('Nepavyko išsiųsti'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; } }
 }
