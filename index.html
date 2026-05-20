@@ -131,6 +131,9 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .mv-select{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;cursor:pointer;transition:border-color 0.12s}
 .mv-select:focus{border-color:#534AB7;background:#fff}
 .mv-hint{font-size:10px;color:#888780;margin-top:6px;line-height:1.5}
+/* Atrinkti section banner (Task 6) */
+.atr-sec{margin:12px 14px 4px;padding:6px 12px;background:linear-gradient(90deg,#f0eeff 0%,#fafaf7 80%);border:0.5px solid #d4cef5;border-radius:6px;display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#534AB7;font-weight:600;flex-shrink:0}
+.atr-sec svg{width:13px;height:13px;color:#534AB7}
 /* Reference comments section (basket-level thread, below header) */
 .rc-section{margin:8px 14px 0;border:0.5px solid #d3d1c7;border-radius:8px;background:#fafaf7;flex-shrink:0}
 .rc-toggle{width:100%;display:flex;align-items:center;gap:7px;padding:8px 12px;background:none;border:none;cursor:pointer;color:#1a1a18;font-family:inherit;font-size:11px;text-align:left;border-radius:8px;transition:background 0.1s}
@@ -626,6 +629,8 @@ async function loadData() {
     }
     S.projectId = projs[0].id;
     S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&removed_from_agency=eq.false&select=id,name,basket_date,actor_count,sort_order&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    detectAtrinkti();
+    await computeAllBasketCounts();
     renderSidebar();
     updateBadges();
     // Route to the view the user had open
@@ -645,11 +650,71 @@ async function loadData() {
 }
 function setSyncTxt(t) { document.getElementById('syncBtn').textContent = t; }
 
+// ── Atrinkti merge (Task 6) ────────────────────────────────────────────────
+// Agency convention: a basket whose name ends with "atrinkti" or "atrinktos"
+// is the shortlisted subset of its parent character. We hide atrinkti baskets
+// from the sidebar and merge their candidates into the parent basket view
+// under an "Atrinkti" section at the top. Candidates that exist in both
+// parent and atrinkti are shown only in the Atrinkti section.
+function detectAtrinkti() {
+  var re = /^(.+?)\s+atrinkt(?:i|os)\s*$/i;
+  // Build a lowercase-name → basket map for parent lookup
+  var byName = {};
+  S.baskets.forEach(function(b){ byName[b.name.trim().toLowerCase()] = b; });
+  // Reset any prior pairing flags (re-runs cleanly on reload)
+  S.baskets.forEach(function(b){
+    b.is_atrinkti = false;
+    b.parent_basket_id = null;
+    b.atrinkti_basket_id = null;
+    b.atrinkti_count = 0;
+  });
+  S.baskets.forEach(function(b){
+    var m = b.name.match(re);
+    if (!m) return;
+    var parentName = m[1].trim().toLowerCase();
+    var parent = byName[parentName];
+    if (parent && parent.id !== b.id) {
+      b.is_atrinkti = true;
+      b.parent_basket_id = parent.id;
+      parent.atrinkti_basket_id = b.id;
+    }
+  });
+}
+
+// Replace baskets.actor_count (which is the raw agency count and drifts
+// when manual rows are added) with the actual unique actor count from DB,
+// merged across atrinkti pairs.
+async function computeAllBasketCounts() {
+  if (!S.baskets || !S.baskets.length) return;
+  try {
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=basket_id,actor_id');
+    var byBasket = {};
+    rows.forEach(function(r){
+      if (!byBasket[r.basket_id]) byBasket[r.basket_id] = new Set();
+      if (r.actor_id) byBasket[r.basket_id].add(r.actor_id);
+    });
+    S.baskets.forEach(function(b){
+      var own = byBasket[b.id] || new Set();
+      if (b.atrinkti_basket_id) {
+        var atr = byBasket[b.atrinkti_basket_id] || new Set();
+        var u = new Set(own);
+        atr.forEach(function(x){ u.add(x); });
+        b.actor_count = u.size;
+        b.atrinkti_count = atr.size;
+      } else {
+        b.actor_count = own.size;
+      }
+    });
+  } catch(e) { /* keep raw counts if query fails */ }
+}
+
 // ── Sidebar ────────────────────────────────────────────────────────────────
 function renderSidebar() {
   var list = document.getElementById('sidebarList');
-  if (!S.baskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
-  list.innerHTML = S.baskets.map(function(b) {
+  // Atrinkti baskets are merged into their parent and never shown standalone
+  var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti; });
+  if (!sbBaskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
+  list.innerHTML = sbBaskets.map(function(b) {
     return '<div class="sb-item ' + (b.id === S.activeBasketId && S.view === 'basket' ? 'act' : '') + '"'
       + ' draggable="true"'
       + ' data-id="' + b.id + '"'
@@ -675,10 +740,26 @@ async function updateBadges() {
   } catch(e) {}
   // Nauji kandidatai badge — count basket_actors not in seenActors set.
   // Always-visible badge, not just when the tab is open.
+  // Dedup by actor_id across atrinkti pairs so a candidate present in both
+  // parent and atrinkti isn't double-counted.
   try {
     if (!S.baskets || !S.baskets.length) return;
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id');
-    var newCount = rows.filter(function(r){ return !S.seenActors.has(r.id); }).length;
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id,basket_id,actor_id');
+    // Build pair map for dedup: actor_id+parent_basket_key → seen
+    var parentOf = {};
+    S.baskets.forEach(function(b){
+      if (b.is_atrinkti && b.parent_basket_id) parentOf[b.id] = b.parent_basket_id;
+      else parentOf[b.id] = b.id;
+    });
+    var seenPairs = new Set();
+    var newCount = 0;
+    rows.forEach(function(r){
+      if (S.seenActors.has(r.id)) return;
+      var key = (parentOf[r.basket_id] || r.basket_id) + ':' + r.actor_id;
+      if (seenPairs.has(key)) return;
+      seenPairs.add(key);
+      newCount++;
+    });
     var nb = document.getElementById('naukBadge');
     if (nb) { nb.textContent = newCount; nb.style.display = newCount ? '' : 'none'; }
   } catch(e) {}
@@ -815,22 +896,29 @@ async function onNotifClick(id, ev) {
   if (!n) return;
   // Mark as read (server + local), then navigate
   await markRead(id, true);
+  // If notification points to an atrinkti basket, re-route to the parent
+  // so the user lands in the merged view that's actually visible.
+  var navBasketId = n.basket_id;
+  if (navBasketId) {
+    var bRef = S.baskets.find(function(b){ return b.id === navBasketId; });
+    if (bRef && bRef.is_atrinkti && bRef.parent_basket_id) navBasketId = bRef.parent_basket_id;
+  }
   if (n.type === 'new_actors_batch') {
     switchView('nauji');
-  } else if (n.type === 'new_char_refs' && n.basket_id) {
-    selectBasket(n.basket_id);
-  } else if (n.type === 'new_ref_comment' && n.basket_id) {
-    selectBasket(n.basket_id);
+  } else if (n.type === 'new_char_refs' && navBasketId) {
+    selectBasket(navBasketId);
+  } else if (n.type === 'new_ref_comment' && navBasketId) {
+    selectBasket(navBasketId);
     // Auto-expand the reference comments panel so the new comment is visible
     setTimeout(function(){
       S.refComExpanded = true;
       var sec = document.getElementById('rcSection');
       if (sec) sec.classList.add('open');
     }, 300);
-  } else if (n.basket_actor_id && n.basket_id) {
-    jumpToActor(n.basket_actor_id, n.basket_id);
-  } else if (n.basket_id) {
-    selectBasket(n.basket_id);
+  } else if (n.basket_actor_id && navBasketId) {
+    jumpToActor(n.basket_actor_id, navBasketId);
+  } else if (navBasketId) {
+    selectBasket(navBasketId);
   }
 }
 
@@ -918,9 +1006,19 @@ function renderNauji(newOnes) {
   var html = '<div class="mhead"><div><div class="mh-title">Nauji kandidatai</div><div class="mh-sub">' + newOnes.length + ' kiti</div></div>'
     + (newOnes.length ? '<button class="fl" onclick="markNaujiRead()">Žymėti kaip peržiūrėta</button>' : '') + '</div>';
   if (!newOnes.length) { html += '<div class="empty-state">Naujų kandidatų nėra</div>'; document.getElementById('mainArea').innerHTML = html; return; }
-  S.baskets.forEach(function(basket) {
-    var bNew = newOnes.filter(function(r){ return r.basket_id === basket.id; });
+  // Iterate parent baskets only; new candidates from atrinkti basket appear under parent
+  S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
+    var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
+    var bNew = newOnes.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0; });
     if (!bNew.length) return;
+    // Dedup by actor_id (rare: same candidate new in both parent and atrinkti)
+    var seen = new Set();
+    bNew = bNew.filter(function(r){
+      var aid = r.actors && r.actors.id;
+      if (!aid) return true;
+      if (seen.has(aid)) return false;
+      seen.add(aid); return true;
+    });
     html += '<div style="padding:0 14px"><div class="nauji-char-row" onclick="selectBasket(\'' + basket.id + '\')">'
       + '<span class="nauji-char-nm">' + basket.name.toUpperCase() + '</span>'
       + '<span class="nauji-cnt">' + bNew.length + ' nauji</span></div></div><div class="grid" style="padding-top:0">';
@@ -933,6 +1031,7 @@ function renderNauji(newOnes) {
       var hidCls = r.hidden ? ' is-hidden' : '';
       var manCls = r.is_manual ? ' has-manual' : '';
       var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
+      // Always navigate to PARENT basket (atrinkti baskets are merged-only)
       html += '<div class="card isnew' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
     });
     html += '</div>';
@@ -1000,26 +1099,33 @@ async function selectBasket(id) {
   closePanel(); renderSidebar(); closeSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    var parentBasket = S.baskets.find(function(b){ return b.id === id; });
+    var atrId = parentBasket && parentBasket.atrinkti_basket_id;
+    // Fetch from both parent and atrinkti when paired — single query, two basket_ids
+    var basketIdsToFetch = atrId ? [id, atrId] : [id];
+    var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
-      var extRows = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,availability,notes,videos');
+      var extRows = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,availability,notes,videos');
       extRows.forEach(function(r){ ext[r.id] = r; });
     } catch(e) {}
     var actorIds = bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean);
     var photos = [];
     if (actorIds.length) photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=id,actor_id,storage_path,is_primary&order=is_primary.desc');
-    // Character reference photos for this basket
+    // Character references and ref-thread comments stay tied to the PARENT basket only
+    // (atrinkti baskets share the parent's references — refs are character-level)
     try {
       var refs = await sb('/rest/v1/character_refs?basket_id=eq.' + id + '&select=id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
       S.charRefs[id] = refs;
     } catch(e) { S.charRefs[id] = []; }
-    // Reference-thread comments for this basket
     try {
       var rcs = await sb('/rest/v1/comments?basket_id=eq.' + id + '&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
       S.refComments[id] = rcs;
     } catch(e) { S.refComments[id] = []; }
-    S.basketActors = bas.map(function(ba) {
+
+    // Map raw rows into the standard basketActors shape, marking which basket
+    // they live in.
+    var mapped = bas.map(function(ba) {
       return {
         basket_actor_id: ba.id, actor: ba.actors, status: ba.status || 'pending',
         comment_count: (ba.comments || []).length, is_new: !S.seenActors.has(ba.id),
@@ -1031,8 +1137,22 @@ async function selectBasket(id) {
         is_manual: !!ba.is_manual,
         source_basket_actor_id: ba.source_basket_actor_id || null,
         removed_from_agency: !!ba.removed_from_agency,
+        _in_atrinkti: atrId ? (ba.basket_id === atrId) : false,
       };
     });
+
+    if (atrId) {
+      // Dedup by actor_id: when a candidate exists in BOTH parent and atrinkti,
+      // keep only the atrinkti row (per spec "displayed in atrinkti section only")
+      var atrActorIds = new Set();
+      mapped.forEach(function(m){ if (m._in_atrinkti && m.actor && m.actor.id) atrActorIds.add(m.actor.id); });
+      mapped = mapped.filter(function(m){
+        if (m._in_atrinkti) return true;
+        return !(m.actor && atrActorIds.has(m.actor.id));
+      });
+    }
+
+    S.basketActors = mapped;
     renderGrid();
   } catch(e) { document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti kandidatų</div>'; }
 }
@@ -1046,10 +1166,14 @@ function renderGrid() {
   var allActors = S.basketActors.filter(function(a){ return !a.removed_from_agency; });
   var actors  = S.showHidden ? allActors : allActors.filter(function(a){ return !a.hidden; });
   var hidCnt  = allActors.filter(function(a){ return a.hidden; }).length;
-  var newOnes = actors.filter(function(a){ return a.is_new; });
-  var taip    = actors.filter(function(a){ return !a.is_new && a.status === 'yes'; });
-  var galbut  = actors.filter(function(a){ return !a.is_new && a.status === 'maybe'; });
-  var pending = actors.filter(function(a){ return !a.is_new && (a.status === 'pending' || !a.status); });
+  // Atrinkti section (Task 6): candidates living in the paired atrinkti basket
+  // appear at the top in their own section; everything else uses normal status grouping.
+  var atrinkti = actors.filter(function(a){ return a._in_atrinkti; });
+  var nonAtr   = actors.filter(function(a){ return !a._in_atrinkti; });
+  var newOnes = nonAtr.filter(function(a){ return a.is_new; });
+  var taip    = nonAtr.filter(function(a){ return !a.is_new && a.status === 'yes'; });
+  var galbut  = nonAtr.filter(function(a){ return !a.is_new && a.status === 'maybe'; });
+  var pending = nonAtr.filter(function(a){ return !a.is_new && (a.status === 'pending' || !a.status); });
   var f = S.filter;
   var refs = S.charRefs[S.activeBasketId] || [];
   var refsHtml = '<div class="cref-strip">';
@@ -1067,7 +1191,7 @@ function renderGrid() {
   refsHtml += '</div>';
 
   var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
-    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
+    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (atrinkti.length ? ' · ' + atrinkti.length + ' atrinkti' : '') + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
     + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
@@ -1076,6 +1200,17 @@ function renderGrid() {
     + '</div></div>';
   // Reference-thread comments section — collapsible, sits between header and grid
   html += renderRefCommentsSection(S.activeBasketId);
+  // Atrinkti section at top — always rendered when atrinkti basket exists,
+  // regardless of filter (the filter applies to status, atrinkti is orthogonal)
+  if (atrinkti.length) {
+    html += '<div class="atr-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Atrinkti · ' + atrinkti.length + '</div>';
+    // Apply current status filter inside atrinkti as well
+    var atrFiltered = atrinkti;
+    if (f === 'taip')   atrFiltered = atrinkti.filter(function(a){ return a.status === 'yes'; });
+    if (f === 'galbut') atrFiltered = atrinkti.filter(function(a){ return a.status === 'maybe'; });
+    if (atrFiltered.length) html += '<div class="grid">' + atrFiltered.map(cardHtml).join('') + '</div>';
+    else html += '<div class="ov-empty" style="padding:4px 14px 12px">Pagal filtrą nėra atrinktų</div>';
+  }
   if (newOnes.length && f === 'all') {
     html += '<div class="new-bar"><div class="nb-l"><div class="nb-dot"></div><div class="nb-txt">' + newOnes.length + ' naujai pridėti</div></div>'
       + '<button class="nb-btn" onclick="dismissNew()">Žymėti kaip peržiūrėta</button></div>'
@@ -1412,9 +1547,10 @@ function openMoveModal(baId) {
   if (!ba) return;
   S.moveModalBaId = baId;
   var sel = document.getElementById('mvTarget');
-  // Populate target basket dropdown — exclude current basket
+  // Populate target basket dropdown — exclude current basket AND atrinkti baskets
+  // (atrinkti baskets are never selectable targets; moves always land in the parent)
   sel.innerHTML = S.baskets
-    .filter(function(b){ return b.id !== S.activeBasketId; })
+    .filter(function(b){ return b.id !== S.activeBasketId && !b.is_atrinkti; })
     .map(function(b){ return '<option value="' + b.id + '">' + esc(b.name.toUpperCase()) + '</option>'; })
     .join('');
   // Reset action to "copy" by default
@@ -1449,9 +1585,14 @@ async function confirmMove() {
   var targetId = document.getElementById('mvTarget').value;
   var action = document.querySelector('input[name="mvAction"]:checked').value;
   if (!targetId) { showToast('Pasirinkite veikėją'); return; }
-  // Duplicate check — does this actor already exist in target basket?
+  // Duplicate check — does this actor already exist in target basket
+  // OR its paired atrinkti basket? (you can't manually re-add something
+  // that's already in the merged view)
   try {
-    var existing = await sb('/rest/v1/basket_actors?basket_id=eq.' + targetId + '&actor_id=eq.' + ba.actor.id + '&select=id&limit=1');
+    var checkBasketIds = [targetId];
+    var target = S.baskets.find(function(b){ return b.id === targetId; });
+    if (target && target.atrinkti_basket_id) checkBasketIds.push(target.atrinkti_basket_id);
+    var existing = await sb('/rest/v1/basket_actors?basket_id=in.(' + checkBasketIds.join(',') + ')&actor_id=eq.' + ba.actor.id + '&select=id&limit=1');
     if (Array.isArray(existing) && existing.length) {
       showToast('Šis aktorius jau yra pasirinktame veikėjuje');
       return;
@@ -1612,8 +1753,18 @@ async function showOverview(type, btn) {
       var ts = type === 'patvirtinti' ? 'yes' : 'maybe';
       var lbl = type === 'patvirtinti' ? 'Patvirtinti aktoriai' : 'Galbūt kandidatai';
       html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">' + lbl + ' · Visi veikėjai</div>';
-      S.baskets.forEach(function(basket) {
-        var filt = rows.filter(function(r){ return r.basket_id === basket.id && r.status === ts; });
+      // Iterate parent baskets only; atrinkti baskets are merged below
+      S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
+        var ownRows = rows.filter(function(r){ return r.basket_id === basket.id && r.status === ts; });
+        var filt = ownRows;
+        // If basket has paired atrinkti, merge in atrinkti rows (atrinkti wins for dups)
+        if (basket.atrinkti_basket_id) {
+          var atrRows = rows.filter(function(r){ return r.basket_id === basket.atrinkti_basket_id && r.status === ts; });
+          var atrActorIds = new Set();
+          atrRows.forEach(function(r){ if (r.actors && r.actors.id) atrActorIds.add(r.actors.id); });
+          var ownDeduped = ownRows.filter(function(r){ return !(r.actors && atrActorIds.has(r.actors.id)); });
+          filt = atrRows.concat(ownDeduped);
+        }
         html += '<div class="ov-char-lbl">' + basket.name.toUpperCase() + '</div>';
         if (filt.length) {
           html += '<div class="grid-sm">';
@@ -1625,7 +1776,9 @@ async function showOverview(type, btn) {
             var hidCls = r.hidden ? ' is-hidden' : '';
             var manCls = r.is_manual ? ' has-manual' : '';
             var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
-            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
+            // Navigate to the PARENT basket (atrinkti baskets aren't visible standalone)
+            var navBasketId = basket.id;
+            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + navBasketId + '\')">' + img + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
           });
           html += '</div>';
         } else html += '<div class="ov-empty">' + (type === 'patvirtinti' ? 'Nėra patvirtintų' : 'Nėra') + '</div>';
@@ -1633,11 +1786,20 @@ async function showOverview(type, btn) {
     } else {
       html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Veikėjai be patvirtinto aktoriaus</div>';
       var any = false;
-      S.baskets.forEach(function(basket) {
-        if (rows.filter(function(r){ return r.basket_id === basket.id && r.status === 'yes'; }).length) return;
+      S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
+        // For "no approved" check, consider both parent and atrinkti
+        var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
+        var hasYes = rows.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0 && r.status === 'yes'; }).length > 0;
+        if (hasYes) return;
         any = true;
-        var tot = rows.filter(function(r){ return r.basket_id === basket.id; }).length;
-        var rev = rows.filter(function(r){ return r.basket_id === basket.id && (r.status === 'yes' || r.status === 'maybe'); }).length;
+        // Count unique candidates across the pair (dedup by actor_id)
+        var pairRows = rows.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0; });
+        var seenAct = new Set();
+        pairRows.forEach(function(r){ if (r.actors && r.actors.id) seenAct.add(r.actors.id); });
+        var tot = seenAct.size;
+        var revAct = new Set();
+        pairRows.forEach(function(r){ if ((r.status === 'yes' || r.status === 'maybe') && r.actors && r.actors.id) revAct.add(r.actors.id); });
+        var rev = revAct.size;
         html += '<div class="ov-row-txt" onclick="selectBasket(\'' + basket.id + '\')">'
           + '<div class="ov-char">' + basket.name.toUpperCase() + '</div>'
           + '<div class="ov-stat">' + tot + ' kandidatai · ' + rev + ' peržiūrėta</div></div>';
