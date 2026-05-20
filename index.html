@@ -1103,6 +1103,8 @@ function nIcon(t) {
     new_ref_comment:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="8" cy="11" r="1" fill="currentColor"/><circle cx="13" cy="11" r="1" fill="currentColor"/><circle cx="18" cy="11" r="1" fill="currentColor"/></svg>',
     new_board:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     new_board_comment:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h.01"/><path d="M13 10h.01"/><path d="M17 10h.01"/></svg>',
+    candidate_moved:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>',
+    candidate_copied: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
   };
   return m[t] || m.new_comment;
 }
@@ -1127,6 +1129,16 @@ function nText(n) {
   if (n.type === 'new_board_comment') {
     var bn2 = esc(((n.meta && n.meta.board_name) || '').toUpperCase());
     return '<strong>' + by + '</strong> pakomentavo derinį' + (bn2 ? ' <strong>' + bn2 + '</strong>' : '');
+  }
+  if (n.type === 'candidate_moved') {
+    var src = esc(((n.meta && n.meta.source_basket_name) || '').toUpperCase());
+    var dst = b; // basket_name already uppercased above
+    return '<strong>' + by + '</strong> perkėlė <strong>' + a + '</strong> iš <strong>' + src + '</strong> į <strong>' + dst + '</strong>';
+  }
+  if (n.type === 'candidate_copied') {
+    var src2 = esc(((n.meta && n.meta.source_basket_name) || '').toUpperCase());
+    var dst2 = b;
+    return '<strong>' + by + '</strong> nukopijavo <strong>' + a + '</strong> iš <strong>' + src2 + '</strong> į <strong>' + dst2 + '</strong>';
   }
   return (n.meta && n.meta.text) || 'Pranešimas';
 }
@@ -1947,6 +1959,30 @@ async function confirmMove() {
     }
     closeMoveModal();
     var targetName = (S.baskets.find(function(b){ return b.id === targetId; }) || {}).name || '';
+    // Fire notification — the team sees that a candidate was moved or copied
+    // between characters. The notification points to the TARGET basket (so a
+    // click navigates there). source_basket_name lives in meta so nText/digest
+    // can render "X moved Y from SOURCE to TARGET". When the source row is
+    // in an atrinkti basket, we resolve to the parent character's name so the
+    // notification matches what the user sees in the sidebar (atrinkti
+    // baskets are merged into their parent view).
+    var sourceBaBasket = S.baskets.find(function(b){ return b.id === ba.basket_id; });
+    var sourceName = '';
+    if (sourceBaBasket) {
+      if (sourceBaBasket.is_atrinkti && !sourceBaBasket.is_atrinkti_orphan && sourceBaBasket.parent_basket_id) {
+        var parentBa = S.baskets.find(function(b){ return b.id === sourceBaBasket.parent_basket_id; });
+        sourceName = parentBa ? parentBa.name : sourceBaBasket.name;
+      } else {
+        sourceName = sourceBaBasket.name;
+      }
+    }
+    await createNotif(action === 'move' ? 'candidate_moved' : 'candidate_copied', {
+      baId: baId,           // source BA — digest uses this for the actor's photo strip
+      basketId: targetId,
+      basketName: targetName,
+      actorName: ba.actor.first_name,
+      meta: { source_basket_name: sourceName, action: action }
+    });
     showToast(action === 'move' ? ('Perkelta į ' + targetName.toUpperCase()) : ('Kopijuota į ' + targetName.toUpperCase()));
     // Bump target basket actor count locally so sidebar reflects it without full reload
     var tgt = S.baskets.find(function(b){ return b.id === targetId; });
