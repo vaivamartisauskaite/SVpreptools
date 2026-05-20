@@ -120,6 +120,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .card.has-manual .cmt-dot{right:30px}
 .ph-manual{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#534AB7;background:#f0eeff;border:0.5px solid #534AB7;border-radius:10px;padding:1px 7px;margin-top:4px;cursor:help}
 .ph-manual svg{width:10px;height:10px}
+.ph-removed{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#c0392b;background:#fdecea;border:0.5px solid #c0392b;border-radius:10px;padding:1px 7px;margin-top:4px;margin-left:4px;cursor:help}
+.ph-removed svg{width:10px;height:10px}
 /* Move/copy modal */
 .mv-row{display:flex;gap:8px;margin-bottom:4px}
 .mv-row label{flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:6px;cursor:pointer;font-size:11px;color:#1a1a18;transition:all 0.12s;background:#f5f4f0}
@@ -634,7 +636,7 @@ async function updateBadges() {
   // Always-visible badge, not just when the tab is open.
   try {
     if (!S.baskets || !S.baskets.length) return;
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id');
     var newCount = rows.filter(function(r){ return !S.seenActors.has(r.id); }).length;
     var nb = document.getElementById('naukBadge');
     if (nb) { nb.textContent = newCount; nb.style.display = newCount ? '' : 'none'; }
@@ -840,7 +842,7 @@ async function loadNauji() {
   try {
     // Fetch basket_actors with actor info — DO NOT embed actor_photos here
     // (it does not reliably resolve through the join in PostgREST)
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,basket_id,status,hidden,is_manual,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id,basket_id,status,hidden,is_manual,actors(id,first_name,agency_id)');
     if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     var newOnes = rows.filter(function(r){ return !S.seenActors.has(r.id); });
     // Fetch photos separately
@@ -947,7 +949,7 @@ async function selectBasket(id) {
   closePanel(); renderSidebar(); closeSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
       var extRows = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,availability,notes,videos');
@@ -972,6 +974,7 @@ async function selectBasket(id) {
         hidden: !!ba.hidden,
         is_manual: !!ba.is_manual,
         source_basket_actor_id: ba.source_basket_actor_id || null,
+        removed_from_agency: !!ba.removed_from_agency,
       };
     });
     renderGrid();
@@ -981,7 +984,10 @@ async function selectBasket(id) {
 // ── Basket grid ────────────────────────────────────────────────────────────
 function renderGrid() {
   var basket  = S.baskets.find(function(b){ return b.id === S.activeBasketId; });
-  var allActors = S.basketActors;
+  // Removed-from-agency rows are filtered out completely (no toggle).
+  // They're still in S.basketActors so deep links from notifications work,
+  // and openActor renders them with a "Pašalintas" badge.
+  var allActors = S.basketActors.filter(function(a){ return !a.removed_from_agency; });
   var actors  = S.showHidden ? allActors : allActors.filter(function(a){ return !a.hidden; });
   var hidCnt  = allActors.filter(function(a){ return a.hidden; }).length;
   var newOnes = actors.filter(function(a){ return a.is_new; });
@@ -1358,7 +1364,7 @@ async function showOverview(type, btn) {
   closePanel(); closeSidebar(); renderSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,status,basket_id,hidden,is_manual,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id,status,basket_id,hidden,is_manual,actors(id,first_name,agency_id)');
     if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     // Photos separately
     var actorIds = Array.from(new Set(rows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
@@ -1452,6 +1458,7 @@ async function openActor(baId) {
     + '<div class="ph-name">' + esc((actor && actor.first_name) || '—') + '</div>'
     + '<div class="ph-id">ID ' + esc((actor && actor.agency_id) || '—') + ' · ' + esc((basket && basket.name && basket.name.toUpperCase()) || '') + '</div>'
     + (ba.is_manual ? '<div class="ph-manual" title="Šis kandidatas pridėtas rankiniu būdu CastApp\'e (ne iš ActorsAgency)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>Rankinis įrašas</span></div>' : '')
+    + (ba.removed_from_agency ? '<div class="ph-removed" title="Šis kandidatas pašalintas iš ActorsAgency krepšelio — duomenys išlieka peržiūrai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg><span>Pašalintas iš agentūros</span></div>' : '')
     + '</div><button class="ph-close" onclick="closePanel()">✕</button></div>'
     + '<div class="ph-actions">'
     + '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div>'
