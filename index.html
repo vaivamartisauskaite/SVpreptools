@@ -559,6 +559,7 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
       <label class="us-check"><input type="checkbox" id="pI"> atnaujintą informaciją</label>
       <label class="us-check"><input type="checkbox" id="pV"> pridėtus vaizdo įrašus</label>
       <label class="us-check"><input type="checkbox" id="pS"> pakeistą kandidato statusą</label>
+      <label class="us-check"><input type="checkbox" id="pB"> aktorių derinius (nauji deriniai ir komentarai juose)</label>
     </div>
     <div class="us-group">El. laiškai:</div>
     <label class="us-radio"><input type="radio" name="freq" id="fDay" value="kasdien"> kasdien (santrauka)</label>
@@ -721,7 +722,7 @@ window.onload = async function() {
   var token  = params.get('t');
   if (!token) { showInvalid('Nuoroda neturi prieigos rakto.<br>Paprašykite administratoriaus atsiųsti jūsų asmeninę nuorodą.'); return; }
   try {
-    var users = await sb('/rest/v1/app_users?token=eq.' + encodeURIComponent(token) + '&select=id,name,email,token,pref_actors,pref_comments,pref_info,pref_videos,pref_status,frequency');
+    var users = await sb('/rest/v1/app_users?token=eq.' + encodeURIComponent(token) + '&select=id,name,email,token,pref_actors,pref_comments,pref_info,pref_videos,pref_status,pref_boards,frequency');
     if (!Array.isArray(users) || !users.length) { showInvalid('Nuoroda neatpažinta.<br>Paprašykite administratoriaus atsiųsti naują nuorodą.'); return; }
     var u = users[0];
     S.username  = u.name;
@@ -1030,6 +1031,8 @@ function nIcon(t) {
     new_video:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
     new_char_refs:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
     new_ref_comment:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="8" cy="11" r="1" fill="currentColor"/><circle cx="13" cy="11" r="1" fill="currentColor"/><circle cx="18" cy="11" r="1" fill="currentColor"/></svg>',
+    new_board:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    new_board_comment:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h.01"/><path d="M13 10h.01"/><path d="M17 10h.01"/></svg>',
   };
   return m[t] || m.new_comment;
 }
@@ -1047,6 +1050,14 @@ function nText(n) {
   if (n.type === 'new_video')   return 'Pridėtas naujas video: <strong>' + a + '</strong>' + loc;
   if (n.type === 'new_char_refs') return '<strong>' + by + '</strong> pridėjo <strong>' + (n.count || '') + '</strong> reference' + ((n.count||0) === 1 ? '' : 's') + ' veikėjui <strong>' + b + '</strong>';
   if (n.type === 'new_ref_comment') return '<strong>' + by + '</strong> pakomentavo apie references veikėjui <strong>' + b + '</strong>';
+  if (n.type === 'new_board') {
+    var bn = esc(((n.meta && n.meta.board_name) || '').toUpperCase());
+    return '<strong>' + by + '</strong> sukūrė naują aktorių derinį' + (bn ? ' <strong>' + bn + '</strong>' : '');
+  }
+  if (n.type === 'new_board_comment') {
+    var bn2 = esc(((n.meta && n.meta.board_name) || '').toUpperCase());
+    return '<strong>' + by + '</strong> pakomentavo derinį' + (bn2 ? ' <strong>' + bn2 + '</strong>' : '');
+  }
   return (n.meta && n.meta.text) || 'Pranešimas';
 }
 
@@ -1075,6 +1086,14 @@ async function onNotifClick(id, ev) {
       var sec = document.getElementById('rcSection');
       if (sec) sec.classList.add('open');
     }, 300);
+  } else if ((n.type === 'new_board' || n.type === 'new_board_comment') && n.board_id) {
+    // Open the boards view and select the referenced board. showBoardsView
+    // loads the boards list, then we explicitly select the target board.
+    var tabBoards = document.getElementById('tabBoards');
+    await showBoardsView(tabBoards);
+    if (S.boards.some(function(b){ return b.id === n.board_id; })) {
+      await selectBoard(n.board_id);
+    }
   } else if (n.basket_actor_id && navBasketId) {
     jumpToActor(n.basket_actor_id, navBasketId);
   } else if (navBasketId) {
@@ -1127,6 +1146,7 @@ async function createNotif(type, data) {
     await sb('/rest/v1/notifications', { method: 'POST', body: JSON.stringify({
       project_id: S.projectId, type: type,
       basket_id: data.basketId || null, basket_actor_id: data.baId || null,
+      board_id: data.boardId || null,
       actor_name: data.actorName || null, basket_name: data.basketName || null,
       count: data.count || 1, triggered_by: S.username, meta: data.meta || {}
     })});
@@ -2316,6 +2336,7 @@ async function createBoard() {
       await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
     }
     showToast('Sukurtas');
+    await createNotif('new_board', { boardId: newBoard.id, meta: { board_name: newBoard.name } });
     await loadBoards();
     S.activeBoardId = newBoard.id;
     renderSidebar();
@@ -2659,6 +2680,8 @@ async function submitBoardComment() {
       list.insertAdjacentHTML('beforeend', brdCommentHtml(newCmt));
       list.scrollTop = list.scrollHeight;
     }
+    // Fire notification for the team (filtered by pref_boards on the digest side)
+    await createNotif('new_board_comment', { boardId: d.board.id, meta: { board_name: d.board.name } });
   } catch(e) { showToast('Nepavyko išsiųsti'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; } }
 }
@@ -3100,7 +3123,7 @@ async function deleteRefComment(commentId, refId) {
 async function openUserModal() {
   document.getElementById('usEmail').textContent = S.userEmail || S.username;
   try {
-    var rows = await sb('/rest/v1/app_users?id=eq.' + S.userId + '&select=pref_actors,pref_comments,pref_info,pref_videos,pref_status,frequency');
+    var rows = await sb('/rest/v1/app_users?id=eq.' + S.userId + '&select=pref_actors,pref_comments,pref_info,pref_videos,pref_status,pref_boards,frequency');
     if (rows && rows[0]) {
       var u = rows[0];
       document.getElementById('pA').checked = !!u.pref_actors;
@@ -3108,6 +3131,7 @@ async function openUserModal() {
       document.getElementById('pI').checked = !!u.pref_info;
       document.getElementById('pV').checked = !!u.pref_videos;
       document.getElementById('pS').checked = !!u.pref_status;
+      document.getElementById('pB').checked = u.pref_boards !== false; // default true
       // Frequency: legacy 'iškart' users are auto-migrated to 'kasdien' display
       // (the instant-email path was removed; they keep getting the digest).
       // Only 'išjungta' explicitly opts out.
@@ -3127,6 +3151,7 @@ async function saveUserPrefs() {
     pref_info:     document.getElementById('pI').checked,
     pref_videos:   document.getElementById('pV').checked,
     pref_status:   document.getElementById('pS').checked,
+    pref_boards:   document.getElementById('pB').checked,
     frequency:     freq ? freq.value : 'kasdien'
   };
   try {
@@ -3162,7 +3187,7 @@ async function openAdminPanel() {
   var body = document.getElementById('adminBody');
   body.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
-    var users = await sb('/rest/v1/app_users?select=id,name,email,token,pref_actors,pref_comments,pref_info,pref_videos,pref_status,frequency&order=created_at.asc');
+    var users = await sb('/rest/v1/app_users?select=id,name,email,token,pref_actors,pref_comments,pref_info,pref_videos,pref_status,pref_boards,frequency&order=created_at.asc');
     renderAdminBody(users);
   } catch(e) { body.innerHTML = '<div style="color:#c0392b;font-size:12px">Klaida: ' + e.message + '</div>'; }
 }
@@ -3189,6 +3214,7 @@ function renderAdminBody(users) {
       if (u.pref_info)     prefs.push('Info');
       if (u.pref_videos)   prefs.push('Video');
       if (u.pref_status)   prefs.push('Statusas');
+      if (u.pref_boards !== false) prefs.push('Deriniai');
       html += '<div class="user-row">'
         + '<div class="user-info">'
         + '<div class="user-name">' + esc(u.name) + '</div>'
