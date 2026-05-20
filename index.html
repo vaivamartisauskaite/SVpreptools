@@ -98,6 +98,19 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .card-ph{width:100%;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.7)}
 .card-name{padding:5px 8px 6px;font-size:11px;font-weight:500;background:#f5f4f0;color:#1a1a18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge{position:absolute;top:6px;left:6px;font-size:8px;font-weight:600;letter-spacing:0.05em;padding:2px 6px;border-radius:3px}
+/* Hide candidate toggle */
+.card.is-hidden{filter:grayscale(1);opacity:0.5}
+.card-eye{position:absolute;bottom:30px;left:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.45);border:none;color:#fff;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;transition:background 0.12s;z-index:2}
+.card-eye:hover{background:rgba(0,0,0,0.75)}
+.card-eye svg{width:13px;height:13px}
+.card:hover .card-eye{display:flex}
+.card.is-hidden .card-eye{display:flex}
+.ph-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.ph-hide-btn{font-size:10px;color:#888780;border:0.5px solid #d3d1c7;border-radius:6px;padding:4px 9px;cursor:pointer;background:#fff;transition:all 0.12s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.ph-hide-btn:hover{border-color:#888780;color:#1a1a18}
+.ph-hide-btn.is-on{color:#c0392b;border-color:#c0392b;background:#fdecea}
+.ph-hide-btn svg{width:11px;height:11px}
+.tb-icon-btn.act{color:#534AB7;background:rgba(83,74,183,0.12)}
 .b-t{background:#3B6D11;color:#C0DD97}
 .b-m{background:#854F0B;color:#FAC775}
 .cmt-dot{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600}
@@ -396,6 +409,9 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
     </div>
     <div class="tb-right">
       <div class="tb-sync" id="syncBtn" onclick="loadData()">↻ Atnaujinti</div>
+      <button class="tb-icon-btn" id="tbShowHidden" onclick="toggleShowHidden()" title="Rodyti paslėptus kandidatus">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+      </button>
       <button class="tb-user-btn" onclick="openUserModal()" title="Pranešimų nustatymai">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span class="tb-uname" id="tbUserName"></span>
@@ -457,6 +473,7 @@ var S = {
   infoModalBaId: null,
   notifications: [],
   charRefs: {}, // basket_id → array of ref rows
+  showHidden: localStorage.getItem('showHidden') === '1',
 };
 
 // ── Supabase ───────────────────────────────────────────────────────────────
@@ -501,6 +518,12 @@ function startApp() {
   document.getElementById('appShell').style.display = 'flex';
   var nameEl = document.getElementById('tbUserName');
   if (nameEl) nameEl.textContent = S.username || '';
+  // Apply persisted showHidden state to topbar button
+  var shBtn = document.getElementById('tbShowHidden');
+  if (shBtn) {
+    shBtn.classList.toggle('act', S.showHidden);
+    shBtn.title = S.showHidden ? 'Slėpti paslėptus kandidatus' : 'Rodyti paslėptus kandidatus';
+  }
   loadData();
   startRealtime();
 }
@@ -772,7 +795,8 @@ async function loadNauji() {
   try {
     // Fetch basket_actors with actor info — DO NOT embed actor_photos here
     // (it does not reliably resolve through the join in PostgREST)
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,basket_id,status,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,basket_id,status,hidden,actors(id,first_name,agency_id)');
+    if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     var newOnes = rows.filter(function(r){ return !S.seenActors.has(r.id); });
     // Fetch photos separately
     if (newOnes.length) {
@@ -808,7 +832,8 @@ function renderNauji(newOnes) {
       var agId = (r.actors && r.actors.agency_id) || 'x';
       var img = photoOrPlaceholder(photos, name, agId);
       var bst = r.status === 'yes' ? '<div class="badge b-t">Taip</div>' : r.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
-      html += '<div class="card isnew" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + '<div class="card-name">' + esc(name) + '</div></div>';
+      var hidCls = r.hidden ? ' is-hidden' : '';
+      html += '<div class="card isnew' + hidCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + '<div class="card-name">' + esc(name) + '</div></div>';
     });
     html += '</div>';
   });
@@ -875,7 +900,7 @@ async function selectBasket(id) {
   closePanel(); renderSidebar(); closeSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
       var extRows = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,availability,notes,videos');
@@ -897,6 +922,7 @@ async function selectBasket(id) {
         availability: (ext[ba.id] && ext[ba.id].availability) || '',
         notes: (ext[ba.id] && ext[ba.id].notes) || '',
         videos: (ext[ba.id] && ext[ba.id].videos) || [],
+        hidden: !!ba.hidden,
       };
     });
     renderGrid();
@@ -906,7 +932,9 @@ async function selectBasket(id) {
 // ── Basket grid ────────────────────────────────────────────────────────────
 function renderGrid() {
   var basket  = S.baskets.find(function(b){ return b.id === S.activeBasketId; });
-  var actors  = S.basketActors;
+  var allActors = S.basketActors;
+  var actors  = S.showHidden ? allActors : allActors.filter(function(a){ return !a.hidden; });
+  var hidCnt  = allActors.filter(function(a){ return a.hidden; }).length;
   var newOnes = actors.filter(function(a){ return a.is_new; });
   var taip    = actors.filter(function(a){ return !a.is_new && a.status === 'yes'; });
   var galbut  = actors.filter(function(a){ return !a.is_new && a.status === 'maybe'; });
@@ -928,7 +956,7 @@ function renderGrid() {
   refsHtml += '</div>';
 
   var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
-    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (refs.length ? ' · ' + refs.length + ' references' : '') + '</div></div>'
+    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
     + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
@@ -950,16 +978,60 @@ function renderGrid() {
 function cardHtml(a) {
   var sel = a.basket_actor_id === S.selectedBaId ? ' sel' : '';
   var isNew = a.is_new ? ' isnew' : '';
+  var hid = a.hidden ? ' is-hidden' : '';
   var name = (a.actor && a.actor.first_name) || '?';
   var agId = (a.actor && a.actor.agency_id) || 'x';
   var img = photoOrPlaceholder(a.photos || [], name, agId);
   var bst = a.status === 'yes' ? '<div class="badge b-t">Taip</div>' : a.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
   var cmt = a.comment_count > 0 ? '<div class="cmt-dot">' + a.comment_count + '</div>' : '';
   var ntag = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
-  return '<div class="card' + sel + isNew + '" onclick="openActor(\'' + a.basket_actor_id + '\')">' + img + bst + cmt + ntag + '<div class="card-name">' + esc(name) + '</div></div>';
+  var eyeIc = a.hidden
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeTitle = a.hidden ? 'Rodyti kandidatą' : 'Paslėpti kandidatą';
+  var eyeBtn = '<button class="card-eye" onclick="event.stopPropagation();toggleHidden(\'' + a.basket_actor_id + '\')" title="' + eyeTitle + '">' + eyeIc + '</button>';
+  return '<div class="card' + sel + isNew + hid + '" onclick="openActor(\'' + a.basket_actor_id + '\')">' + img + bst + cmt + ntag + eyeBtn + '<div class="card-name">' + esc(name) + '</div></div>';
 }
 
 function setFilter(f) { S.filter = f; renderGrid(); }
+
+// ── Hide candidate ─────────────────────────────────────────────────────────
+async function toggleHidden(baId) {
+  var ba = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
+  if (!ba) return;
+  var newVal = !ba.hidden;
+  // Optimistic update — revert on error
+  ba.hidden = newVal;
+  if (S.view === 'basket') renderGrid();
+  if (S.selectedBaId === baId) openActor(baId);
+  try {
+    await sb('/rest/v1/basket_actors?id=eq.' + baId, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ hidden: newVal })
+    });
+    showToast(newVal ? 'Kandidatas paslėptas' : 'Kandidatas rodomas');
+  } catch(e) {
+    ba.hidden = !newVal; // revert
+    if (S.view === 'basket') renderGrid();
+    if (S.selectedBaId === baId) openActor(baId);
+    showToast('Nepavyko atnaujinti');
+  }
+}
+
+function toggleShowHidden() {
+  S.showHidden = !S.showHidden;
+  localStorage.setItem('showHidden', S.showHidden ? '1' : '0');
+  document.getElementById('tbShowHidden').classList.toggle('act', S.showHidden);
+  document.getElementById('tbShowHidden').title = S.showHidden ? 'Slėpti paslėptus kandidatus' : 'Rodyti paslėptus kandidatus';
+  // Re-render current view
+  if      (S.view === 'basket')                                   renderGrid();
+  else if (S.view === 'patvirtinti' || S.view === 'galbut' || S.view === 'nepatvirtinti') {
+    var tabId = S.view === 'patvirtinti' ? 'tabPatv' : S.view === 'galbut' ? 'tabGalb' : 'tabNepa';
+    showOverview(S.view, document.getElementById(tabId));
+  }
+  else if (S.view === 'nauji')                                    loadNauji();
+}
 function dismissNew() {
   S.basketActors.filter(function(a){ return a.is_new; }).forEach(function(a){ S.seenActors.add(a.basket_actor_id); a.is_new = false; });
   localStorage.setItem('seenActors', JSON.stringify(Array.from(S.seenActors)));
@@ -1059,7 +1131,8 @@ async function showOverview(type, btn) {
   closePanel(); closeSidebar(); renderSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,status,basket_id,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,status,basket_id,hidden,actors(id,first_name,agency_id)');
+    if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     // Photos separately
     var actorIds = Array.from(new Set(rows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
     var pMap = {};
@@ -1084,7 +1157,8 @@ async function showOverview(type, btn) {
             var name = (r.actors && r.actors.first_name) || '?';
             var agId = (r.actors && r.actors.agency_id) || 'x';
             var img = photoOrPlaceholder(photos, name, agId);
-            html += '<div class="card" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + '<div class="card-name">' + esc(name) + '</div></div>';
+            var hidCls = r.hidden ? ' is-hidden' : '';
+            html += '<div class="card' + hidCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + '<div class="card-name">' + esc(name) + '</div></div>';
           });
           html += '</div>';
         } else html += '<div class="ov-empty">' + (type === 'patvirtinti' ? 'Nėra patvirtintų' : 'Nėra') + '</div>';
@@ -1149,7 +1223,14 @@ async function openActor(baId) {
     + '<div class="ph-name">' + esc((actor && actor.first_name) || '—') + '</div>'
     + '<div class="ph-id">ID ' + esc((actor && actor.agency_id) || '—') + ' · ' + esc((basket && basket.name && basket.name.toUpperCase()) || '') + '</div>'
     + '</div><button class="ph-close" onclick="closePanel()">✕</button></div>'
-    + '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div></div>'
+    + '<div class="ph-actions">'
+    + '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div>'
+    + '<button class="ph-hide-btn ' + (ba.hidden ? 'is-on' : '') + '" onclick="toggleHidden(\'' + baId + '\')" title="' + (ba.hidden ? 'Šis kandidatas yra paslėptas' : 'Paslėpti šį kandidatą iš kandidatų sąrašų') + '">'
+    + (ba.hidden
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg><span>Paslėptas — rodyti</span>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>Paslėpti</span>')
+    + '</button>'
+    + '</div></div>'
     + '<div class="pb">'
     + mainImg
     + (thumbs ? '<div class="pgrid">' + thumbs + '</div>' : '')
