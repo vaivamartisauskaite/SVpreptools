@@ -775,8 +775,24 @@ async function loadData() {
     await computeAllBasketCounts();
     renderSidebar();
     updateBadges();
-    // Route to the view the user had open
-    if (prevView === 'basket' && prevBaId && S.baskets.some(function(b){ return b.id === prevBaId; })) {
+    // Route to the view the user had open. Special case: if the URL has a
+    // ?board=ID query param (deep-link from email digest), that overrides any
+    // prevView and lands us directly on the referenced board. The param is
+    // then stripped so a subsequent refresh doesn't keep deep-linking.
+    var dlBoardId = new URLSearchParams(window.location.search).get('board');
+    if (dlBoardId) {
+      await showBoardsView(document.getElementById('tabBoards'));
+      if (S.boards && S.boards.some(function(b){ return b.id === dlBoardId; })) {
+        await selectBoard(dlBoardId);
+      }
+      if (window.history && window.history.replaceState) {
+        try {
+          var u2 = new URL(window.location.href);
+          u2.searchParams.delete('board');
+          window.history.replaceState({}, '', u2);
+        } catch(e) {}
+      }
+    } else if (prevView === 'basket' && prevBaId && S.baskets.some(function(b){ return b.id === prevBaId; })) {
       S.selectedBaId = prevSelBa;
       await selectBasket(prevBaId);
     } else if (prevView === 'patvirtinti' || prevView === 'galbut' || prevView === 'nepatvirtinti') {
