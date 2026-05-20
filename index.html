@@ -111,6 +111,21 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .ph-hide-btn.is-on{color:#c0392b;border-color:#c0392b;background:#fdecea}
 .ph-hide-btn svg{width:11px;height:11px}
 .tb-icon-btn.act{color:#534AB7;background:rgba(83,74,183,0.12)}
+/* Manual (moved/copied inside app) marker */
+.card-manual{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;background:#534AB7;color:#fff;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;border:none;cursor:help}
+.card-manual svg{width:11px;height:11px}
+.card.has-manual .cmt-dot{right:30px}
+.ph-manual{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#534AB7;background:#f0eeff;border:0.5px solid #534AB7;border-radius:10px;padding:1px 7px;margin-top:4px;cursor:help}
+.ph-manual svg{width:10px;height:10px}
+/* Move/copy modal */
+.mv-row{display:flex;gap:8px;margin-bottom:4px}
+.mv-row label{flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:6px;cursor:pointer;font-size:11px;color:#1a1a18;transition:all 0.12s;background:#f5f4f0}
+.mv-row label:hover{border-color:#888780;background:#fff}
+.mv-row label.sel{border-color:#534AB7;background:#f0eeff;color:#534AB7}
+.mv-row input{accent-color:#534AB7;cursor:pointer}
+.mv-select{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;cursor:pointer;transition:border-color 0.12s}
+.mv-select:focus{border-color:#534AB7;background:#fff}
+.mv-hint{font-size:10px;color:#888780;margin-top:6px;line-height:1.5}
 .b-t{background:#3B6D11;color:#C0DD97}
 .b-m{background:#854F0B;color:#FAC775}
 .cmt-dot{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600}
@@ -333,6 +348,25 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
   </div>
 </div>
 
+<!-- Move / Copy modal -->
+<div class="modal-ov" id="moveModal" style="display:none" onclick="if(event.target===this)closeMoveModal()">
+  <div class="modal-box">
+    <div class="modal-title">Perkelti arba kopijuoti kandidatą</div>
+    <label class="modal-lbl" style="margin-top:0">Veiksmas</label>
+    <div class="mv-row">
+      <label class="sel"><input type="radio" name="mvAction" value="copy" checked onchange="updMvSel(this)"> Kopijuoti</label>
+      <label><input type="radio" name="mvAction" value="move" onchange="updMvSel(this)"> Perkelti</label>
+    </div>
+    <div class="mv-hint" id="mvHint">Kopijuojant kandidatas išliks ir esamame veikėjuje, ir bus pridėtas į pasirinktą.</div>
+    <label class="modal-lbl">Į veikėją</label>
+    <select class="mv-select" id="mvTarget"></select>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeMoveModal()">Atšaukti</button>
+      <button class="btn-save" onclick="confirmMove()">Patvirtinti</button>
+    </div>
+  </div>
+</div>
+
 <!-- User settings modal -->
 <div class="modal-ov" id="userModal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal-box">
@@ -474,6 +508,7 @@ var S = {
   notifications: [],
   charRefs: {}, // basket_id → array of ref rows
   showHidden: localStorage.getItem('showHidden') === '1',
+  moveModalBaId: null,
 };
 
 // ── Supabase ───────────────────────────────────────────────────────────────
@@ -795,7 +830,7 @@ async function loadNauji() {
   try {
     // Fetch basket_actors with actor info — DO NOT embed actor_photos here
     // (it does not reliably resolve through the join in PostgREST)
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,basket_id,status,hidden,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,basket_id,status,hidden,is_manual,actors(id,first_name,agency_id)');
     if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     var newOnes = rows.filter(function(r){ return !S.seenActors.has(r.id); });
     // Fetch photos separately
@@ -833,7 +868,9 @@ function renderNauji(newOnes) {
       var img = photoOrPlaceholder(photos, name, agId);
       var bst = r.status === 'yes' ? '<div class="badge b-t">Taip</div>' : r.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
       var hidCls = r.hidden ? ' is-hidden' : '';
-      html += '<div class="card isnew' + hidCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + '<div class="card-name">' + esc(name) + '</div></div>';
+      var manCls = r.is_manual ? ' has-manual' : '';
+      var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
+      html += '<div class="card isnew' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + bst + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
     });
     html += '</div>';
   });
@@ -900,7 +937,7 @@ async function selectBasket(id) {
   closePanel(); renderSidebar(); closeSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    var bas = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
       var extRows = await sb('/rest/v1/basket_actors?basket_id=eq.' + id + '&select=id,availability,notes,videos');
@@ -923,6 +960,8 @@ async function selectBasket(id) {
         notes: (ext[ba.id] && ext[ba.id].notes) || '',
         videos: (ext[ba.id] && ext[ba.id].videos) || [],
         hidden: !!ba.hidden,
+        is_manual: !!ba.is_manual,
+        source_basket_actor_id: ba.source_basket_actor_id || null,
       };
     });
     renderGrid();
@@ -979,18 +1018,22 @@ function cardHtml(a) {
   var sel = a.basket_actor_id === S.selectedBaId ? ' sel' : '';
   var isNew = a.is_new ? ' isnew' : '';
   var hid = a.hidden ? ' is-hidden' : '';
+  var manCls = a.is_manual ? ' has-manual' : '';
   var name = (a.actor && a.actor.first_name) || '?';
   var agId = (a.actor && a.actor.agency_id) || 'x';
   var img = photoOrPlaceholder(a.photos || [], name, agId);
   var bst = a.status === 'yes' ? '<div class="badge b-t">Taip</div>' : a.status === 'maybe' ? '<div class="badge b-m">Galbūt</div>' : '';
   var cmt = a.comment_count > 0 ? '<div class="cmt-dot">' + a.comment_count + '</div>' : '';
   var ntag = a.is_new ? '<div class="new-tag">Naujas</div>' : '';
+  var manBadge = a.is_manual
+    ? '<div class="card-manual" title="Šis kandidatas pridėtas rankiniu būdu CastApp\'e (ne iš ActorsAgency)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>'
+    : '';
   var eyeIc = a.hidden
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
   var eyeTitle = a.hidden ? 'Rodyti kandidatą' : 'Paslėpti kandidatą';
   var eyeBtn = '<button class="card-eye" onclick="event.stopPropagation();toggleHidden(\'' + a.basket_actor_id + '\')" title="' + eyeTitle + '">' + eyeIc + '</button>';
-  return '<div class="card' + sel + isNew + hid + '" onclick="openActor(\'' + a.basket_actor_id + '\')">' + img + bst + cmt + ntag + eyeBtn + '<div class="card-name">' + esc(name) + '</div></div>';
+  return '<div class="card' + sel + isNew + hid + manCls + '" onclick="openActor(\'' + a.basket_actor_id + '\')">' + img + bst + cmt + ntag + manBadge + eyeBtn + '<div class="card-name">' + esc(name) + '</div></div>';
 }
 
 function setFilter(f) { S.filter = f; renderGrid(); }
@@ -1031,6 +1074,98 @@ function toggleShowHidden() {
     showOverview(S.view, document.getElementById(tabId));
   }
   else if (S.view === 'nauji')                                    loadNauji();
+}
+
+// ── Move / Copy candidate ──────────────────────────────────────────────────
+function openMoveModal(baId) {
+  var ba = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
+  if (!ba) return;
+  S.moveModalBaId = baId;
+  var sel = document.getElementById('mvTarget');
+  // Populate target basket dropdown — exclude current basket
+  sel.innerHTML = S.baskets
+    .filter(function(b){ return b.id !== S.activeBasketId; })
+    .map(function(b){ return '<option value="' + b.id + '">' + esc(b.name.toUpperCase()) + '</option>'; })
+    .join('');
+  // Reset action to "copy" by default
+  var radios = document.querySelectorAll('input[name="mvAction"]');
+  radios.forEach(function(r){ r.checked = (r.value === 'copy'); });
+  document.querySelectorAll('.mv-row label').forEach(function(l, i){ l.classList.toggle('sel', i === 0); });
+  document.getElementById('mvHint').textContent = 'Kopijuojant kandidatas išliks ir esamame veikėjuje, ir bus pridėtas į pasirinktą.';
+  document.getElementById('moveModal').style.display = 'flex';
+}
+
+function closeMoveModal() {
+  document.getElementById('moveModal').style.display = 'none';
+  S.moveModalBaId = null;
+}
+
+function updMvSel(radio) {
+  document.querySelectorAll('.mv-row label').forEach(function(l){
+    var inp = l.querySelector('input');
+    l.classList.toggle('sel', inp && inp.checked);
+  });
+  var v = radio.value;
+  document.getElementById('mvHint').textContent = v === 'move'
+    ? 'Perkeliant kandidatas bus paslėptas esamame veikėjuje ir matomas tik pasirinktame.'
+    : 'Kopijuojant kandidatas išliks ir esamame veikėjuje, ir bus pridėtas į pasirinktą.';
+}
+
+async function confirmMove() {
+  var baId = S.moveModalBaId;
+  if (!baId) return;
+  var ba = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
+  if (!ba || !ba.actor) { showToast('Klaida'); return; }
+  var targetId = document.getElementById('mvTarget').value;
+  var action = document.querySelector('input[name="mvAction"]:checked').value;
+  if (!targetId) { showToast('Pasirinkite veikėją'); return; }
+  // Duplicate check — does this actor already exist in target basket?
+  try {
+    var existing = await sb('/rest/v1/basket_actors?basket_id=eq.' + targetId + '&actor_id=eq.' + ba.actor.id + '&select=id&limit=1');
+    if (Array.isArray(existing) && existing.length) {
+      showToast('Šis aktorius jau yra pasirinktame veikėjuje');
+      return;
+    }
+  } catch(e) { /* if check fails, attempt insert anyway — DB has no uniq constraint */ }
+  // Insert new manual row carrying availability/notes/videos forward
+  var payload = {
+    basket_id: targetId,
+    actor_id: ba.actor.id,
+    status: 'pending',
+    is_manual: true,
+    source_basket_actor_id: baId,
+    availability: ba.availability || null,
+    notes: ba.notes || null,
+    videos: ba.videos && ba.videos.length ? ba.videos : []
+  };
+  try {
+    await sb('/rest/v1/basket_actors', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (action === 'move') {
+      await sb('/rest/v1/basket_actors?id=eq.' + baId, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ hidden: true })
+      });
+      // Reflect in local state so the source disappears immediately
+      ba.hidden = true;
+    }
+    closeMoveModal();
+    var targetName = (S.baskets.find(function(b){ return b.id === targetId; }) || {}).name || '';
+    showToast(action === 'move' ? ('Perkelta į ' + targetName.toUpperCase()) : ('Kopijuota į ' + targetName.toUpperCase()));
+    // Bump target basket actor count locally so sidebar reflects it without full reload
+    var tgt = S.baskets.find(function(b){ return b.id === targetId; });
+    if (tgt) tgt.actor_count = (tgt.actor_count || 0) + 1;
+    renderSidebar();
+    // Re-render source view
+    if (S.view === 'basket') renderGrid();
+    if (action === 'move' && S.selectedBaId === baId) openActor(baId); // update CV to show hidden state
+  } catch(e) {
+    showToast('Nepavyko atlikti: ' + (e.message || ''));
+  }
 }
 function dismissNew() {
   S.basketActors.filter(function(a){ return a.is_new; }).forEach(function(a){ S.seenActors.add(a.basket_actor_id); a.is_new = false; });
@@ -1131,7 +1266,7 @@ async function showOverview(type, btn) {
   closePanel(); closeSidebar(); renderSidebar();
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
   try {
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,status,basket_id,hidden,actors(id,first_name,agency_id)');
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&select=id,status,basket_id,hidden,is_manual,actors(id,first_name,agency_id)');
     if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
     // Photos separately
     var actorIds = Array.from(new Set(rows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
@@ -1158,7 +1293,9 @@ async function showOverview(type, btn) {
             var agId = (r.actors && r.actors.agency_id) || 'x';
             var img = photoOrPlaceholder(photos, name, agId);
             var hidCls = r.hidden ? ' is-hidden' : '';
-            html += '<div class="card' + hidCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + '<div class="card-name">' + esc(name) + '</div></div>';
+            var manCls = r.is_manual ? ' has-manual' : '';
+            var manBadge = r.is_manual ? '<div class="card-manual" title="Pridėta rankiniu būdu CastApp\'e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>' : '';
+            html += '<div class="card' + hidCls + manCls + '" onclick="jumpToActor(\'' + r.id + '\',\'' + basket.id + '\')">' + img + manBadge + '<div class="card-name">' + esc(name) + '</div></div>';
           });
           html += '</div>';
         } else html += '<div class="ov-empty">' + (type === 'patvirtinti' ? 'Nėra patvirtintų' : 'Nėra') + '</div>';
@@ -1222,9 +1359,13 @@ async function openActor(baId) {
     '<div class="panel-head"><div class="ph-top"><div>'
     + '<div class="ph-name">' + esc((actor && actor.first_name) || '—') + '</div>'
     + '<div class="ph-id">ID ' + esc((actor && actor.agency_id) || '—') + ' · ' + esc((basket && basket.name && basket.name.toUpperCase()) || '') + '</div>'
+    + (ba.is_manual ? '<div class="ph-manual" title="Šis kandidatas pridėtas rankiniu būdu CastApp\'e (ne iš ActorsAgency)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>Rankinis įrašas</span></div>' : '')
     + '</div><button class="ph-close" onclick="closePanel()">✕</button></div>'
     + '<div class="ph-actions">'
     + '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div>'
+    + '<button class="ph-hide-btn" onclick="openMoveModal(\'' + baId + '\')" title="Perkelti arba kopijuoti kandidatą į kitą veikėją">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>Perkelti / Kopijuoti</span>'
+    + '</button>'
     + '<button class="ph-hide-btn ' + (ba.hidden ? 'is-on' : '') + '" onclick="toggleHidden(\'' + baId + '\')" title="' + (ba.hidden ? 'Šis kandidatas yra paslėptas' : 'Paslėpti šį kandidatą iš kandidatų sąrašų') + '">'
     + (ba.hidden
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg><span>Paslėptas — rodyti</span>'
