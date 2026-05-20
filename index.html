@@ -131,6 +131,44 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .mv-select{width:100%;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:8px 10px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;cursor:pointer;transition:border-color 0.12s}
 .mv-select:focus{border-color:#534AB7;background:#fff}
 .mv-hint{font-size:10px;color:#888780;margin-top:6px;line-height:1.5}
+/* Reference comments section (basket-level thread, below header) */
+.rc-section{margin:8px 14px 0;border:0.5px solid #d3d1c7;border-radius:8px;background:#fafaf7;flex-shrink:0}
+.rc-toggle{width:100%;display:flex;align-items:center;gap:7px;padding:8px 12px;background:none;border:none;cursor:pointer;color:#1a1a18;font-family:inherit;font-size:11px;text-align:left;border-radius:8px;transition:background 0.1s}
+.rc-toggle:hover{background:#f0eeea}
+.rc-toggle svg.rc-icon{width:13px;height:13px;color:#888780;flex-shrink:0}
+.rc-toggle .rc-count{font-size:10px;color:#888780;margin-left:auto}
+.rc-toggle .rc-chevron{width:11px;height:11px;color:#888780;transition:transform 0.18s}
+.rc-section.open .rc-toggle .rc-chevron{transform:rotate(180deg)}
+.rc-panel{display:none;padding:4px 12px 10px;border-top:0.5px solid #e6e4dc}
+.rc-section.open .rc-panel{display:block}
+.rc-list{max-height:280px;overflow-y:auto;margin-bottom:8px}
+.rc-empty{font-size:10px;color:#888780;padding:8px 0;font-style:italic}
+.rc-item{position:relative;padding:7px 0;border-bottom:0.5px solid #ebe9e0;font-size:11px}
+.rc-item:last-child{border-bottom:none}
+.rc-item .rc-author{font-weight:600;color:#534AB7;margin-right:6px}
+.rc-item .rc-time{font-size:9px;color:#888780}
+.rc-item .rc-text{margin-top:3px;line-height:1.4;color:#1a1a18;white-space:pre-wrap;word-wrap:break-word}
+.rc-item .rc-del{position:absolute;top:5px;right:0;background:none;border:none;cursor:pointer;color:#888780;padding:2px;border-radius:3px;display:none}
+.rc-item:hover .rc-del{display:block}
+.rc-item .rc-del:hover{color:#c0392b}
+.rc-item .rc-del svg{width:11px;height:11px}
+.rc-att-img{margin-top:5px;max-width:160px;border-radius:4px;overflow:hidden;cursor:pointer}
+.rc-att-img img{display:block;width:100%;height:auto}
+.rc-att-link{display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:10px;color:#534AB7}
+.rc-att-link a{color:#534AB7;text-decoration:none}
+.rc-att-link svg{width:10px;height:10px}
+.rc-compose{display:flex;gap:5px;align-items:flex-end}
+.rc-inp{flex:1;background:#fff;border:0.5px solid #d3d1c7;border-radius:6px;padding:6px 9px;font-size:11px;font-family:inherit;color:#1a1a18;outline:none;resize:vertical;min-height:30px;max-height:120px;line-height:1.4;transition:border-color 0.12s}
+.rc-inp:focus{border-color:#534AB7;background:#fff}
+.rc-clip{background:none;border:0.5px solid #d3d1c7;border-radius:6px;padding:0 7px;cursor:pointer;color:#888780;display:flex;align-items:center;height:32px;flex-shrink:0;position:relative;overflow:hidden;transition:all 0.12s}
+.rc-clip:hover{color:#534AB7;border-color:#534AB7}
+.rc-clip svg{width:13px;height:13px}
+.rc-clip input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.rc-send{background:#534AB7;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:11px;cursor:pointer;font-family:inherit;height:32px;flex-shrink:0;transition:background 0.12s}
+.rc-send:hover{background:#3c349e}
+.rc-pending{font-size:10px;color:#888780;margin-top:4px;display:flex;align-items:center;gap:5px}
+.rc-pending span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.rc-pending .rc-cancel{background:none;border:none;cursor:pointer;color:#c0392b;padding:0 4px;font-size:14px;line-height:1}
 .b-t{background:#3B6D11;color:#C0DD97}
 .b-m{background:#854F0B;color:#FAC775}
 .cmt-dot{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600}
@@ -512,6 +550,9 @@ var S = {
   infoModalBaId: null,
   notifications: [],
   charRefs: {}, // basket_id → array of ref rows
+  refComments: {}, // basket_id → array of comment rows (basket-level comments)
+  refComExpanded: false, // is the reference comments panel expanded
+  refPending: null, // {basketId, file, dataUrl} attachment staged for next ref comment
   showHidden: localStorage.getItem('showHidden') === '1',
   moveModalBaId: null,
 };
@@ -584,7 +625,7 @@ async function loadData() {
       setSyncTxt('↻ Atnaujinti'); return;
     }
     S.projectId = projs[0].id;
-    S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&removed_from_agency=eq.false&select=id,name,basket_date,actor_count,sort_order&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
     renderSidebar();
     updateBadges();
     // Route to the view the user had open
@@ -747,6 +788,7 @@ function nIcon(t) {
     info_update:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
     new_video:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
     new_char_refs:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+    new_ref_comment:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="8" cy="11" r="1" fill="currentColor"/><circle cx="13" cy="11" r="1" fill="currentColor"/><circle cx="18" cy="11" r="1" fill="currentColor"/></svg>',
   };
   return m[t] || m.new_comment;
 }
@@ -763,6 +805,7 @@ function nText(n) {
   if (n.type === 'info_update') return 'Atnaujinta informacija: <strong>' + a + '</strong>' + loc;
   if (n.type === 'new_video')   return 'Pridėtas naujas video: <strong>' + a + '</strong>' + loc;
   if (n.type === 'new_char_refs') return '<strong>' + by + '</strong> pridėjo <strong>' + (n.count || '') + '</strong> reference' + ((n.count||0) === 1 ? '' : 's') + ' veikėjui <strong>' + b + '</strong>';
+  if (n.type === 'new_ref_comment') return '<strong>' + by + '</strong> pakomentavo apie references veikėjui <strong>' + b + '</strong>';
   return (n.meta && n.meta.text) || 'Pranešimas';
 }
 
@@ -776,6 +819,14 @@ async function onNotifClick(id, ev) {
     switchView('nauji');
   } else if (n.type === 'new_char_refs' && n.basket_id) {
     selectBasket(n.basket_id);
+  } else if (n.type === 'new_ref_comment' && n.basket_id) {
+    selectBasket(n.basket_id);
+    // Auto-expand the reference comments panel so the new comment is visible
+    setTimeout(function(){
+      S.refComExpanded = true;
+      var sec = document.getElementById('rcSection');
+      if (sec) sec.classList.add('open');
+    }, 300);
   } else if (n.basket_actor_id && n.basket_id) {
     jumpToActor(n.basket_actor_id, n.basket_id);
   } else if (n.basket_id) {
@@ -963,6 +1014,11 @@ async function selectBasket(id) {
       var refs = await sb('/rest/v1/character_refs?basket_id=eq.' + id + '&select=id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
       S.charRefs[id] = refs;
     } catch(e) { S.charRefs[id] = []; }
+    // Reference-thread comments for this basket
+    try {
+      var rcs = await sb('/rest/v1/comments?basket_id=eq.' + id + '&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
+      S.refComments[id] = rcs;
+    } catch(e) { S.refComments[id] = []; }
     S.basketActors = bas.map(function(ba) {
       return {
         basket_actor_id: ba.id, actor: ba.actors, status: ba.status || 'pending',
@@ -1018,6 +1074,8 @@ function renderGrid() {
     + '<button class="fl ' + (f === 'taip' ? 'act' : '') + '" onclick="setFilter(\'taip\')">Taip</button>'
     + '<button class="fl ' + (f === 'galbut' ? 'act' : '') + '" onclick="setFilter(\'galbut\')">Galbūt</button>'
     + '</div></div>';
+  // Reference-thread comments section — collapsible, sits between header and grid
+  html += renderRefCommentsSection(S.activeBasketId);
   if (newOnes.length && f === 'all') {
     html += '<div class="new-bar"><div class="nb-l"><div class="nb-dot"></div><div class="nb-txt">' + newOnes.length + ' naujai pridėti</div></div>'
       + '<button class="nb-btn" onclick="dismissNew()">Žymėti kaip peržiūrėta</button></div>'
@@ -1134,6 +1192,180 @@ async function reorderBaskets(srcId, targetId, pos) {
     // Reload to recover from drift
     loadData();
   }
+}
+
+// ── Reference-thread comments (basket-level) ───────────────────────────────
+function renderRefCommentsSection(basketId) {
+  var rcs = S.refComments[basketId] || [];
+  var cls = S.refComExpanded ? 'rc-section open' : 'rc-section';
+  var listHtml = rcs.length
+    ? rcs.map(function(c){ return refCommentHtml(c); }).join('')
+    : '<div class="rc-empty">Nėra komentarų. Pridėkite pirmą.</div>';
+  var pend = (S.refPending && S.refPending.basketId === basketId) ? S.refPending : null;
+  var pendHtml = pend
+    ? '<div class="rc-pending">📎 <span>' + esc(pend.file.name) + '</span><button class="rc-cancel" onclick="cancelRefPending()" title="Atšaukti">×</button></div>'
+    : '';
+  return '<div class="' + cls + '" id="rcSection">'
+    + '<button class="rc-toggle" onclick="toggleRefComments()">'
+      + '<svg class="rc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+      + '<span>Komentarai apie references</span>'
+      + '<span class="rc-count">' + (rcs.length ? '(' + rcs.length + ')' : '') + '</span>'
+      + '<svg class="rc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'
+    + '</button>'
+    + '<div class="rc-panel">'
+      + '<div class="rc-list" id="rcList">' + listHtml + '</div>'
+      + '<div class="rc-compose">'
+        + '<textarea class="rc-inp" id="rcInp" rows="1" placeholder="Rašyti komentarą apie references…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();addRefComment()}"></textarea>'
+        + '<label class="rc-clip" title="Pridėti priedą">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>'
+          + '<input type="file" id="rcFile" accept="image/*,.heic,.heif,application/pdf" onchange="setRefPending(this)">'
+        + '</label>'
+        + '<button class="rc-send" onclick="addRefComment()">Siųsti</button>'
+      + '</div>'
+      + pendHtml
+    + '</div>'
+  + '</div>';
+}
+
+function refCommentHtml(c) {
+  var d = new Date(c.created_at);
+  var t = d.toLocaleDateString('lt-LT', {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('lt-LT', {hour:'2-digit',minute:'2-digit'});
+  var attHtml = '';
+  if (c.attachment_path) {
+    var attUrl = ATT_BASE + c.attachment_path;
+    if (isImageFile(c.attachment_name)) {
+      var safeUrl = esc(attUrl).replace(/'/g,"\\'");
+      attHtml = '<div class="rc-att-img" onclick="openImageViewer(\'' + safeUrl + '\')"><img src="' + esc(attUrl) + '" alt="" loading="lazy"></div>';
+    } else {
+      attHtml = '<div class="rc-att-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>'
+        + '<a href="' + esc(attUrl) + '" target="_blank" rel="noopener" download="' + esc(c.attachment_name || '') + '">' + esc(c.attachment_name || 'Priedas') + '</a></div>';
+    }
+  }
+  var canDel = c.author_name === S.username;
+  var delBtn = canDel
+    ? '<button class="rc-del" onclick="deleteRefComment(\'' + c.id + '\')" title="Ištrinti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+    : '';
+  return '<div class="rc-item">'
+    + '<span class="rc-author">' + esc(c.author_name || '') + '</span><span class="rc-time">' + t + '</span>'
+    + delBtn
+    + '<div class="rc-text">' + esc(c.content || '') + '</div>' + attHtml
+    + '</div>';
+}
+
+function toggleRefComments() {
+  S.refComExpanded = !S.refComExpanded;
+  var sec = document.getElementById('rcSection');
+  if (sec) sec.classList.toggle('open', S.refComExpanded);
+}
+
+function setRefPending(input) {
+  if (!input || !input.files || !input.files[0]) return;
+  var f = input.files[0];
+  S.refPending = { basketId: S.activeBasketId, file: f };
+  // Re-render section to show pending file
+  var sec = document.getElementById('rcSection');
+  if (sec) {
+    var wasOpen = sec.classList.contains('open');
+    sec.outerHTML = renderRefCommentsSection(S.activeBasketId);
+    if (wasOpen) {
+      var newSec = document.getElementById('rcSection');
+      if (newSec) newSec.classList.add('open');
+    }
+  }
+}
+
+function cancelRefPending() {
+  S.refPending = null;
+  var sec = document.getElementById('rcSection');
+  if (sec) {
+    var wasOpen = sec.classList.contains('open');
+    sec.outerHTML = renderRefCommentsSection(S.activeBasketId);
+    if (wasOpen) {
+      var newSec = document.getElementById('rcSection');
+      if (newSec) newSec.classList.add('open');
+    }
+  }
+}
+
+async function addRefComment() {
+  var basketId = S.activeBasketId;
+  if (!basketId) return;
+  var inp = document.getElementById('rcInp');
+  var text = inp ? inp.value.trim() : '';
+  var pending = (S.refPending && S.refPending.basketId === basketId) ? S.refPending : null;
+  if (!text && !pending) return;
+  var payload = {
+    basket_id: basketId,
+    basket_actor_id: null,
+    author_name: S.username,
+    content: text
+  };
+  // Upload attachment first if present
+  if (pending) {
+    try {
+      var ext = (pending.file.name.match(/\.([a-z0-9]+)$/i) || [, 'bin'])[1].toLowerCase();
+      var path = 'ref-' + basketId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+      var up = await fetch(SUPABASE_URL + '/storage/v1/object/attachments/' + path, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': pending.file.type || 'application/octet-stream'
+        },
+        body: pending.file
+      });
+      if (!up.ok) throw new Error(await up.text());
+      payload.attachment_path = path;
+      payload.attachment_name = pending.file.name;
+    } catch(e) { showToast('Nepavyko įkelti priedo: ' + e.message); return; }
+  }
+  try {
+    var rows = await sb('/rest/v1/comments', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    var inserted = Array.isArray(rows) ? rows[0] : rows;
+    if (inserted) {
+      if (!S.refComments[basketId]) S.refComments[basketId] = [];
+      S.refComments[basketId].push(inserted);
+    }
+    // Reset compose state and re-render section
+    if (inp) inp.value = '';
+    S.refPending = null;
+    var sec = document.getElementById('rcSection');
+    if (sec) {
+      sec.outerHTML = renderRefCommentsSection(basketId);
+      var newSec = document.getElementById('rcSection');
+      if (newSec) newSec.classList.add('open'); // keep open after sending
+    }
+    S.refComExpanded = true;
+    // Fire notification (mirrors existing pattern)
+    var basket = S.baskets.find(function(b){ return b.id === basketId; });
+    try {
+      await createNotif('new_ref_comment', { basketId: basketId, basketName: (basket && basket.name) });
+    } catch(e) {}
+    sendNotifEmails('new_ref_comment', { basketId: basketId, basketName: (basket && basket.name), message: text, author: S.username });
+  } catch(e) {
+    showToast('Nepavyko išsiųsti: ' + e.message);
+  }
+}
+
+async function deleteRefComment(commentId) {
+  if (!confirm('Ištrinti šį komentarą?')) return;
+  try {
+    await sb('/rest/v1/comments?id=eq.' + commentId, { method: 'DELETE', headers: { 'Prefer': '' } });
+    var basketId = S.activeBasketId;
+    if (S.refComments[basketId]) {
+      S.refComments[basketId] = S.refComments[basketId].filter(function(c){ return c.id !== commentId; });
+    }
+    var sec = document.getElementById('rcSection');
+    if (sec) {
+      sec.outerHTML = renderRefCommentsSection(basketId);
+      var newSec = document.getElementById('rcSection');
+      if (newSec && S.refComExpanded) newSec.classList.add('open');
+    }
+    showToast('Komentaras ištrintas');
+  } catch(e) { showToast('Nepavyko ištrinti'); }
 }
 
 // ── Hide candidate ─────────────────────────────────────────────────────────
@@ -1979,7 +2211,8 @@ async function sendNotifEmails(type, data) {
       info_update:      'pref_info',
       new_video:        'pref_videos',
       new_actors_batch: 'pref_actors',
-      new_char_refs:    'pref_actors'
+      new_char_refs:    'pref_actors',
+      new_ref_comment:  'pref_comments'
     };
     var prefKey = prefMap[type]; if (!prefKey) return;
 
@@ -1987,6 +2220,13 @@ async function sendNotifEmails(type, data) {
     var photoUrls = [];
     if (data.baId) photoUrls = await _fetchActorPhotosForEmail(data.baId);
     if (type === 'new_char_refs' && data.refUrls && data.refUrls.length) photoUrls = data.refUrls.slice(0, 3);
+    // For new_ref_comment, grab up to 3 of this basket's reference photos
+    if (type === 'new_ref_comment' && data.basketId) {
+      try {
+        var rfs = await sb('/rest/v1/character_refs?basket_id=eq.' + data.basketId + '&select=storage_path&order=position.asc,created_at.asc&limit=3');
+        photoUrls = rfs.map(function(r){ return REFS_BASE + r.storage_path; });
+      } catch(e) {}
+    }
     // For new_actors_batch, try to grab first photo from any actor in this basket
     if (type === 'new_actors_batch' && !photoUrls.length && data.basketId) {
       try {
@@ -2010,7 +2250,8 @@ async function sendNotifEmails(type, data) {
       info_update:      'Atnaujinta informacija — ' + actorName,
       new_video:        'Naujas video — ' + actorName,
       new_actors_batch: 'Pridėti ' + (data.count || '') + ' nauji kandidatai',
-      new_char_refs:    'Pridėtos references — ' + basketName
+      new_char_refs:    'Pridėtos references — ' + basketName,
+      new_ref_comment:  'Naujas komentaras apie references — ' + basketName
     };
     var titleText = titleByType[type] || type;
     var subject   = 'Sugauti Vanagą CAST // ' + titleText;
@@ -2056,6 +2297,12 @@ async function sendNotifEmails(type, data) {
       if (basketName) rows6.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
       rows6.push(['Pridėta', '<strong>' + (data.count || '') + '</strong> naujų kandidatų']);
       content += _emailInfoGrid(rows6);
+    } else if (type === 'new_ref_comment') {
+      var rows7 = [];
+      if (basketName) rows7.push(['Veikėjas', '<strong>' + esc(basketName) + '</strong>']);
+      if (data.author) rows7.push(['Komentavo', esc(data.author)]);
+      content += _emailInfoGrid(rows7);
+      content += _emailCommentBlock(data.author || '', data.message || '');
     } else {
       content += '<p style="font-size:13px;color:#1a1a18;">' + esc(titleText) + '</p>';
     }
