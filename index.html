@@ -359,15 +359,35 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .cmt-pending span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
 .cmt-pending .rm{cursor:pointer;color:#c0392b;border:none;background:none;font-size:12px;padding:0;line-height:1}
 /* Gallery */
-.gallery{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:300;display:flex;align-items:center;justify-content:center}
-.gal-img{max-height:90vh;max-width:90vw;object-fit:contain;border-radius:3px;display:block;user-select:none}
-.gal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background 0.12s}
+.gallery{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:300;display:flex;align-items:center;justify-content:center;gap:14px;padding:20px}
+.gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.gal-img{max-height:88vh;max-width:100%;object-fit:contain;border-radius:3px;display:block;user-select:none}
+.gal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background 0.12s;z-index:2}
 .gal-close:hover{background:rgba(255,255,255,0.22)}
-.gal-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:background 0.12s}
+.gal-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:background 0.12s;z-index:2}
 .gal-btn:hover{background:rgba(255,255,255,0.2)}
 .gal-prev{left:16px}
 .gal-next{right:16px}
-.gal-ctr{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:11px}
+.gal-ctr{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:11px;z-index:2}
+/* Gallery comment side panel (per-reference comments) */
+.gal-cmt{width:320px;max-width:32vw;background:#fff;border-radius:6px;padding:14px;display:flex;flex-direction:column;max-height:88vh;flex-shrink:0}
+.gal-cmt-h{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid #ebe9e1}
+.gal-cmt-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;min-height:60px}
+.gal-cmt-empty{font-size:11px;color:#a3a39a;text-align:center;padding:14px 0}
+.gal-cmt-row{font-size:12px;line-height:1.4;padding:6px 8px;background:#f4f3ee;border-radius:4px;position:relative}
+.gal-cmt-row-h{display:flex;align-items:center;gap:6px;font-size:9px;color:#888780;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px}
+.gal-cmt-row-au{font-weight:600;color:#534AB7}
+.gal-cmt-row-del{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:11px;line-height:1;opacity:0;transition:opacity 0.1s}
+.gal-cmt-row:hover .gal-cmt-row-del{opacity:1}
+.gal-cmt-row-del:hover{background:#fbe9e9;color:#a73a3a}
+.gal-cmt-form{display:flex;gap:6px}
+.gal-cmt-input{flex:1;border:0.5px solid #d3d1c7;border-radius:4px;padding:6px 8px;font-size:12px;font-family:inherit;outline:none;resize:none;min-height:32px;max-height:80px}
+.gal-cmt-input:focus{border-color:#534AB7}
+.gal-cmt-send{background:#534AB7;color:#fff;border:none;padding:6px 12px;font-size:11px;border-radius:4px;cursor:pointer;font-family:inherit;font-weight:600}
+.gal-cmt-send:hover{background:#403690}
+.gal-cmt-send:disabled{background:#c8c5b8;cursor:not-allowed}
+/* Comment count badge on reference thumbnail */
+.cref-cnt{position:absolute;bottom:3px;right:3px;background:#534AB7;color:#fff;font-size:9px;font-weight:600;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;letter-spacing:0;text-transform:none;pointer-events:none}
 /* Modals */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-box{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}
@@ -462,7 +482,17 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 <div class="gallery" id="gallery" style="display:none" onclick="if(event.target===this)closeGallery()">
   <button class="gal-close" onclick="closeGallery()">✕</button>
   <button class="gal-btn gal-prev" onclick="galNav(-1)">&#8249;</button>
-  <img class="gal-img" id="galImg" src="" alt="">
+  <div class="gal-stage">
+    <img class="gal-img" id="galImg" src="" alt="">
+  </div>
+  <div class="gal-cmt" id="galCmt" style="display:none">
+    <div class="gal-cmt-h">Komentarai apie šią reference</div>
+    <div class="gal-cmt-list" id="galCmtList"></div>
+    <div class="gal-cmt-form">
+      <textarea class="gal-cmt-input" id="galCmtInput" placeholder="Komentaras…" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key===\u0027Enter\u0027)submitRefComment()"></textarea>
+      <button class="gal-cmt-send" onclick="submitRefComment()">Siųsti</button>
+    </div>
+  </div>
   <button class="gal-btn gal-next" onclick="galNav(1)">&#8250;</button>
   <div class="gal-ctr" id="galCtr"></div>
 </div>
@@ -766,19 +796,31 @@ function detectAtrinkti() {
   // Reset any prior pairing flags (re-runs cleanly on reload)
   S.baskets.forEach(function(b){
     b.is_atrinkti = false;
+    b.is_atrinkti_orphan = false;
     b.parent_basket_id = null;
     b.atrinkti_basket_id = null;
     b.atrinkti_count = 0;
+    // Restore original name in case of re-run after a prior orphan rename
+    if (b.original_name) b.name = b.original_name;
   });
   S.baskets.forEach(function(b){
     var m = b.name.match(re);
     if (!m) return;
-    var parentName = m[1].trim().toLowerCase();
-    var parent = byName[parentName];
+    var parentRoot = m[1].trim();
+    var parent = byName[parentRoot.toLowerCase()];
     if (parent && parent.id !== b.id) {
+      // Paired: merge into parent (basket is hidden from sidebar)
       b.is_atrinkti = true;
       b.parent_basket_id = parent.id;
       parent.atrinkti_basket_id = b.id;
+    } else {
+      // Orphan: no parent exists in this project. Strip "atrinkti" suffix
+      // from the displayed name so the user sees just "Vėžys" instead of
+      // "Vėžys atrinkti". The basket stays visible in the sidebar but is
+      // rendered with all candidates in the "Atrinkti kastingui" section.
+      b.is_atrinkti_orphan = true;
+      b.original_name = b.name;
+      b.name = parentRoot;
     }
   });
 }
@@ -1208,6 +1250,7 @@ async function selectBasket(id) {
   try {
     var parentBasket = S.baskets.find(function(b){ return b.id === id; });
     var atrId = parentBasket && parentBasket.atrinkti_basket_id;
+    var isOrphan = parentBasket && parentBasket.is_atrinkti_orphan;
     // Fetch from both parent and atrinkti when paired — single query, two basket_ids
     var basketIdsToFetch = atrId ? [id, atrId] : [id];
     var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
@@ -1219,20 +1262,35 @@ async function selectBasket(id) {
     var actorIds = bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean);
     var photos = [];
     if (actorIds.length) photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=id,actor_id,storage_path,is_primary&order=is_primary.desc');
-    // Character references and ref-thread comments stay tied to the PARENT basket only
-    // (atrinkti baskets share the parent's references — refs are character-level)
+    // References merge across pair (refs live on whichever basket they were
+    // uploaded to; we show union). Comments also merged across pair.
+    var refBasketIds = atrId ? [id, atrId] : [id];
     try {
-      var refs = await sb('/rest/v1/character_refs?basket_id=eq.' + id + '&select=id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
+      var refs = await sb('/rest/v1/character_refs?basket_id=in.(' + refBasketIds.join(',') + ')&select=id,basket_id,storage_path,original_filename,uploaded_by,created_at&order=position.asc,created_at.asc');
       S.charRefs[id] = refs;
     } catch(e) { S.charRefs[id] = []; }
     try {
-      var rcs = await sb('/rest/v1/comments?basket_id=eq.' + id + '&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
+      // Basket-level ref thread comments only — exclude per-ref comments (have character_ref_id)
+      var rcs = await sb('/rest/v1/comments?basket_id=in.(' + refBasketIds.join(',') + ')&basket_actor_id=is.null&character_ref_id=is.null&select=id,author_name,content,created_at,attachment_path,attachment_name&order=created_at.asc');
       S.refComments[id] = rcs;
     } catch(e) { S.refComments[id] = []; }
+    // Per-reference comments (counted for thumb badges; full thread fetched on gallery open)
+    try {
+      var refIds = (S.charRefs[id] || []).map(function(r){ return r.id; });
+      if (refIds.length) {
+        var perRef = await sb('/rest/v1/comments?character_ref_id=in.(' + refIds.join(',') + ')&select=character_ref_id&order=created_at.asc');
+        var cntMap = {};
+        perRef.forEach(function(c){ cntMap[c.character_ref_id] = (cntMap[c.character_ref_id] || 0) + 1; });
+        (S.charRefs[id] || []).forEach(function(r){ r.comment_count = cntMap[r.id] || 0; });
+      }
+    } catch(e) {}
 
     // Map raw rows into the standard basketActors shape, marking which basket
-    // they live in.
+    // they live in. Orphans: all their rows are "in atrinkti" (since the
+    // basket itself is the atrinkti — its name was stripped from "X atrinkti"
+    // to "X" for display).
     var mapped = bas.map(function(ba) {
+      var inAtr = isOrphan ? true : (atrId ? (ba.basket_id === atrId) : false);
       return {
         basket_actor_id: ba.id, actor: ba.actors, status: ba.status || 'pending',
         comment_count: (ba.comments || []).length, is_new: !S.seenActors.has(ba.id),
@@ -1244,7 +1302,7 @@ async function selectBasket(id) {
         is_manual: !!ba.is_manual,
         source_basket_actor_id: ba.source_basket_actor_id || null,
         removed_from_agency: !!ba.removed_from_agency,
-        _in_atrinkti: atrId ? (ba.basket_id === atrId) : false,
+        _in_atrinkti: inAtr,
       };
     });
 
@@ -1299,9 +1357,11 @@ function renderGrid() {
   var refsHtml = '<div class="cref-strip">';
   refs.forEach(function(r, i) {
     var url = REFS_BASE + r.storage_path;
+    var cmtBadge = r.comment_count > 0 ? '<div class="cref-cnt">' + r.comment_count + '</div>' : '';
     refsHtml += '<div class="cref-thumb" onclick="openRefGallery(' + i + ')">'
       + '<img src="' + esc(url) + '" alt="" onerror="this.style.display=\'none\'">'
       + '<button class="cref-del" onclick="event.stopPropagation();deleteCharRef(\'' + r.id + '\',\'' + r.storage_path + '\')" title="Ištrinti">×</button>'
+      + cmtBadge
       + '</div>';
   });
   refsHtml += '<button class="cref-add" id="crefAddBtn" onclick="document.getElementById(\'crefFile\').click()" title="Pridėti references">'
@@ -1311,7 +1371,7 @@ function renderGrid() {
   refsHtml += '</div>';
 
   var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
-    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (atrinkti.length ? ' · ' + atrinkti.length + ' atrinkti' : '') + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
+    + '<div class="mh-sub">' + actors.length + ' kandidatai' + (atrinkti.length && atrinkti.length !== actors.length ? ' · ' + atrinkti.length + ' atrinkti' : '') + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
     + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
@@ -1840,6 +1900,8 @@ function openRefGallery(idx) {
   var refs = S.charRefs[S.activeBasketId] || [];
   if (!refs.length) return;
   S.galPhotos = refs.map(function(r){ return REFS_BASE + r.storage_path; });
+  S.galRefs = refs.slice();          // parallel array — track ref objects for per-image comments
+  S.galMode = 'ref';
   S.galIdx = idx || 0;
   updateGal();
   document.getElementById('gallery').style.display = 'flex';
@@ -2801,13 +2863,91 @@ function updateGal() {
   document.getElementById('galCtr').textContent = (S.galIdx + 1) + ' / ' + len;
   document.querySelector('.gal-prev').style.display = len > 1 ? 'flex' : 'none';
   document.querySelector('.gal-next').style.display = len > 1 ? 'flex' : 'none';
+  // Per-reference comments panel — only when viewing references (not actor photos)
+  var cmtPanel = document.getElementById('galCmt');
+  if (cmtPanel) {
+    var isRefMode = S.galMode === 'ref' && S.galRefs && S.galRefs[S.galIdx];
+    cmtPanel.style.display = isRefMode ? 'flex' : 'none';
+    if (isRefMode) loadRefComments(S.galRefs[S.galIdx].id);
+  }
 }
 function galNav(d) { S.galIdx = (S.galIdx + d + S.galPhotos.length) % S.galPhotos.length; updateGal(); }
-function closeGallery() { document.getElementById('gallery').style.display = 'none'; document.removeEventListener('keydown', galKey); }
+function closeGallery() {
+  document.getElementById('gallery').style.display = 'none';
+  document.removeEventListener('keydown', galKey);
+  S.galMode = null; S.galRefs = null;
+}
 function galKey(e) {
   if (e.key === 'ArrowLeft') galNav(-1);
   else if (e.key === 'ArrowRight') galNav(1);
   else if (e.key === 'Escape') closeGallery();
+}
+
+// ── Per-reference comments ─────────────────────────────────────────────────
+async function loadRefComments(refId) {
+  if (!refId) return;
+  var list = document.getElementById('galCmtList');
+  if (!list) return;
+  // Show loading state but don't block
+  list.innerHTML = '<div class="gal-cmt-empty">Kraunama…</div>';
+  try {
+    var rows = await sb('/rest/v1/comments?character_ref_id=eq.' + refId + '&select=id,author_name,content,created_at&order=created_at.asc');
+    if (!rows.length) {
+      list.innerHTML = '<div class="gal-cmt-empty">Dar nėra komentarų</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(c){
+      var canDel = c.author_name === S.username;
+      var t = new Date(c.created_at);
+      var ts = t.getDate() + '.' + (t.getMonth()+1) + '. ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      return '<div class="gal-cmt-row" id="grc-' + c.id + '">'
+        + '<div class="gal-cmt-row-h"><span class="gal-cmt-row-au">' + esc(c.author_name) + '</span><span>' + ts + '</span></div>'
+        + '<div>' + esc(c.content).replace(/\n/g, '<br>') + '</div>'
+        + (canDel ? '<span class="gal-cmt-row-del" onclick="deleteRefComment(\'' + c.id + '\',\'' + refId + '\')" title="Ištrinti">×</span>' : '')
+        + '</div>';
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  } catch(e) {
+    list.innerHTML = '<div class="gal-cmt-empty">Nepavyko užkrauti</div>';
+  }
+}
+
+async function submitRefComment() {
+  if (!S.galRefs || !S.galRefs[S.galIdx]) return;
+  var refId = S.galRefs[S.galIdx].id;
+  var input = document.getElementById('galCmtInput');
+  if (!input) return;
+  var content = (input.value || '').trim();
+  if (!content) return;
+  var btn = document.querySelector('.gal-cmt-send');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await sb('/rest/v1/comments', {
+      method: 'POST',
+      body: JSON.stringify({ character_ref_id: refId, author_name: S.username, content: content })
+    });
+    input.value = '';
+    // Bump local count on the ref so badge updates
+    var ref = S.galRefs[S.galIdx];
+    ref.comment_count = (ref.comment_count || 0) + 1;
+    // Also bump in S.charRefs so the underlying card refreshes if user closes gallery
+    var stored = (S.charRefs[S.activeBasketId] || []).find(function(r){ return r.id === refId; });
+    if (stored) stored.comment_count = (stored.comment_count || 0) + 1;
+    await loadRefComments(refId);
+  } catch(e) { showToast('Nepavyko išsiųsti'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; } }
+}
+
+async function deleteRefComment(commentId, refId) {
+  if (!confirm('Ištrinti komentarą?')) return;
+  try {
+    await sb('/rest/v1/comments?id=eq.' + commentId, { method: 'DELETE' });
+    var ref = S.galRefs && S.galRefs.find(function(r){ return r.id === refId; });
+    if (ref && ref.comment_count > 0) ref.comment_count--;
+    var stored = (S.charRefs[S.activeBasketId] || []).find(function(r){ return r.id === refId; });
+    if (stored && stored.comment_count > 0) stored.comment_count--;
+    await loadRefComments(refId);
+  } catch(e) { showToast('Nepavyko ištrinti'); }
 }
 
 // ── User settings (saves to Supabase) ──────────────────────────────────────
