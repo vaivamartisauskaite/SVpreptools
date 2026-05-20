@@ -55,6 +55,9 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .sb-item:hover{background:#ebebea}
 .sb-item.act{background:#fff;border-left-color:#534AB7}
 .sb-item.act .sb-nm{font-weight:500;color:#534AB7}
+.sb-item.dragging{opacity:0.4}
+.sb-item.drop-before{box-shadow:inset 0 2px 0 0 #534AB7}
+.sb-item.drop-after{box-shadow:inset 0 -2px 0 0 #534AB7}
 .sb-nm{font-size:11px;color:#1a1a18;letter-spacing:0.04em}
 .sb-cnt{font-size:9px;background:#e8e6e0;color:#888780;border-radius:10px;padding:1px 6px;flex-shrink:0}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:50}
@@ -579,7 +582,7 @@ async function loadData() {
       setSyncTxt('↻ Atnaujinti'); return;
     }
     S.projectId = projs[0].id;
-    S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count&order=basket_date.asc,name.asc');
+    S.baskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
     renderSidebar();
     updateBadges();
     // Route to the view the user had open
@@ -604,7 +607,14 @@ function renderSidebar() {
   var list = document.getElementById('sidebarList');
   if (!S.baskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
   list.innerHTML = S.baskets.map(function(b) {
-    return '<div class="sb-item ' + (b.id === S.activeBasketId && S.view === 'basket' ? 'act' : '') + '" onclick="selectBasket(\'' + b.id + '\')">'
+    return '<div class="sb-item ' + (b.id === S.activeBasketId && S.view === 'basket' ? 'act' : '') + '"'
+      + ' draggable="true"'
+      + ' data-id="' + b.id + '"'
+      + ' onclick="selectBasket(\'' + b.id + '\')"'
+      + ' ondragstart="onSbDragStart(event,\'' + b.id + '\')"'
+      + ' ondragover="onSbDragOver(event)"'
+      + ' ondrop="onSbDrop(event,\'' + b.id + '\')"'
+      + ' ondragend="onSbDragEnd(event)">'
       + '<span class="sb-nm">' + b.name.toUpperCase() + '</span>'
       + '<span class="sb-cnt">' + (b.actor_count || 0) + '</span></div>';
   }).join('');
@@ -740,7 +750,7 @@ function nIcon(t) {
 }
 
 function nText(n) {
-  var a = esc(n.actor_name || ''), b = esc(n.basket_name || ''), by = esc(n.triggered_by || '');
+  var a = esc(n.actor_name || ''), b = esc((n.basket_name || '').toUpperCase()), by = esc(n.triggered_by || '');
   var loc = b ? ' (' + b + ')' : '';
   if (n.type === 'new_actors_batch') return 'Pridėti <strong>' + (n.count || '') + '</strong> nauji kandidatai';
   if (n.type === 'new_comment')  return '<strong>' + by + '</strong> pakomentavo <strong>' + a + '</strong>' + loc;
@@ -1037,6 +1047,88 @@ function cardHtml(a) {
 }
 
 function setFilter(f) { S.filter = f; renderGrid(); }
+
+// ── Sidebar drag-and-drop reorder ─────────────────────────────────────────
+var _dragSrcId = null;
+
+function onSbDragStart(e, id) {
+  _dragSrcId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  // Firefox needs some payload set
+  try { e.dataTransfer.setData('text/plain', id); } catch(_) {}
+}
+
+function onSbDragOver(e) {
+  if (!_dragSrcId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var item = e.currentTarget;
+  if (item.getAttribute('data-id') === _dragSrcId) return;
+  var rect = item.getBoundingClientRect();
+  var midY = rect.top + rect.height / 2;
+  var before = e.clientY < midY;
+  // Clear all other indicators (cheap with <30 items)
+  document.querySelectorAll('.sb-item.drop-before, .sb-item.drop-after').forEach(function(el){
+    if (el !== item) el.classList.remove('drop-before', 'drop-after');
+  });
+  item.classList.toggle('drop-before', before);
+  item.classList.toggle('drop-after', !before);
+}
+
+function onSbDrop(e, targetId) {
+  e.preventDefault();
+  if (!_dragSrcId || _dragSrcId === targetId) { onSbDragEnd(e); return; }
+  var item = e.currentTarget;
+  var rect = item.getBoundingClientRect();
+  var midY = rect.top + rect.height / 2;
+  var pos = e.clientY < midY ? 'before' : 'after';
+  reorderBaskets(_dragSrcId, targetId, pos);
+  onSbDragEnd(e);
+}
+
+function onSbDragEnd(e) {
+  _dragSrcId = null;
+  document.querySelectorAll('.sb-item').forEach(function(el){
+    el.classList.remove('dragging', 'drop-before', 'drop-after');
+  });
+}
+
+async function reorderBaskets(srcId, targetId, pos) {
+  if (srcId === targetId) return;
+  var src = S.baskets.find(function(b){ return b.id === srcId; });
+  if (!src) return;
+  // Pull src out, find target index in remaining array, splice src in at the right spot
+  var rest = S.baskets.filter(function(b){ return b.id !== srcId; });
+  var tgtIdx = rest.findIndex(function(b){ return b.id === targetId; });
+  if (tgtIdx < 0) return;
+  var insertIdx = pos === 'after' ? tgtIdx + 1 : tgtIdx;
+  rest.splice(insertIdx, 0, src);
+  // Compute new sort_order values
+  var changed = [];
+  rest.forEach(function(b, i) {
+    if (b.sort_order !== i) {
+      b.sort_order = i;
+      changed.push(b);
+    }
+  });
+  S.baskets = rest;
+  renderSidebar();
+  // Persist — parallel PATCH for all baskets whose sort_order changed
+  try {
+    await Promise.all(changed.map(function(b){
+      return sb('/rest/v1/baskets?id=eq.' + b.id, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ sort_order: b.sort_order })
+      });
+    }));
+  } catch(e) {
+    showToast('Nepavyko išsaugoti tvarkos');
+    // Reload to recover from drift
+    loadData();
+  }
+}
 
 // ── Hide candidate ─────────────────────────────────────────────────────────
 async function toggleHidden(baId) {
@@ -1901,7 +1993,7 @@ async function sendNotifEmails(type, data) {
     }
 
     var actorName  = data.actorName  || '';
-    var basketName = data.basketName || '';
+    var basketName = (data.basketName || '').toUpperCase();
     var agencyId   = data.agencyId   || '';
     var BASE_APP   = 'https://vaivamartisauskaite.github.io/SVpreptools/';
 
