@@ -134,6 +134,97 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 /* Atrinkti section banner (Task 6) */
 .atr-sec{margin:12px 14px 4px;padding:6px 12px;background:linear-gradient(90deg,#f0eeff 0%,#fafaf7 80%);border:0.5px solid #d4cef5;border-radius:6px;display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#534AB7;font-weight:600;flex-shrink:0}
 .atr-sec svg{width:13px;height:13px;color:#534AB7}
+
+/* ─── Aktorių deriniai / Boards (Task 7) ──────────────────────────────── */
+.brd-wrap{padding:0;display:flex;flex-direction:column;height:100%;min-height:0}
+.brd-head{display:flex;align-items:center;gap:14px;padding:14px 18px 8px;flex-shrink:0}
+.brd-title{font-size:18px;font-weight:600;letter-spacing:-0.01em;cursor:text;padding:2px 6px;margin:-2px -6px;border-radius:4px}
+.brd-title:hover{background:#f4f3ee}
+.brd-title-input{font-size:18px;font-weight:600;letter-spacing:-0.01em;padding:2px 6px;border:1px solid #534AB7;border-radius:4px;outline:none;font-family:inherit;background:#fff;min-width:200px}
+.brd-author{font-size:10px;color:#888780;letter-spacing:0.05em;text-transform:uppercase}
+.brd-actions{margin-left:auto;display:flex;gap:6px}
+.brd-act-btn{font-size:11px;padding:5px 11px;border:0.5px solid #d3d1c7;background:#fff;border-radius:4px;cursor:pointer;color:#3a3a35;display:inline-flex;align-items:center;gap:4px;font-family:inherit}
+.brd-act-btn:hover{background:#f4f3ee;border-color:#a3a39a}
+.brd-act-btn svg{width:12px;height:12px}
+.brd-act-btn.danger{color:#a73a3a}
+.brd-act-btn.danger:hover{background:#fbe9e9;border-color:#d77;color:#a73a3a}
+.brd-act-btn.archived{background:#f4f3ee;color:#888780;font-style:italic}
+
+.brd-scroll{flex:1;overflow-y:auto;padding:6px 14px 80px}
+.brd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:start}
+.brd-cat{background:#fff;border:0.5px solid #e6e4dc;border-radius:6px;padding:10px;cursor:grab;position:relative}
+.brd-cat:hover{border-color:#c8c5b8}
+.brd-cat.dragging{opacity:0.4}
+.brd-cat.drop-target{border-color:#534AB7;background:#f0eeff}
+.brd-cat-head{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:#3a3a35;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid #ebe9e1}
+.brd-cat-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brd-cat-rm{flex-shrink:0;width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:14px;line-height:1;opacity:0;transition:opacity 0.1s}
+.brd-cat:hover .brd-cat-rm{opacity:1}
+.brd-cat-rm:hover{background:#fbe9e9;color:#a73a3a}
+.brd-picks{display:flex;flex-direction:column;gap:6px;min-height:60px}
+.brd-pick{display:flex;align-items:center;gap:8px;padding:4px;border-radius:4px;cursor:pointer;position:relative}
+.brd-pick:hover{background:#f4f3ee}
+.brd-pick-ph{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e6e4dc}
+.brd-pick-ph-fb{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px;flex-shrink:0}
+.brd-pick-nm{flex:1;font-size:12px;color:#3a3a35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brd-pick-st{flex-shrink:0;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase}
+.brd-pick-st.t{background:#d4ecd4;color:#2a6b2a}
+.brd-pick-st.m{background:#ffe9c9;color:#8a5a1a}
+.brd-pick-rm{flex-shrink:0;width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:13px;line-height:1;opacity:0;transition:opacity 0.1s}
+.brd-pick:hover .brd-pick-rm{opacity:1}
+.brd-pick-rm:hover{background:#fbe9e9;color:#a73a3a}
+.brd-add-pick{font-size:10px;color:#534AB7;padding:5px 8px;border:0.5px dashed #d3d1c7;border-radius:4px;cursor:pointer;text-align:center;margin-top:4px;background:#fafaf7;display:flex;align-items:center;justify-content:center;gap:4px}
+.brd-add-pick:hover{background:#f0eeff;border-color:#534AB7;border-style:solid}
+.brd-add-cat-card{background:#fafaf7;border:0.5px dashed #d3d1c7;border-radius:6px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:120px;font-size:11px;color:#534AB7;gap:6px}
+.brd-add-cat-card:hover{border-color:#534AB7;border-style:solid;background:#f0eeff}
+
+.brd-comments{position:sticky;bottom:0;background:#fff;border-top:0.5px solid #d3d1c7;padding:10px 18px;flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,0.04)}
+.brd-cmt-list{max-height:140px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.brd-cmt{font-size:12px;line-height:1.4;padding:6px 8px;background:#f4f3ee;border-radius:4px;position:relative}
+.brd-cmt-h{display:flex;align-items:center;gap:6px;font-size:9px;color:#888780;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px}
+.brd-cmt-au{font-weight:600;color:#534AB7}
+.brd-cmt-del{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a3a39a;font-size:11px;line-height:1;opacity:0;transition:opacity 0.1s}
+.brd-cmt:hover .brd-cmt-del{opacity:1}
+.brd-cmt-del:hover{background:#fbe9e9;color:#a73a3a}
+.brd-cmt-form{display:flex;gap:6px}
+.brd-cmt-input{flex:1;border:0.5px solid #d3d1c7;border-radius:4px;padding:6px 8px;font-size:12px;font-family:inherit;outline:none;resize:none;min-height:32px;max-height:80px}
+.brd-cmt-input:focus{border-color:#534AB7}
+.brd-cmt-send{background:#534AB7;color:#fff;border:none;padding:6px 14px;font-size:11px;border-radius:4px;cursor:pointer;font-family:inherit;font-weight:600}
+.brd-cmt-send:hover{background:#403690}
+.brd-cmt-send:disabled{background:#c8c5b8;cursor:not-allowed}
+
+.brd-empty{padding:40px 20px;text-align:center;color:#888780;font-size:13px}
+.brd-new-btn{margin:10px 14px 4px;padding:8px 12px;background:#534AB7;color:#fff;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.brd-new-btn:hover{background:#403690}
+.brd-new-btn svg{width:14px;height:14px}
+
+/* Sidebar boards mode */
+.sb-author-grp{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;padding:10px 14px 4px;font-weight:600}
+.sb-board{display:flex;align-items:center;gap:6px;padding:7px 14px;cursor:pointer;font-size:12px;color:#3a3a35;border-left:2px solid transparent}
+.sb-board:hover{background:#f4f3ee}
+.sb-board.act{background:#f0eeff;border-left-color:#534AB7;color:#534AB7;font-weight:600}
+.sb-board-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-board.arch{color:#a3a39a;font-style:italic}
+.sb-archived-sep{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#a3a39a;padding:12px 14px 4px;font-weight:600;border-top:0.5px solid #ebe9e1;margin-top:6px}
+
+/* Pick picker modal */
+.pp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:200}
+.pp-box{background:#fff;border-radius:8px;width:min(640px,92vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.pp-head{padding:14px 18px;border-bottom:0.5px solid #ebe9e1;display:flex;align-items:center;gap:10px}
+.pp-title{font-size:14px;font-weight:600;flex:1}
+.pp-close{cursor:pointer;color:#888780;font-size:20px;line-height:1}
+.pp-body{flex:1;overflow-y:auto;padding:12px 18px}
+.pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.pp-card{cursor:pointer;border-radius:6px;overflow:hidden;border:0.5px solid transparent;position:relative}
+.pp-card:hover{border-color:#534AB7}
+.pp-card.picked{opacity:0.4;cursor:not-allowed}
+.pp-card.picked::after{content:'Jau yra';position:absolute;top:6px;right:6px;background:rgba(83,74,183,0.9);color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;letter-spacing:0.05em;text-transform:uppercase;font-weight:600}
+.pp-ph{width:100%;aspect-ratio:1;object-fit:cover;background:#e6e4dc;display:block}
+.pp-ph-fb{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:18px}
+.pp-nm{font-size:11px;padding:5px 6px 7px;color:#3a3a35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pp-st-badge{position:absolute;bottom:28px;left:6px;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase}
+.pp-st-badge.t{background:#d4ecd4;color:#2a6b2a}
+.pp-st-badge.m{background:#ffe9c9;color:#8a5a1a}
 /* Reference comments section (basket-level thread, below header) */
 .rc-section{margin:8px 14px 0;border:0.5px solid #d3d1c7;border-radius:8px;background:#fafaf7;flex-shrink:0}
 .rc-toggle{width:100%;display:flex;align-items:center;gap:7px;padding:8px 12px;background:none;border:none;cursor:pointer;color:#1a1a18;font-family:inherit;font-size:11px;text-align:left;border-radius:8px;transition:background 0.1s}
@@ -486,6 +577,10 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"/><path d="M13.9 21.818a10 10 0 0 1-3.8 0"/><path d="M17.609 3.72a10 10 0 0 1 2.69 2.7"/><path d="M2.182 13.9a10 10 0 0 1 0-3.8"/><path d="M20.28 17.61a10 10 0 0 1-2.7 2.69"/><path d="M21.818 10.1a10 10 0 0 1 0 3.8"/><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"/><path d="m6.163 21.117-2.906.85a1 1 0 0 1-1.236-1.169l.965-2.98"/></svg>
         <span class="tab-lbl">Nepatvirtinti</span>
       </button>
+      <button class="tb-tab" id="tabBoards" onclick="showBoardsView(this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="tab-lbl">Aktorių deriniai</span>
+      </button>
     </div>
     <div class="tb-right">
       <div class="tb-sync" id="syncBtn" onclick="loadData()">↻ Atnaujinti</div>
@@ -558,6 +653,11 @@ var S = {
   refPending: null, // {basketId, file, dataUrl} attachment staged for next ref comment
   showHidden: localStorage.getItem('showHidden') === '1',
   moveModalBaId: null,
+  // Aktorių deriniai (Task 7)
+  boards: [],                  // list of board metadata for the project
+  activeBoardId: null,         // currently-open board
+  boardData: null,             // { board, categories, picks, comments }
+  pickPickerCategoryId: null,  // category id while pick-picker modal is open
 };
 
 // ── Supabase ───────────────────────────────────────────────────────────────
@@ -640,6 +740,8 @@ async function loadData() {
     } else if (prevView === 'patvirtinti' || prevView === 'galbut' || prevView === 'nepatvirtinti') {
       var tabId = prevView === 'patvirtinti' ? 'tabPatv' : prevView === 'galbut' ? 'tabGalb' : 'tabNepa';
       showOverview(prevView, document.getElementById(tabId));
+    } else if (prevView === 'deriniai') {
+      showBoardsView(document.getElementById('tabBoards'));
     } else if (prevView === 'nauji') {
       switchView('nauji');
     } else {
@@ -711,6 +813,11 @@ async function computeAllBasketCounts() {
 // ── Sidebar ────────────────────────────────────────────────────────────────
 function renderSidebar() {
   var list = document.getElementById('sidebarList');
+  // Mode switch: in boards view, sidebar shows boards grouped by author
+  if (S.view === 'deriniai') {
+    renderBoardsSidebar();
+    return;
+  }
   // Atrinkti baskets are merged into their parent and never shown standalone
   var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti; });
   if (!sbBaskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
@@ -1216,7 +1323,7 @@ function renderGrid() {
   // Atrinkti section at top — always rendered when atrinkti basket exists,
   // regardless of filter (the filter applies to status, atrinkti is orthogonal)
   if (atrinkti.length) {
-    html += '<div class="atr-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Atrinkti · ' + atrinkti.length + '</div>';
+    html += '<div class="atr-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Atrinkti kastingui · ' + atrinkti.length + '</div>';
     // Apply current status filter inside atrinkti as well
     var atrFiltered = atrinkti;
     if (f === 'taip')   atrFiltered = atrinkti.filter(function(a){ return a.status === 'yes'; });
@@ -1827,6 +1934,542 @@ async function jumpToActor(baId, basketId) {
   await selectBasket(basketId);
   S.selectedBaId = baId; renderGrid(); openActor(baId);
 }
+
+// ═══ Aktorių deriniai / Boards (Task 7) ════════════════════════════════════
+//
+// Each user creates their own cast picks board. Boards have categories
+// (one per character / basket) and picks (candidates assigned per category).
+// Owner can edit; anyone can comment. Comments sticky at bottom of view.
+// "Kopijuoti kaip šabloną" duplicates the board's structure to a new one
+// owned by the copier. Archived boards appear at the bottom of the sidebar.
+
+async function showBoardsView(btn) {
+  S.view = 'deriniai'; S.activeBasketId = null; S.selectedBaId = null;
+  document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('act'); });
+  if (btn) btn.classList.add('act');
+  document.getElementById('sbPran').classList.remove('act');
+  document.getElementById('sbNauji').classList.remove('act');
+  closePanel(); closeSidebar();
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+  try {
+    await loadBoards();
+    renderSidebar();
+    if (S.activeBoardId && S.boards.some(function(b){ return b.id === S.activeBoardId; })) {
+      await selectBoard(S.activeBoardId);
+    } else {
+      renderBoardsEmpty();
+    }
+  } catch(e) {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti derinių<br><small style="font-size:10px;color:#aaa;display:block;margin-top:6px">' + esc(e.message) + '</small></div>';
+  }
+}
+
+async function loadBoards() {
+  S.boards = await sb('/rest/v1/boards?project_id=eq.' + S.projectId + '&select=id,name,author_name,archived,created_at,updated_at&order=author_name.asc,archived.asc,created_at.desc');
+}
+
+function renderBoardsEmpty() {
+  document.getElementById('mainArea').innerHTML =
+    '<div class="brd-empty">Pasirinkite derinį iš sąrašo arba sukurkite naują</div>';
+}
+
+function renderBoardsSidebar() {
+  var list = document.getElementById('sidebarList');
+  // "+ Naujas derinys" button at top, then boards grouped by author, archived at bottom
+  var html = '<button class="brd-new-btn" onclick="createBoard()">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>'
+    + 'Naujas derinys</button>';
+  var active = S.boards.filter(function(b){ return !b.archived; });
+  var archived = S.boards.filter(function(b){ return b.archived; });
+  // Group active by author
+  var byAuthor = {};
+  active.forEach(function(b){
+    var a = b.author_name || '?';
+    if (!byAuthor[a]) byAuthor[a] = [];
+    byAuthor[a].push(b);
+  });
+  var authors = Object.keys(byAuthor).sort();
+  if (!active.length) html += '<div style="padding:14px;font-size:11px;color:#888780">Dar nėra derinių</div>';
+  authors.forEach(function(au){
+    html += '<div class="sb-author-grp">' + esc(au) + '</div>';
+    byAuthor[au].forEach(function(b){
+      html += '<div class="sb-board ' + (b.id === S.activeBoardId ? 'act' : '') + '" onclick="selectBoard(\'' + b.id + '\')">'
+        + '<span class="sb-board-nm">' + esc(b.name) + '</span></div>';
+    });
+  });
+  if (archived.length) {
+    html += '<div class="sb-archived-sep">Archyvuoti · ' + archived.length + '</div>';
+    archived.forEach(function(b){
+      html += '<div class="sb-board arch ' + (b.id === S.activeBoardId ? 'act' : '') + '" onclick="selectBoard(\'' + b.id + '\')">'
+        + '<span class="sb-board-nm">' + esc(b.name) + '</span>'
+        + '<span style="font-size:9px;color:#a3a39a">' + esc(b.author_name) + '</span></div>';
+    });
+  }
+  list.innerHTML = html;
+  document.getElementById('sbPran').classList.remove('act');
+  document.getElementById('sbNauji').classList.remove('act');
+}
+
+async function selectBoard(boardId) {
+  S.activeBoardId = boardId; closePanel();
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+  if (S.view === 'deriniai') renderSidebar();
+  try {
+    var board = S.boards.find(function(b){ return b.id === boardId; });
+    if (!board) { renderBoardsEmpty(); return; }
+    var cats = await sb('/rest/v1/board_categories?board_id=eq.' + boardId + '&select=id,basket_id,position&order=position.asc,created_at.asc');
+    var picks = [];
+    if (cats.length) {
+      picks = await sb('/rest/v1/board_picks?board_category_id=in.(' + cats.map(function(c){ return c.id; }).join(',') + ')&select=id,board_category_id,basket_actor_id,position,added_by,created_at&order=position.asc,created_at.asc');
+    }
+    // Fetch basket_actor details for all picks (need actor info + photos)
+    var pickBaIds = picks.map(function(p){ return p.basket_actor_id; }).filter(Boolean);
+    var baInfo = {};
+    if (pickBaIds.length) {
+      var baRows = await sb('/rest/v1/basket_actors?id=in.(' + pickBaIds.join(',') + ')&select=id,status,basket_id,actor_id,removed_from_agency,actors(id,first_name,agency_id)');
+      var actorIds = Array.from(new Set(baRows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
+      var pMap = {};
+      if (actorIds.length) {
+        var photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
+        photos.forEach(function(p){ if (!pMap[p.actor_id]) pMap[p.actor_id] = []; pMap[p.actor_id].push(p); });
+      }
+      baRows.forEach(function(r){
+        baInfo[r.id] = {
+          actor: r.actors, status: r.status, basket_id: r.basket_id,
+          photos: (r.actors && pMap[r.actors.id]) || [],
+          removed: !!r.removed_from_agency
+        };
+      });
+    }
+    var comments = await sb('/rest/v1/board_comments?board_id=eq.' + boardId + '&select=id,author_name,content,attachment_path,attachment_name,created_at&order=created_at.asc');
+    S.boardData = { board: board, categories: cats, picks: picks, baInfo: baInfo, comments: comments };
+    renderBoard();
+  } catch(e) {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti derinio<br><small style="font-size:10px;color:#aaa;display:block;margin-top:6px">' + esc(e.message) + '</small></div>';
+  }
+}
+
+function renderBoard() {
+  var d = S.boardData; if (!d) return;
+  var b = d.board;
+  var isOwner = b.author_name === S.username;
+  // Build category lookup so we can render parent basket names
+  var basketsById = {};
+  S.baskets.forEach(function(bk){ basketsById[bk.id] = bk; });
+  // Picks grouped by category id
+  var picksByCat = {};
+  d.picks.forEach(function(p){
+    if (!picksByCat[p.board_category_id]) picksByCat[p.board_category_id] = [];
+    picksByCat[p.board_category_id].push(p);
+  });
+
+  var html = '<div class="brd-wrap">';
+  // Header
+  html += '<div class="brd-head">'
+    + '<div style="flex:1;min-width:0">'
+    + (isOwner
+        ? '<div class="brd-title" onclick="renameBoardPrompt()" title="Spustelėkite, kad pervadintumėte">' + esc(b.name) + (b.archived ? ' <span class="brd-act-btn archived" style="font-size:9px;padding:2px 6px">archyvuotas</span>' : '') + '</div>'
+        : '<div class="brd-title" style="cursor:default">' + esc(b.name) + (b.archived ? ' <span class="brd-act-btn archived" style="font-size:9px;padding:2px 6px">archyvuotas</span>' : '') + '</div>')
+    + '<div class="brd-author">' + esc(b.author_name) + '</div></div>'
+    + '<div class="brd-actions">'
+    + '<button class="brd-act-btn" onclick="copyBoardAsTemplate()" title="Sukuria naują derinį pagal šio struktūrą — be picks">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>'
+    +   'Kopijuoti kaip šabloną</button>'
+    + (isOwner ? '<button class="brd-act-btn" onclick="archiveBoardToggle()">'
+        + (b.archived
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Atstatyti'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archyvuoti')
+        + '</button>' : '')
+    + (isOwner ? '<button class="brd-act-btn danger" onclick="deleteBoardConfirm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Ištrinti</button>' : '')
+    + '</div></div>';
+
+  // Categories grid
+  html += '<div class="brd-scroll"><div class="brd-grid">';
+  d.categories.forEach(function(cat){
+    var basket = basketsById[cat.basket_id];
+    var catName = basket ? basket.name.toUpperCase() : '(pašalintas veikėjas)';
+    var picksHere = picksByCat[cat.id] || [];
+    html += '<div class="brd-cat" data-cat-id="' + cat.id + '"'
+      + (isOwner ? ' draggable="true" ondragstart="onCatDragStart(event,\'' + cat.id + '\')" ondragover="onCatDragOver(event)" ondrop="onCatDrop(event,\'' + cat.id + '\')" ondragend="onCatDragEnd(event)"' : '')
+      + '>'
+      + '<div class="brd-cat-head"><span class="brd-cat-name">' + esc(catName) + '</span>'
+      + (isOwner ? '<span class="brd-cat-rm" onclick="event.stopPropagation();removeCategoryFromBoard(\'' + cat.id + '\')" title="Pašalinti veikėją iš derinio">×</span>' : '')
+      + '</div>';
+    html += '<div class="brd-picks">';
+    picksHere.forEach(function(p){
+      var info = d.baInfo[p.basket_actor_id];
+      if (!info) { html += '<div class="brd-pick" style="color:#a3a39a;font-size:11px;font-style:italic">(kandidatas pašalintas)</div>'; return; }
+      var name = (info.actor && info.actor.first_name) || '?';
+      var agId = (info.actor && info.actor.agency_id) || 'x';
+      var photo = (info.photos && info.photos[0]) || null;
+      var photoHtml = photo
+        ? '<img class="brd-pick-ph" src="' + pUrl(photo.storage_path) + '" onerror="this.outerHTML=\'<div class=\\\'brd-pick-ph-fb\\\' style=\\\'background:' + hsl(agId) + '\\\'>' + esc(name.charAt(0).toUpperCase()) + '</div>\'">'
+        : '<div class="brd-pick-ph-fb" style="background:' + hsl(agId) + '">' + esc(name.charAt(0).toUpperCase()) + '</div>';
+      var stBadge = info.status === 'yes' ? '<span class="brd-pick-st t">Taip</span>' : info.status === 'maybe' ? '<span class="brd-pick-st m">Galbūt</span>' : '';
+      html += '<div class="brd-pick" onclick="boardPickClick(\'' + p.basket_actor_id + '\',\'' + (info.basket_id || '') + '\')">'
+        + photoHtml + '<span class="brd-pick-nm">' + esc(name) + '</span>'
+        + stBadge
+        + (isOwner ? '<span class="brd-pick-rm" onclick="event.stopPropagation();removePickFromCategory(\'' + p.id + '\')" title="Pašalinti">×</span>' : '')
+        + '</div>';
+    });
+    if (isOwner) {
+      html += '<div class="brd-add-pick" onclick="openPickPicker(\'' + cat.id + '\',\'' + cat.basket_id + '\')">+ Pridėti kandidatą</div>';
+    }
+    html += '</div></div>'; // .brd-picks, .brd-cat
+  });
+  if (isOwner) {
+    html += '<div class="brd-add-cat-card" onclick="addCategoryPrompt()">+ Pridėti veikėją</div>';
+  }
+  html += '</div></div>'; // .brd-grid, .brd-scroll
+
+  // Sticky comments at the bottom
+  html += '<div class="brd-comments">';
+  html += '<div class="brd-cmt-list" id="brdCmtList">';
+  if (!d.comments.length) html += '<div style="font-size:11px;color:#a3a39a;text-align:center;padding:8px">Komentarų dar nėra</div>';
+  d.comments.forEach(function(c){ html += brdCommentHtml(c); });
+  html += '</div>';
+  html += '<div class="brd-cmt-form">'
+    + '<textarea class="brd-cmt-input" id="brdCmtInput" placeholder="Pridėti komentarą…" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key===\'Enter\')submitBoardComment()"></textarea>'
+    + '<button class="brd-cmt-send" onclick="submitBoardComment()">Siųsti</button></div>';
+  html += '</div>'; // .brd-comments
+
+  html += '</div>'; // .brd-wrap
+  document.getElementById('mainArea').innerHTML = html;
+  // Scroll comments to bottom
+  var cl = document.getElementById('brdCmtList');
+  if (cl) cl.scrollTop = cl.scrollHeight;
+}
+
+function brdCommentHtml(c) {
+  var canDel = c.author_name === S.username;
+  var t = new Date(c.created_at);
+  var ts = t.getDate() + '.' + (t.getMonth()+1) + '. ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+  return '<div class="brd-cmt" id="bcmt-' + c.id + '">'
+    + '<div class="brd-cmt-h"><span class="brd-cmt-au">' + esc(c.author_name) + '</span><span>' + ts + '</span></div>'
+    + '<div>' + esc(c.content).replace(/\n/g, '<br>') + '</div>'
+    + (canDel ? '<span class="brd-cmt-del" onclick="deleteBoardComment(\'' + c.id + '\')" title="Ištrinti">×</span>' : '')
+    + '</div>';
+}
+
+function boardPickClick(baId, basketId) {
+  // If the pick lives in an atrinkti basket, navigate to its PARENT
+  // (atrinkti baskets are never selectable standalone in the UI)
+  var bk = S.baskets.find(function(b){ return b.id === basketId; });
+  if (bk && bk.is_atrinkti && bk.parent_basket_id) basketId = bk.parent_basket_id;
+  if (!basketId) { showToast('Veikėjas pašalintas'); return; }
+  jumpToActor(baId, basketId);
+}
+
+async function createBoard() {
+  var defaultName = S.username + ' #' + (S.boards.filter(function(b){ return b.author_name === S.username; }).length + 1);
+  var name = prompt('Naujo derinio pavadinimas:', defaultName);
+  if (!name || !name.trim()) return;
+  try {
+    var rows = await sb('/rest/v1/boards', {
+      method: 'POST',
+      body: JSON.stringify({ project_id: S.projectId, name: name.trim(), author_name: S.username })
+    });
+    var newBoard = Array.isArray(rows) ? rows[0] : rows;
+    // Auto-populate with all current parent baskets (skip atrinkti)
+    var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti; });
+    if (parentBaskets.length) {
+      var catRows = parentBaskets.map(function(bk, i){
+        return { board_id: newBoard.id, basket_id: bk.id, position: i };
+      });
+      await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
+    }
+    showToast('Sukurtas');
+    await loadBoards();
+    S.activeBoardId = newBoard.id;
+    renderSidebar();
+    await selectBoard(newBoard.id);
+  } catch(e) { showToast('Nepavyko sukurti'); }
+}
+
+async function renameBoardPrompt() {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  var name = prompt('Naujas pavadinimas:', d.board.name);
+  if (!name || !name.trim() || name.trim() === d.board.name) return;
+  try {
+    await sb('/rest/v1/boards?id=eq.' + d.board.id, {
+      method: 'PATCH',
+      body: JSON.stringify({ name: name.trim(), updated_at: new Date().toISOString() })
+    });
+    d.board.name = name.trim();
+    var sb_b = S.boards.find(function(x){ return x.id === d.board.id; });
+    if (sb_b) sb_b.name = name.trim();
+    renderSidebar(); renderBoard();
+    showToast('Pervadinta');
+  } catch(e) { showToast('Nepavyko pervadinti'); }
+}
+
+async function archiveBoardToggle() {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  var newArchived = !d.board.archived;
+  try {
+    await sb('/rest/v1/boards?id=eq.' + d.board.id, {
+      method: 'PATCH',
+      body: JSON.stringify({ archived: newArchived, updated_at: new Date().toISOString() })
+    });
+    d.board.archived = newArchived;
+    var sb_b = S.boards.find(function(x){ return x.id === d.board.id; });
+    if (sb_b) sb_b.archived = newArchived;
+    renderSidebar(); renderBoard();
+    showToast(newArchived ? 'Archyvuotas' : 'Atstatytas');
+  } catch(e) { showToast('Nepavyko'); }
+}
+
+async function deleteBoardConfirm() {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  if (!confirm('Ištrinti derinį "' + d.board.name + '"?\nVisi pasirinkimai ir komentarai bus pašalinti.')) return;
+  try {
+    await sb('/rest/v1/boards?id=eq.' + d.board.id, { method: 'DELETE' });
+    S.boards = S.boards.filter(function(x){ return x.id !== d.board.id; });
+    S.activeBoardId = null; S.boardData = null;
+    renderSidebar(); renderBoardsEmpty();
+    showToast('Ištrinta');
+  } catch(e) { showToast('Nepavyko ištrinti'); }
+}
+
+async function copyBoardAsTemplate() {
+  var d = S.boardData; if (!d) return;
+  var defaultName = d.board.name + ' (kopija)';
+  var name = prompt('Naujo derinio pavadinimas:', defaultName);
+  if (!name || !name.trim()) return;
+  try {
+    var rows = await sb('/rest/v1/boards', {
+      method: 'POST',
+      body: JSON.stringify({ project_id: S.projectId, name: name.trim(), author_name: S.username })
+    });
+    var newBoard = Array.isArray(rows) ? rows[0] : rows;
+    // Copy categories preserving order — but NOT picks (template = empty)
+    if (d.categories.length) {
+      var catRows = d.categories.map(function(c, i){
+        return { board_id: newBoard.id, basket_id: c.basket_id, position: c.position != null ? c.position : i };
+      });
+      await sb('/rest/v1/board_categories', { method: 'POST', body: JSON.stringify(catRows) });
+    }
+    showToast('Šablonas sukurtas');
+    await loadBoards();
+    S.activeBoardId = newBoard.id;
+    renderSidebar();
+    await selectBoard(newBoard.id);
+  } catch(e) { showToast('Nepavyko kopijuoti'); }
+}
+
+async function removeCategoryFromBoard(catId) {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  if (!confirm('Pašalinti šį veikėją iš derinio?\nPasirinkti kandidatai bus pamesti.')) return;
+  try {
+    await sb('/rest/v1/board_categories?id=eq.' + catId, { method: 'DELETE' });
+    await selectBoard(d.board.id);
+    showToast('Pašalinta');
+  } catch(e) { showToast('Nepavyko'); }
+}
+
+async function addCategoryPrompt() {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  var existing = new Set(d.categories.map(function(c){ return c.basket_id; }));
+  var available = S.baskets.filter(function(b){ return !b.is_atrinkti && !existing.has(b.id); });
+  if (!available.length) { showToast('Visi veikėjai jau pridėti'); return; }
+  // Build numbered list prompt — simplest UI for v1
+  var listText = available.map(function(b, i){ return (i+1) + '. ' + b.name.toUpperCase(); }).join('\n');
+  var pick = prompt('Pasirinkite veikėją (įveskite numerį):\n' + listText);
+  if (!pick) return;
+  var idx = parseInt(pick, 10) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= available.length) { showToast('Netinkamas pasirinkimas'); return; }
+  var basket = available[idx];
+  try {
+    var maxPos = d.categories.reduce(function(m, c){ return Math.max(m, c.position || 0); }, -1);
+    await sb('/rest/v1/board_categories', {
+      method: 'POST',
+      body: JSON.stringify({ board_id: d.board.id, basket_id: basket.id, position: maxPos + 1 })
+    });
+    await selectBoard(d.board.id);
+    showToast('Pridėta');
+  } catch(e) { showToast('Nepavyko'); }
+}
+
+// ── Pick picker modal ──────────────────────────────────────────────────────
+async function openPickPicker(catId, basketId) {
+  S.pickPickerCategoryId = catId;
+  var d = S.boardData; if (!d) return;
+  var basket = S.baskets.find(function(b){ return b.id === basketId; });
+  if (!basket) { showToast('Veikėjas nerastas'); return; }
+  // Existing picks in this category — disable to avoid duplicates
+  var existingBaIds = new Set(d.picks.filter(function(p){ return p.board_category_id === catId; }).map(function(p){ return p.basket_actor_id; }));
+  // Fetch parent + atrinkti rows
+  var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
+  try {
+    var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIds.join(',') + ')&removed_from_agency=eq.false&hidden=eq.false&select=id,status,basket_id,actors(id,first_name,agency_id)&order=status.asc');
+    var actorIds = Array.from(new Set(bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
+    var pMap = {};
+    if (actorIds.length) {
+      var photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
+      photos.forEach(function(p){ if (!pMap[p.actor_id]) pMap[p.actor_id] = []; pMap[p.actor_id].push(p); });
+    }
+    // Dedup: if same actor in both parent & atrinkti, prefer atrinkti row
+    var seenActorIds = new Set();
+    bas = bas.slice().sort(function(a, b){
+      var aAtr = basket.atrinkti_basket_id && a.basket_id === basket.atrinkti_basket_id ? 0 : 1;
+      var bAtr = basket.atrinkti_basket_id && b.basket_id === basket.atrinkti_basket_id ? 0 : 1;
+      return aAtr - bAtr;
+    });
+    bas = bas.filter(function(r){
+      var aid = r.actors && r.actors.id;
+      if (!aid || seenActorIds.has(aid)) return false;
+      seenActorIds.add(aid); return true;
+    });
+    // Sort yes → maybe → pending for picker UX
+    var rank = { 'yes': 0, 'maybe': 1, 'pending': 2 };
+    bas.sort(function(a, b){ return (rank[a.status] || 3) - (rank[b.status] || 3); });
+
+    var html = '<div class="pp-overlay" onclick="if(event.target===this)closePickPicker()">'
+      + '<div class="pp-box">'
+      + '<div class="pp-head"><div class="pp-title">' + esc(basket.name.toUpperCase()) + ' — pasirinkite kandidatą</div>'
+      + '<div class="pp-close" onclick="closePickPicker()">×</div></div>'
+      + '<div class="pp-body">';
+    if (!bas.length) html += '<div style="text-align:center;color:#888780;padding:30px;font-size:13px">Šiame veikėjuje kandidatų nėra</div>';
+    else {
+      html += '<div class="pp-grid">';
+      bas.forEach(function(r){
+        var name = (r.actors && r.actors.first_name) || '?';
+        var agId = (r.actors && r.actors.agency_id) || 'x';
+        var ph = (pMap[r.actors && r.actors.id] && pMap[r.actors && r.actors.id][0]) || null;
+        var phHtml = ph
+          ? '<img class="pp-ph" src="' + pUrl(ph.storage_path) + '" onerror="this.outerHTML=\'<div class=\\\'pp-ph-fb\\\' style=\\\'background:' + hsl(agId) + '\\\'>' + esc(name.charAt(0).toUpperCase()) + '</div>\'">'
+          : '<div class="pp-ph-fb" style="background:' + hsl(agId) + '">' + esc(name.charAt(0).toUpperCase()) + '</div>';
+        var stBadge = r.status === 'yes' ? '<span class="pp-st-badge t">Taip</span>' : r.status === 'maybe' ? '<span class="pp-st-badge m">Galbūt</span>' : '';
+        var picked = existingBaIds.has(r.id);
+        var click = picked ? '' : ' onclick="addPickToCategory(\'' + r.id + '\')"';
+        html += '<div class="pp-card ' + (picked ? 'picked' : '') + '"' + click + '>'
+          + phHtml + stBadge + '<div class="pp-nm">' + esc(name) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div></div></div>';
+    var existing = document.getElementById('pickPicker');
+    if (existing) existing.remove();
+    var wrap = document.createElement('div'); wrap.id = 'pickPicker'; wrap.innerHTML = html;
+    document.body.appendChild(wrap);
+  } catch(e) { showToast('Nepavyko užkrauti kandidatų: ' + e.message); }
+}
+
+function closePickPicker() {
+  var p = document.getElementById('pickPicker'); if (p) p.remove();
+  S.pickPickerCategoryId = null;
+}
+
+async function addPickToCategory(baId) {
+  var catId = S.pickPickerCategoryId;
+  if (!catId || !S.boardData) return;
+  var d = S.boardData;
+  var maxPos = (d.picks.filter(function(p){ return p.board_category_id === catId; })
+                       .reduce(function(m, p){ return Math.max(m, p.position || 0); }, -1));
+  try {
+    await sb('/rest/v1/board_picks', {
+      method: 'POST',
+      body: JSON.stringify({ board_category_id: catId, basket_actor_id: baId, position: maxPos + 1, added_by: S.username })
+    });
+    closePickPicker();
+    await selectBoard(d.board.id);
+  } catch(e) { showToast('Nepavyko pridėti'); }
+}
+
+async function removePickFromCategory(pickId) {
+  var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
+  try {
+    await sb('/rest/v1/board_picks?id=eq.' + pickId, { method: 'DELETE' });
+    await selectBoard(d.board.id);
+  } catch(e) { showToast('Nepavyko'); }
+}
+
+// ── Category drag-drop ─────────────────────────────────────────────────────
+var _catDragId = null;
+function onCatDragStart(e, catId) {
+  _catDragId = catId;
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.add('dragging');
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+}
+function onCatDragOver(e) {
+  e.preventDefault();
+  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.add('drop-target');
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+}
+async function onCatDrop(e, targetCatId) {
+  e.preventDefault();
+  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  if (!_catDragId || _catDragId === targetCatId) { _catDragId = null; return; }
+  var d = S.boardData; if (!d) return;
+  var srcIdx = d.categories.findIndex(function(c){ return c.id === _catDragId; });
+  var tgtIdx = d.categories.findIndex(function(c){ return c.id === targetCatId; });
+  if (srcIdx < 0 || tgtIdx < 0) { _catDragId = null; return; }
+  var moved = d.categories.splice(srcIdx, 1)[0];
+  var insertAt = srcIdx < tgtIdx ? tgtIdx : tgtIdx;
+  d.categories.splice(insertAt, 0, moved);
+  d.categories.forEach(function(c, i){ c.position = i; });
+  renderBoard();
+  // Persist new positions in parallel
+  try {
+    await Promise.all(d.categories.map(function(c){
+      return sb('/rest/v1/board_categories?id=eq.' + c.id, {
+        method: 'PATCH', body: JSON.stringify({ position: c.position })
+      });
+    }));
+  } catch(err) { showToast('Tvarkos pakeisti nepavyko'); selectBoard(d.board.id); }
+  _catDragId = null;
+}
+function onCatDragEnd(e) {
+  if (e.currentTarget && e.currentTarget.classList) e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.brd-cat.drop-target').forEach(function(el){ el.classList.remove('drop-target'); });
+  _catDragId = null;
+}
+
+// ── Board comments ─────────────────────────────────────────────────────────
+async function submitBoardComment() {
+  var input = document.getElementById('brdCmtInput');
+  if (!input) return;
+  var content = (input.value || '').trim();
+  if (!content) return;
+  var d = S.boardData; if (!d) return;
+  var btn = document.querySelector('.brd-cmt-send');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    var rows = await sb('/rest/v1/board_comments', {
+      method: 'POST',
+      body: JSON.stringify({ board_id: d.board.id, author_name: S.username, content: content })
+    });
+    var newCmt = Array.isArray(rows) ? rows[0] : rows;
+    d.comments.push(newCmt);
+    input.value = '';
+    // Append the new comment in place and scroll to bottom (avoid full re-render)
+    var list = document.getElementById('brdCmtList');
+    if (list) {
+      // Remove "no comments" placeholder if present
+      var placeholder = list.querySelector('div[style*="Komentarų dar nėra"]');
+      if (placeholder) placeholder.remove();
+      list.insertAdjacentHTML('beforeend', brdCommentHtml(newCmt));
+      list.scrollTop = list.scrollHeight;
+    }
+  } catch(e) { showToast('Nepavyko išsiųsti'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; } }
+}
+
+async function deleteBoardComment(commentId) {
+  var d = S.boardData; if (!d) return;
+  var cmt = d.comments.find(function(c){ return c.id === commentId; });
+  if (!cmt || cmt.author_name !== S.username) return;
+  if (!confirm('Ištrinti komentarą?')) return;
+  try {
+    await sb('/rest/v1/board_comments?id=eq.' + commentId, { method: 'DELETE' });
+    d.comments = d.comments.filter(function(c){ return c.id !== commentId; });
+    var el = document.getElementById('bcmt-' + commentId);
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  } catch(e) { showToast('Nepavyko ištrinti'); }
+}
+
+// ═══ End of boards code ════════════════════════════════════════════════════
 
 // ── Actor panel ────────────────────────────────────────────────────────────
 async function openActor(baId) {
