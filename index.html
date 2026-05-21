@@ -542,6 +542,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
     <label class="modal-lbl">Pridėti video (YouTube arba Dropbox nuoroda)</label>
     <input class="modal-inp" id="ifVid" type="url" placeholder="https://…" oninput="previewVid(this.value)">
     <div class="vid-prev" id="vidPrev"><img id="vidThumb" src="" alt=""><div class="vid-prev-play"><span>▶</span></div></div>
+    <label class="modal-lbl">CV nuoroda į išorinį puslapį</label>
+    <input class="modal-inp" id="ifCvUrl" type="url" placeholder="https://…">
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeInfoModal()">Atšaukti</button>
       <button class="btn-save" onclick="saveInfoModal()">Išsaugoti</button>
@@ -584,6 +586,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
     <textarea class="modal-ta" id="mcAvail" rows="3" placeholder="Užimtumo informacija…"></textarea>
     <label class="modal-lbl">Pastabos</label>
     <textarea class="modal-ta" id="mcNotes" rows="4" placeholder="Pastabos apie kandidatą…"></textarea>
+    <label class="modal-lbl">CV nuoroda į išorinį puslapį</label>
+    <input class="modal-inp" id="mcCvUrl" type="url" placeholder="https://…">
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeManualCandidateModal()">Atšaukti</button>
       <button class="btn-save" id="mcSaveBtn" onclick="saveManualCandidate()">Išsaugoti</button>
@@ -865,7 +869,7 @@ async function loadData() {
     // detectAtrinkti can pair an active basket with a removed sibling whose
     // refs/comments still live in DB. S.baskets remains the active set used
     // everywhere else (sidebar, grid, etc.).
-    S.allBaskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order,removed_from_agency&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    S.allBaskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order,removed_from_agency,is_manual,created_by&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
     S.baskets = S.allBaskets.filter(function(b){ return !b.removed_from_agency; });
     detectAtrinkti();
     await computeAllBasketCounts();
@@ -1456,7 +1460,7 @@ async function selectBasket(id) {
     var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,created_by,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
-      var extRows = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,availability,notes,videos');
+      var extRows = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,availability,notes,videos,cv_url');
       extRows.forEach(function(r){ ext[r.id] = r; });
     } catch(e) {}
     var actorIds = bas.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean);
@@ -1502,6 +1506,7 @@ async function selectBasket(id) {
         availability: (ext[ba.id] && ext[ba.id].availability) || '',
         notes: (ext[ba.id] && ext[ba.id].notes) || '',
         videos: (ext[ba.id] && ext[ba.id].videos) || [],
+        cv_url: (ext[ba.id] && ext[ba.id].cv_url) || null,
         hidden: !!ba.hidden,
         is_manual: !!ba.is_manual,
         source_basket_actor_id: ba.source_basket_actor_id || null,
@@ -2097,6 +2102,7 @@ function openManualCandidateModal(baId) {
   document.getElementById('mcPhotos').value = '';
   document.getElementById('mcAvail').value = '';
   document.getElementById('mcNotes').value = '';
+  document.getElementById('mcCvUrl').value = '';
   document.getElementById('mcExistingPhotos').style.display = 'none';
   document.getElementById('mcExistingList').innerHTML = '';
   if (baId) {
@@ -2105,6 +2111,7 @@ function openManualCandidateModal(baId) {
       document.getElementById('mcFirstName').value = (ba.actor && ba.actor.first_name) || '';
       document.getElementById('mcAvail').value = ba.availability || '';
       document.getElementById('mcNotes').value = ba.notes || '';
+      document.getElementById('mcCvUrl').value = ba.cv_url || '';
       if (ba.photos && ba.photos.length) {
         document.getElementById('mcExistingList').innerHTML = ba.photos.map(function(p) {
           return '<div class="mc-thumb" data-pid="' + p.id + '">'
@@ -2142,6 +2149,7 @@ async function saveManualCandidate() {
   try {
     var avail = document.getElementById('mcAvail').value.trim();
     var notes = document.getElementById('mcNotes').value.trim();
+    var cvUrl = document.getElementById('mcCvUrl').value.trim();
     var photoFiles = Array.from(document.getElementById('mcPhotos').files || []);
     var actorId, baId;
 
@@ -2161,7 +2169,7 @@ async function saveManualCandidate() {
       // Update basket_actor fields
       await sb('/rest/v1/basket_actors?id=eq.' + baId, {
         method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ availability: avail || null, notes: notes || null })
+        body: JSON.stringify({ availability: avail || null, notes: notes || null, cv_url: cvUrl || null })
       });
       // Delete marked photos (storage + row). Best-effort on storage; the row delete is the source of truth.
       for (var i = 0; i < S.mcPhotosToDelete.length; i++) {
@@ -2199,6 +2207,7 @@ async function saveManualCandidate() {
           status: 'pending',
           availability: avail || null,
           notes: notes || null,
+          cv_url: cvUrl || null,
           is_manual: true,
           created_by: S.username
         })
@@ -3212,6 +3221,7 @@ async function openActor(baId) {
     + '<div class="vgrid" id="vgrid-' + baId + '">' + (vids || '<div style="color:#888780;font-size:10px;grid-column:1/-1;padding:2px 0 8px">Nėra pridėtų vaizdo įrašų</div>') + '</div>'
     + '<div class="psec">Duomenys</div>'
     + cvR('Pridėjo', ba.created_by || null)
+    + (ba.cv_url ? '<div class="cvrow"><span class="cvl">CV nuoroda</span><span class="cvv"><a href="' + esc(ba.cv_url) + '" target="_blank" rel="noopener" style="color:#534AB7;text-decoration:underline;word-break:break-all">' + esc(ba.cv_url) + '</a></span></div>' : '')
     + cvR('Gimimo metai', (actor && actor.dob))
     + cvR('Ūgis', (actor && actor.height) ? actor.height + ' cm' : null)
     + cvR('Svoris', (actor && actor.weight) ? actor.weight + ' kg' : null)
@@ -3343,6 +3353,7 @@ function openInfoModal(baId) {
   document.getElementById('ifUzim').value   = (ba && ba.availability) || '';
   document.getElementById('ifPastab').value = (ba && ba.notes) || '';
   document.getElementById('ifVid').value    = '';
+  document.getElementById('ifCvUrl').value  = (ba && ba.cv_url) || '';
   document.getElementById('vidPrev').style.display = 'none';
   document.getElementById('infoModal').style.display = 'flex';
 }
@@ -3353,14 +3364,15 @@ async function saveInfoModal() {
   var av  = document.getElementById('ifUzim').value.trim();
   var nt  = document.getElementById('ifPastab').value.trim();
   var vu  = document.getElementById('ifVid').value.trim();
+  var cv  = document.getElementById('ifCvUrl').value.trim();
   var ba  = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
   var basket = S.baskets.find(function(b){ return b.id === S.activeBasketId; });
   try {
-    var upd = { availability: av, notes: nt };
+    var upd = { availability: av, notes: nt, cv_url: cv || null };
     var addedVideo = false;
     if (vu) { var vd = parseVid(vu); upd.videos = (ba && ba.videos || []).concat([vd]); addedVideo = true; }
     await sb('/rest/v1/basket_actors?id=eq.' + baId, { method: 'PATCH', body: JSON.stringify(upd) });
-    if (ba) { ba.availability = av; ba.notes = nt; if (upd.videos) ba.videos = upd.videos; }
+    if (ba) { ba.availability = av; ba.notes = nt; ba.cv_url = cv || null; if (upd.videos) ba.videos = upd.videos; }
     var uzEl = document.getElementById('uzimD-' + baId);
     if (uzEl) { uzEl.textContent = av || 'Nepridėta informacija'; uzEl.className = 'info-display' + (av ? '' : ' empty'); }
     var paEl = document.getElementById('pastD-' + baId);
