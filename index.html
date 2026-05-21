@@ -88,7 +88,7 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
    Pill-shaped solid purple to draw attention as the primary action there. */
 .manual-add-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:6px;border:none;background:#534AB7;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;letter-spacing:.02em;flex-shrink:0;transition:background .12s}
 .manual-add-btn:hover{background:#3f388f}
-.manual-add-btn svg{width:14px;height:14px;flex-shrink:0}
+.mh-right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
 /* Existing-photo thumbnails inside the manual candidate edit modal */
 .mc-thumb{position:relative;width:60px;height:80px;border-radius:4px;overflow:hidden;border:0.5px solid #d3d1c7;background:#e6e4dc;transition:opacity .15s}
 .mc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1582,17 +1582,18 @@ function renderGrid() {
 
   var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
     + '<div class="mh-sub">' + actors.length + ' kandidatai' + (atrinkti.length && atrinkti.length !== actors.length ? ' · ' + atrinkti.length + ' atrinkti' : '') + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
+    + refsHtml + '</div>'
+    + '<div class="mh-right-col">'
     + (basket && basket.is_manual
         ? '<button class="manual-add-btn" onclick="openManualCandidateModal()" title="Pridėti naują kandidatą šiam veikėjui">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'
           + '<span>Pridėti naują</span></button>'
         : '')
-    + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
     + '<button class="fl ' + (f === 'taip' ? 'act' : '') + '" onclick="setFilter(\'taip\')">Taip</button>'
     + '<button class="fl ' + (f === 'galbut' ? 'act' : '') + '" onclick="setFilter(\'galbut\')">Galbūt</button>'
-    + '</div></div>';
+    + '</div></div></div>';
   // Reference-thread comments section — collapsible, sits between header and grid
   html += renderRefCommentsSection(S.activeBasketId);
   // Atrinkti section at top — always rendered when atrinkti basket exists,
