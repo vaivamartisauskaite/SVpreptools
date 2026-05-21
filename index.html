@@ -84,6 +84,16 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .cref-add:hover{border-color:#534AB7;color:#534AB7;background:#f0effe}
 .cref-add svg{width:16px;height:16px}
 .cref-add-busy{opacity:0.5;cursor:wait}
+/* "Pridėti naują" button visible only on manually-created baskets (e.g. Sokolovas).
+   Pill-shaped solid purple to draw attention as the primary action there. */
+.manual-add-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:6px;border:none;background:#534AB7;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;letter-spacing:.02em;flex-shrink:0;transition:background .12s}
+.manual-add-btn:hover{background:#3f388f}
+.manual-add-btn svg{width:14px;height:14px;flex-shrink:0}
+/* Existing-photo thumbnails inside the manual candidate edit modal */
+.mc-thumb{position:relative;width:60px;height:80px;border-radius:4px;overflow:hidden;border:0.5px solid #d3d1c7;background:#e6e4dc;transition:opacity .15s}
+.mc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mc-thumb-x{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#c44;color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.mc-thumb-x:hover{background:#a33}
 .mh-right{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap}
 .fl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
 .fl:hover{border-color:#888780;color:#1a1a18}
@@ -558,6 +568,29 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
   </div>
 </div>
 
+<!-- Manual candidate add/edit modal — only used inside manually-created baskets (e.g. Sokolovas) -->
+<div class="modal-ov" id="manualCandidateModal" style="display:none" onclick="if(event.target===this)closeManualCandidateModal()">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-title" id="mcModalTitle">Pridėti naują kandidatą</div>
+    <label class="modal-lbl" style="margin-top:0">Vardas <span style="color:#c44">*</span></label>
+    <input class="modal-inp" id="mcFirstName" type="text" placeholder="Aktoriaus vardas…" maxlength="120">
+    <label class="modal-lbl">Nuotraukos</label>
+    <input type="file" id="mcPhotos" accept="image/*" multiple style="font-size:12px;">
+    <div id="mcExistingPhotos" style="margin-top:10px;display:none;">
+      <div style="font-size:11px;color:#888780;margin-bottom:6px;">Esamos nuotraukos (paspauskite × kad pašalintumėte):</div>
+      <div id="mcExistingList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <label class="modal-lbl">Užimtumas</label>
+    <textarea class="modal-ta" id="mcAvail" rows="3" placeholder="Užimtumo informacija…"></textarea>
+    <label class="modal-lbl">Pastabos</label>
+    <textarea class="modal-ta" id="mcNotes" rows="4" placeholder="Pastabos apie kandidatą…"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeManualCandidateModal()">Atšaukti</button>
+      <button class="btn-save" id="mcSaveBtn" onclick="saveManualCandidate()">Išsaugoti</button>
+    </div>
+  </div>
+</div>
+
 <!-- User settings modal -->
 <div class="modal-ov" id="userModal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal-box">
@@ -706,6 +739,9 @@ var S = {
   refPending: null, // {basketId, file, dataUrl} attachment staged for next ref comment
   showHidden: localStorage.getItem('showHidden') === '1',
   moveModalBaId: null,
+  // Manual candidate modal state (used in manually-created baskets like Sokolovas)
+  manualEditBaId: null,        // null = create mode; otherwise = edit mode
+  mcPhotosToDelete: [],        // existing actor_photos.id values queued for deletion on save
   // Aktorių deriniai (Task 7)
   boards: [],                  // list of board metadata for the project
   activeBoardId: null,         // currently-open board
@@ -1417,7 +1453,7 @@ async function selectBasket(id) {
     var isOrphan = parentBasket && parentBasket.is_atrinkti_orphan;
     // Fetch from both parent and atrinkti when paired — single query, two basket_ids
     var basketIdsToFetch = atrId ? [id, atrId] : [id];
-    var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    var bas = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,created_by,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
     var ext = {};
     try {
       var extRows = await sb('/rest/v1/basket_actors?basket_id=in.(' + basketIdsToFetch.join(',') + ')&select=id,availability,notes,videos');
@@ -1470,6 +1506,7 @@ async function selectBasket(id) {
         is_manual: !!ba.is_manual,
         source_basket_actor_id: ba.source_basket_actor_id || null,
         removed_from_agency: !!ba.removed_from_agency,
+        created_by: ba.created_by || null,
         _in_atrinkti: inAtr,
       };
     });
@@ -1540,6 +1577,11 @@ function renderGrid() {
 
   var html = '<div class="mhead"><div class="mh-left"><div><div class="mh-title">' + (basket ? esc(basket.name.toUpperCase()) : '') + '</div>'
     + '<div class="mh-sub">' + actors.length + ' kandidatai' + (atrinkti.length && atrinkti.length !== actors.length ? ' · ' + atrinkti.length + ' atrinkti' : '') + (refs.length ? ' · ' + refs.length + ' references' : '') + (hidCnt && !S.showHidden ? ' · ' + hidCnt + ' paslėpti' : '') + '</div></div>'
+    + (basket && basket.is_manual
+        ? '<button class="manual-add-btn" onclick="openManualCandidateModal()" title="Pridėti naują kandidatą šiam veikėjui">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'
+          + '<span>Pridėti naują</span></button>'
+        : '')
     + refsHtml + '</div>'
     + '<div class="mh-right">'
     + '<button class="fl ' + (f === 'all' ? 'act' : '') + '" onclick="setFilter(\'all\')">Visi</button>'
@@ -1974,6 +2016,7 @@ async function confirmMove() {
     status: 'pending',
     is_manual: true,
     source_basket_actor_id: baId,
+    created_by: S.username,
     availability: ba.availability || null,
     notes: ba.notes || null,
     videos: ba.videos && ba.videos.length ? ba.videos : []
@@ -2037,6 +2080,178 @@ async function dismissNew() {
   if (ids.length) await markActorsSeen(ids);
   newOnes.forEach(function(a){ a.is_new = false; });
   renderGrid(); updateBadges(); showToast('Pažymėta kaip peržiūrėta');
+}
+
+// ── Manual candidates (in baskets like Sokolovas that aren't from the agency) ──
+// Two flows:
+//   1. Add — modal opens empty, on save inserts actor + actor_photos + basket_actor
+//      with is_manual=true and created_by=current username.
+//   2. Edit — modal pre-fills from the existing row. User can change name, queue
+//      existing photos for deletion (×), add new photos, edit availability/notes.
+//      Only available on manually-ADDED candidates (not move/copy rows).
+function openManualCandidateModal(baId) {
+  S.manualEditBaId = baId || null;
+  S.mcPhotosToDelete = [];
+  document.getElementById('mcModalTitle').textContent = baId ? 'Redaguoti kandidatą' : 'Pridėti naują kandidatą';
+  document.getElementById('mcFirstName').value = '';
+  document.getElementById('mcPhotos').value = '';
+  document.getElementById('mcAvail').value = '';
+  document.getElementById('mcNotes').value = '';
+  document.getElementById('mcExistingPhotos').style.display = 'none';
+  document.getElementById('mcExistingList').innerHTML = '';
+  if (baId) {
+    var ba = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
+    if (ba) {
+      document.getElementById('mcFirstName').value = (ba.actor && ba.actor.first_name) || '';
+      document.getElementById('mcAvail').value = ba.availability || '';
+      document.getElementById('mcNotes').value = ba.notes || '';
+      if (ba.photos && ba.photos.length) {
+        document.getElementById('mcExistingList').innerHTML = ba.photos.map(function(p) {
+          return '<div class="mc-thumb" data-pid="' + p.id + '">'
+            + '<img src="' + PHOTO_BASE + esc(p.storage_path) + '" alt="" onerror="this.style.display=\'none\'">'
+            + '<button class="mc-thumb-x" onclick="markPhotoForRemoval(\'' + p.id + '\',event)" title="Pašalinti šią nuotrauką">×</button>'
+            + '</div>';
+        }).join('');
+        document.getElementById('mcExistingPhotos').style.display = 'block';
+      }
+    }
+  }
+  document.getElementById('manualCandidateModal').style.display = 'flex';
+}
+
+function closeManualCandidateModal() {
+  document.getElementById('manualCandidateModal').style.display = 'none';
+  S.manualEditBaId = null;
+  S.mcPhotosToDelete = [];
+}
+
+function markPhotoForRemoval(photoId, ev) {
+  if (ev) ev.stopPropagation();
+  if (S.mcPhotosToDelete.indexOf(photoId) < 0) S.mcPhotosToDelete.push(photoId);
+  // Visual: fade the thumbnail, disable its remove button (acts as both indicator + undo prevention)
+  var node = document.querySelector('.mc-thumb[data-pid="' + photoId + '"]');
+  if (node) { node.style.opacity = '0.3'; node.style.pointerEvents = 'none'; }
+}
+
+async function saveManualCandidate() {
+  var btn = document.getElementById('mcSaveBtn');
+  var firstName = document.getElementById('mcFirstName').value.trim();
+  if (!firstName) { showToast('Vardas privalomas'); return; }
+  if (!S.activeBasketId) { showToast('Veikėjas nepasirinktas'); return; }
+  btn.disabled = true; btn.textContent = 'Saugoma…';
+  try {
+    var avail = document.getElementById('mcAvail').value.trim();
+    var notes = document.getElementById('mcNotes').value.trim();
+    var photoFiles = Array.from(document.getElementById('mcPhotos').files || []);
+    var actorId, baId;
+
+    if (S.manualEditBaId) {
+      // EDIT mode
+      var ba = S.basketActors.find(function(a){ return a.basket_actor_id === S.manualEditBaId; });
+      if (!ba) throw new Error('Kandidatas nerastas');
+      actorId = ba.actor && ba.actor.id;
+      baId    = ba.basket_actor_id;
+      // Update actor name
+      if (actorId) {
+        await sb('/rest/v1/actors?id=eq.' + actorId, {
+          method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ first_name: firstName })
+        });
+      }
+      // Update basket_actor fields
+      await sb('/rest/v1/basket_actors?id=eq.' + baId, {
+        method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ availability: avail || null, notes: notes || null })
+      });
+      // Delete marked photos (storage + row). Best-effort on storage; the row delete is the source of truth.
+      for (var i = 0; i < S.mcPhotosToDelete.length; i++) {
+        var pid = S.mcPhotosToDelete[i];
+        var ph = (ba.photos || []).find(function(p){ return p.id === pid; });
+        if (ph && ph.storage_path) {
+          try {
+            await fetch(SUPABASE_URL + '/storage/v1/object/actor-photos/' + ph.storage_path, {
+              method: 'DELETE',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+          } catch(e) {}
+        }
+        try { await sb('/rest/v1/actor_photos?id=eq.' + pid, { method: 'DELETE', headers: { 'Prefer': 'return=minimal' } }); } catch(e) {}
+      }
+    } else {
+      // CREATE mode — insert actor first so we have its id for photos + basket_actor
+      var actorIns = await sb('/rest/v1/actors', {
+        method: 'POST',
+        body: JSON.stringify({
+          first_name: firstName,
+          // agency_id is set to a unique placeholder so any code expecting a
+          // non-null value (sorting, placeholder colours via hsl(agency_id))
+          // keeps working. Has no real meaning for manual records.
+          agency_id: 'manual-' + Math.random().toString(36).slice(2, 12)
+        })
+      });
+      var newActor = Array.isArray(actorIns) ? actorIns[0] : actorIns;
+      actorId = newActor.id;
+      var baIns = await sb('/rest/v1/basket_actors', {
+        method: 'POST',
+        body: JSON.stringify({
+          basket_id: S.activeBasketId,
+          actor_id: actorId,
+          status: 'pending',
+          availability: avail || null,
+          notes: notes || null,
+          is_manual: true,
+          created_by: S.username
+        })
+      });
+      var newBa = Array.isArray(baIns) ? baIns[0] : baIns;
+      baId = newBa.id;
+    }
+
+    // Upload new photos (both create + edit modes). First uploaded becomes
+    // primary IF the actor has no existing primary photo yet.
+    var hasPrimary = false;
+    if (S.manualEditBaId) {
+      var ba2 = S.basketActors.find(function(a){ return a.basket_actor_id === S.manualEditBaId; });
+      if (ba2 && ba2.photos) {
+        hasPrimary = ba2.photos.some(function(p){
+          return p.is_primary && S.mcPhotosToDelete.indexOf(p.id) < 0;
+        });
+      }
+    }
+    for (var j = 0; j < photoFiles.length; j++) {
+      var f = photoFiles[j];
+      if (f.size > 10 * 1024 * 1024) { showToast('Per didelis failas: ' + f.name); continue; }
+      if (f.type && !/^image\//i.test(f.type)) continue;
+      var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+      var path = actorId + '/' + Date.now() + '_' + j + '_' + safe;
+      try {
+        var up = await fetch(SUPABASE_URL + '/storage/v1/object/actor-photos/' + path, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': f.type || 'application/octet-stream', 'x-upsert': 'true'
+          },
+          body: f
+        });
+        if (up.ok) {
+          await sb('/rest/v1/actor_photos', {
+            method: 'POST', headers: { 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ actor_id: actorId, storage_path: path, is_primary: !hasPrimary })
+          });
+          hasPrimary = true; // subsequent uploads in this batch shouldn't all become primary
+        }
+      } catch(e) {}
+    }
+
+    showToast(S.manualEditBaId ? 'Atnaujinta' : 'Pridėtas kandidatas');
+    closeManualCandidateModal();
+    // Reload basket so the new/edited candidate appears immediately
+    await selectBasket(S.activeBasketId);
+  } catch(e) {
+    showToast('Klaida: ' + (e.message || 'nepavyko išsaugoti'));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Išsaugoti';
+  }
 }
 
 // ── Character reference photos ─────────────────────────────────────────────
@@ -2971,7 +3186,11 @@ async function openActor(baId) {
     + (ba.removed_from_agency ? '<div class="ph-removed" title="Šis kandidatas pašalintas iš ActorsAgency krepšelio — duomenys išlieka peržiūrai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg><span>Pašalintas iš agentūros</span></div>' : '')
     + '</div><button class="ph-close" onclick="closePanel()">✕</button></div>'
     + '<div class="ph-actions">'
-    + '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div>'
+    + (ba.is_manual && !ba.source_basket_actor_id
+        ? '<button class="ph-addbtn" onclick="openManualCandidateModal(\'' + baId + '\')" title="Redaguoti šio rankiniu būdu pridėto kandidato informaciją">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>'
+          + 'Redaguoti</button>'
+        : '<div class="ph-addbtn" onclick="openInfoModal(\'' + baId + '\')">+ Papildyti informaciją</div>')
     + '<button class="ph-hide-btn" onclick="openMoveModal(\'' + baId + '\')" title="Perkelti arba kopijuoti kandidatą į kitą veikėją">'
     + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>Perkelti / Kopijuoti</span>'
     + '</button>'
@@ -2992,6 +3211,7 @@ async function openActor(baId) {
     + '<div class="psec" style="margin-top:4px">Video</div>'
     + '<div class="vgrid" id="vgrid-' + baId + '">' + (vids || '<div style="color:#888780;font-size:10px;grid-column:1/-1;padding:2px 0 8px">Nėra pridėtų vaizdo įrašų</div>') + '</div>'
     + '<div class="psec">Duomenys</div>'
+    + cvR('Pridėjo', ba.created_by || null)
     + cvR('Gimimo metai', (actor && actor.dob))
     + cvR('Ūgis', (actor && actor.height) ? actor.height + ' cm' : null)
     + cvR('Svoris', (actor && actor.weight) ? actor.weight + ' kg' : null)
