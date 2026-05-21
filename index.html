@@ -88,13 +88,21 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
    Pill-shaped solid purple to draw attention as the primary action there. */
 .manual-add-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:6px;border:none;background:#534AB7;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;letter-spacing:.02em;flex-shrink:0;transition:background .12s}
 .manual-add-btn:hover{background:#3f388f}
+.manual-add-btn svg{width:14px;height:14px;flex-shrink:0}
 .mh-right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
-   .mh-right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
 /* Existing-photo thumbnails inside the manual candidate edit modal */
 .mc-thumb{position:relative;width:60px;height:80px;border-radius:4px;overflow:hidden;border:0.5px solid #d3d1c7;background:#e6e4dc;transition:opacity .15s}
 .mc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .mc-thumb-x{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#c44;color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .mc-thumb-x:hover{background:#a33}
+/* Two-column grid for compact personal-data fields inside the manual candidate
+   modal. Children are wrapper divs holding a label + input. Tighter top margin
+   on the labels here so the grid stays compact. */
+.mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:8px}
+.mc-grid > div{display:flex;flex-direction:column}
+.mc-grid .modal-lbl{margin-top:6px}
+.mc-grid .modal-inp{margin-top:0}
+@media (max-width:480px){.mc-grid{grid-template-columns:1fr}}
 .mh-right{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap}
 .fl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:0.5px solid #d3d1c7;color:#888780;cursor:pointer;background:none;font-family:inherit;transition:all 0.12s}
 .fl:hover{border-color:#888780;color:#1a1a18}
@@ -573,22 +581,47 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 
 <!-- Manual candidate add/edit modal — only used inside manually-created baskets (e.g. Sokolovas) -->
 <div class="modal-ov" id="manualCandidateModal" style="display:none" onclick="if(event.target===this)closeManualCandidateModal()">
-  <div class="modal-box" style="max-width:500px">
+  <div class="modal-box" style="max-width:560px">
     <div class="modal-title" id="mcModalTitle">Pridėti naują kandidatą</div>
     <label class="modal-lbl" style="margin-top:0">Vardas <span style="color:#c44">*</span></label>
     <input class="modal-inp" id="mcFirstName" type="text" placeholder="Aktoriaus vardas…" maxlength="120">
+
     <label class="modal-lbl">Nuotraukos</label>
     <input type="file" id="mcPhotos" accept="image/*" multiple style="font-size:12px;">
     <div id="mcExistingPhotos" style="margin-top:10px;display:none;">
       <div style="font-size:11px;color:#888780;margin-bottom:6px;">Esamos nuotraukos (paspauskite × kad pašalintumėte):</div>
       <div id="mcExistingList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
+
+    <!-- Personal data fields — same set the agency provides, so the CV panel
+         renders identically for manual vs agency-fetched candidates. Two-column
+         grid for compact entries (year, height, sizes, colours), then full-width
+         textareas for languages and skills. -->
+    <div class="mc-grid">
+      <div><label class="modal-lbl">Gimimo metai</label><input class="modal-inp" id="mcDob" type="text" placeholder="pvz. 1985" maxlength="20"></div>
+      <div><label class="modal-lbl">Ūgis (cm)</label><input class="modal-inp" id="mcHeight" type="number" min="0" max="300" placeholder="pvz. 180"></div>
+      <div><label class="modal-lbl">Svoris (kg)</label><input class="modal-inp" id="mcWeight" type="number" min="0" max="500" placeholder="pvz. 75"></div>
+      <div><label class="modal-lbl">Batų dydis</label><input class="modal-inp" id="mcShoe" type="text" maxlength="20" placeholder="pvz. 42"></div>
+      <div><label class="modal-lbl">Drabužių dydis</label><input class="modal-inp" id="mcClothing" type="text" maxlength="20" placeholder="pvz. M"></div>
+      <div><label class="modal-lbl">Plaukų spalva</label><input class="modal-inp" id="mcHair" type="text" maxlength="60" placeholder="pvz. tamsiai rudi"></div>
+      <div><label class="modal-lbl">Akių spalva</label><input class="modal-inp" id="mcEye" type="text" maxlength="60" placeholder="pvz. mėlynos"></div>
+    </div>
+
+    <label class="modal-lbl">Kalbos</label>
+    <textarea class="modal-ta" id="mcLangs" rows="2" placeholder="pvz. lietuvių, anglų, rusų"></textarea>
+
+    <label class="modal-lbl">Gabumai</label>
+    <textarea class="modal-ta" id="mcSkills" rows="2" placeholder="pvz. dainavimas, jodinėjimas, kovos menai"></textarea>
+
     <label class="modal-lbl">Užimtumas</label>
     <textarea class="modal-ta" id="mcAvail" rows="3" placeholder="Užimtumo informacija…"></textarea>
+
     <label class="modal-lbl">Pastabos</label>
     <textarea class="modal-ta" id="mcNotes" rows="4" placeholder="Pastabos apie kandidatą…"></textarea>
+
     <label class="modal-lbl">CV nuoroda į išorinį puslapį</label>
     <input class="modal-inp" id="mcCvUrl" type="url" placeholder="https://…">
+
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeManualCandidateModal()">Atšaukti</button>
       <button class="btn-save" id="mcSaveBtn" onclick="saveManualCandidate()">Išsaugoti</button>
@@ -2100,17 +2133,29 @@ function openManualCandidateModal(baId) {
   S.manualEditBaId = baId || null;
   S.mcPhotosToDelete = [];
   document.getElementById('mcModalTitle').textContent = baId ? 'Redaguoti kandidatą' : 'Pridėti naują kandidatą';
-  document.getElementById('mcFirstName').value = '';
-  document.getElementById('mcPhotos').value = '';
-  document.getElementById('mcAvail').value = '';
-  document.getElementById('mcNotes').value = '';
-  document.getElementById('mcCvUrl').value = '';
+  // Clear everything first so leftover values from a prior open don't bleed
+  // through when we're now in CREATE mode.
+  var fields = ['mcFirstName','mcPhotos','mcAvail','mcNotes','mcCvUrl',
+                'mcDob','mcHeight','mcWeight','mcShoe','mcClothing','mcHair','mcEye','mcLangs','mcSkills'];
+  fields.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('mcExistingPhotos').style.display = 'none';
   document.getElementById('mcExistingList').innerHTML = '';
   if (baId) {
     var ba = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
     if (ba) {
-      document.getElementById('mcFirstName').value = (ba.actor && ba.actor.first_name) || '';
+      var a = ba.actor || {};
+      document.getElementById('mcFirstName').value = a.first_name || '';
+      // Personal data — same shape as the agency-fed actor record
+      document.getElementById('mcDob').value      = a.dob != null ? String(a.dob) : '';
+      document.getElementById('mcHeight').value   = a.height != null ? String(a.height) : '';
+      document.getElementById('mcWeight').value   = a.weight != null ? String(a.weight) : '';
+      document.getElementById('mcShoe').value     = a.shoe_size || '';
+      document.getElementById('mcClothing').value = a.clothing_size || '';
+      document.getElementById('mcHair').value     = a.hair_color || '';
+      document.getElementById('mcEye').value      = a.eye_color || '';
+      document.getElementById('mcLangs').value    = a.languages || '';
+      document.getElementById('mcSkills').value   = a.skills || '';
+      // Per-BA context
       document.getElementById('mcAvail').value = ba.availability || '';
       document.getElementById('mcNotes').value = ba.notes || '';
       document.getElementById('mcCvUrl').value = ba.cv_url || '';
@@ -2153,6 +2198,25 @@ async function saveManualCandidate() {
     var notes = document.getElementById('mcNotes').value.trim();
     var cvUrl = document.getElementById('mcCvUrl').value.trim();
     var photoFiles = Array.from(document.getElementById('mcPhotos').files || []);
+
+    // Build the actors-table payload — all fields the agency provides, so the
+    // CV panel renders identically. Empty strings → NULL so the cvR helper
+    // hides empty rows. Numeric fields are parsed; non-numeric input → NULL.
+    function txt(id){ var v = (document.getElementById(id).value || '').trim(); return v || null; }
+    function num(id){ var v = (document.getElementById(id).value || '').trim(); if (!v) return null; var n = Number(v); return isFinite(n) ? n : null; }
+    var actorPayload = {
+      first_name:    firstName,
+      dob:           txt('mcDob'),
+      height:        num('mcHeight'),
+      weight:        num('mcWeight'),
+      shoe_size:     txt('mcShoe'),
+      clothing_size: txt('mcClothing'),
+      hair_color:    txt('mcHair'),
+      eye_color:     txt('mcEye'),
+      languages:     txt('mcLangs'),
+      skills:        txt('mcSkills')
+    };
+
     var actorId, baId;
 
     if (S.manualEditBaId) {
@@ -2161,11 +2225,11 @@ async function saveManualCandidate() {
       if (!ba) throw new Error('Kandidatas nerastas');
       actorId = ba.actor && ba.actor.id;
       baId    = ba.basket_actor_id;
-      // Update actor name
+      // Update actor with full personal-data set
       if (actorId) {
         await sb('/rest/v1/actors?id=eq.' + actorId, {
           method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ first_name: firstName })
+          body: JSON.stringify(actorPayload)
         });
       }
       // Update basket_actor fields
@@ -2189,15 +2253,10 @@ async function saveManualCandidate() {
       }
     } else {
       // CREATE mode — insert actor first so we have its id for photos + basket_actor
+      actorPayload.agency_id = 'manual-' + Math.random().toString(36).slice(2, 12);
       var actorIns = await sb('/rest/v1/actors', {
         method: 'POST',
-        body: JSON.stringify({
-          first_name: firstName,
-          // agency_id is set to a unique placeholder so any code expecting a
-          // non-null value (sorting, placeholder colours via hsl(agency_id))
-          // keeps working. Has no real meaning for manual records.
-          agency_id: 'manual-' + Math.random().toString(36).slice(2, 12)
-        })
+        body: JSON.stringify(actorPayload)
       });
       var newActor = Array.isArray(actorIns) ? actorIns[0] : actorIns;
       actorId = newActor.id;
