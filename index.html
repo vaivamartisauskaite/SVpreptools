@@ -147,6 +147,8 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
 .card-stat{position:absolute;bottom:24px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1}
 .card-stat.t{background:#EAF3DE;color:#27500A;border:0.5px solid #BFD79C}
 .card-stat.m{background:#FFF4D6;color:#A06000;border:0.5px solid #E8C97A}
+.card-vid{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}
+.card-vid svg{width:11px;height:11px}
 .card.has-manual .cmt-dot{right:30px}
 .ph-manual{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#534AB7;background:#f0eeff;border:0.5px solid #534AB7;border-radius:10px;padding:1px 7px;margin-top:4px;cursor:help}
 .ph-manual svg{width:10px;height:10px}
@@ -698,6 +700,10 @@ html,body{height:100%;background:#f5f4f0;font-family:-apple-system,BlinkMacSyste
       <button class="tb-tab" id="tabAtrinkti" onclick="showOverview('atrinkti',this)">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span class="tab-lbl">Atrinkti kastingui</span>
+      </button>
+      <button class="tb-tab" id="tabVideoBandymai" onclick="showVideoBandymai(this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        <span class="tab-lbl">Video bandymai</span>
       </button>
       <button class="tb-tab tab-highlight" id="tabBoards" onclick="showBoardsView(this)">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -2535,7 +2541,100 @@ async function jumpToActor(baId, basketId) {
   S.selectedBaId = baId; renderGrid(); openActor(baId);
 }
 
-// ═══ Aktorių deriniai / Boards (Task 7) ════════════════════════════════════
+// ── Video bandymai tab ───────────────────────────────────────────────────────
+// Shows all candidates from the "Pakviesti į Video bandymus" basket.
+// Camera badge on cards that have a video synced. Clicking jumps to the actor
+// in their character basket (matched by agency_id) so the full panel opens.
+
+async function showVideoBandymai(btn) {
+  S.view = 'video'; S.activeBasketId = null; S.selectedBaId = null;
+  document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('act'); });
+  if (btn) btn.classList.add('act');
+  document.getElementById('sbPran').classList.remove('act');
+  document.getElementById('sbNauji').classList.remove('act');
+  closePanel(); closeSidebar(); renderSidebar();
+  document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
+
+  try {
+    var vidBaskets = S.baskets.filter(function(b){ return /pakviesti.*video/i.test(b.name); });
+    if (!vidBaskets.length) {
+      document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
+        + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
+        + '<div style="font-size:13px;color:#888780;padding:20px 0">Krepšelis "Pakviesti į Video bandymus" nerastas. Paleiskite Sync, tada Video Sync.</div>'
+        + '</div>';
+      return;
+    }
+
+    var vidBasketIds = vidBaskets.map(function(b){ return b.id; });
+
+    var rows = await sb(
+      '/rest/v1/basket_actors?basket_id=in.(' + vidBasketIds.join(',') + ')&removed_from_agency=eq.false'
+      + '&select=id,status,basket_id,videos,hidden,actors(id,first_name,agency_id)'
+    );
+    if (!S.showHidden) rows = rows.filter(function(r){ return !r.hidden; });
+
+    var actorIds = Array.from(new Set(rows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
+    var pMap = {};
+    if (actorIds.length) {
+      var photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
+      photos.forEach(function(p){ if (!pMap[p.actor_id]) pMap[p.actor_id] = []; pMap[p.actor_id].push(p); });
+    }
+
+    // Map agency_id → best non-video basket_actor so "jump to actor" opens the
+    // character basket panel rather than the video basket itself.
+    var allOtherBas = await sb(
+      '/rest/v1/basket_actors?basket_id=not.in.(' + vidBasketIds.join(',') + ')&removed_from_agency=eq.false'
+      + '&select=id,basket_id,actors!inner(agency_id)'
+    );
+    var agencyToParent = {};
+    allOtherBas.forEach(function(r){
+      var agId = r.actors && r.actors.agency_id;
+      if (agId && !agencyToParent[agId]) agencyToParent[agId] = { baId: r.id, basketId: r.basket_id };
+    });
+
+    if (!rows.length) {
+      document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
+        + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
+        + '<div style="font-size:13px;color:#888780;padding:20px 0">Krepšelis tuščias arba sinchronizacija nebaigta.</div>'
+        + '</div>';
+      return;
+    }
+
+    var html = '<div class="ov-wrap">'
+      + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai &middot; ' + rows.length + ' kandidatų</div>'
+      + '<div class="grid-sm">';
+
+    rows.forEach(function(r){
+      var actor    = r.actors || {};
+      var name     = actor.first_name || '?';
+      var agId     = actor.agency_id  || 'x';
+      var hasVideo = Array.isArray(r.videos) && r.videos.length > 0;
+      var img      = photoOrPlaceholder(pMap[actor.id] || [], name, agId);
+
+      var vidBadge = hasVideo
+        ? '<div class="card-vid" title="Video įkeltas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg></div>'
+        : '';
+      var stBadge  = r.status === 'yes'   ? '<div class="card-stat t" title="Taip">✓</div>'
+                   : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>'
+                   : '';
+
+      var parent      = agencyToParent[agId];
+      var navBaId     = parent ? parent.baId     : r.id;
+      var navBasketId = parent ? parent.basketId : r.basket_id;
+
+      html += '<div class="card" onclick="jumpToActor(\'' + navBaId + '\',\'' + navBasketId + '\')">'
+            + img + vidBadge + stBadge
+            + '<div class="card-name">' + esc(name) + '</div></div>';
+    });
+
+    html += '</div></div>';
+    document.getElementById('mainArea').innerHTML = html;
+
+  } catch(e) {
+    document.getElementById('mainArea').innerHTML = '<div class="empty-state">Nepavyko užkrauti<br><small style="font-size:10px;color:#aaa;display:block;margin-top:6px">' + esc(e.message) + '</small></div>';
+  }
+}
+
 //
 // Each user creates their own cast picks board. Boards have categories
 // (one per character / basket) and picks (candidates assigned per category).
