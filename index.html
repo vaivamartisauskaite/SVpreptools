@@ -2535,8 +2535,87 @@ async function showOverview(type, btn) {
 }
 
 async function jumpToActor(baId, basketId) {
+  // When called from atrinkti or video tab: open the panel directly without
+  // switching to the basket view. S.basketActors won't contain this actor so
+  // we fetch the row inline and inject it into S.basketActors temporarily.
+  if (S.view === 'atrinkti' || S.view === 'video') {
+    await openActorFromOverview(baId, basketId);
+    return;
+  }
   await selectBasket(basketId);
   S.selectedBaId = baId; renderGrid(); openActor(baId);
+}
+
+// Opens actor panel from atrinkti/video tab without navigating to basket view.
+// Fetches the basket_actor row + photos + videos inline if not already loaded.
+async function openActorFromOverview(baId, basketId) {
+  // Check if already in S.basketActors from a previous call this session
+  var existing = S.basketActors.find(function(a){ return a.basket_actor_id === baId; });
+  if (existing) { openActor(baId); return; }
+
+  document.getElementById('panel').classList.remove('hidden');
+  document.getElementById('panelInner').innerHTML = '<div class="loading" style="padding:24px"><div class="spinner"></div></div>';
+
+  try {
+    var rows = await sb('/rest/v1/basket_actors?id=eq.' + baId
+      + '&select=id,status,basket_id,actor_id,hidden,is_manual,source_basket_actor_id,removed_from_agency,created_by,actors(id,agency_id,first_name,dob,height,weight,shoe_size,clothing_size,hair_color,eye_color,languages,skills),comments(id)');
+    if (!rows.length) return;
+    var raw = rows[0];
+
+    var extRows = await sb('/rest/v1/basket_actors?id=eq.' + baId + '&select=id,availability,notes,videos,cv_url');
+    var ext = extRows[0] || {};
+
+    // Fetch videos across ALL basket_actor rows for this actor so the panel
+    // shows every video regardless of which basket it was synced to
+    var actorDbId = raw.actors && raw.actors.id;
+    var allVideos = ext.videos || [];
+    if (actorDbId) {
+      try {
+        var allExtRows = await sb('/rest/v1/basket_actors?actor_id=eq.' + actorDbId + '&select=videos');
+        var seen = new Set((allVideos).map(function(v){ return v && v.url; }).filter(Boolean));
+        allExtRows.forEach(function(r){
+          (r.videos || []).forEach(function(v){
+            if (v && v.url && !seen.has(v.url)) { seen.add(v.url); allVideos = allVideos.concat([v]); }
+          });
+        });
+      } catch(e) {}
+    }
+
+    var photos = [];
+    if (actorDbId) {
+      photos = await sb('/rest/v1/actor_photos?actor_id=eq.' + actorDbId + '&select=id,actor_id,storage_path,is_primary&order=is_primary.desc');
+    }
+
+    var ba = {
+      basket_actor_id: raw.id,
+      actor: raw.actors,
+      status: raw.status || 'pending',
+      comment_count: (raw.comments || []).length,
+      is_new: false,
+      photos: photos,
+      availability: ext.availability || '',
+      notes: ext.notes || '',
+      videos: allVideos,
+      cv_url: ext.cv_url || null,
+      hidden: !!raw.hidden,
+      is_manual: !!raw.is_manual,
+      source_basket_actor_id: raw.source_basket_actor_id || null,
+      removed_from_agency: !!raw.removed_from_agency,
+      created_by: raw.created_by || null,
+      _in_atrinkti: false,
+      _overview_basket_id: basketId  // remember which basket to use for context
+    };
+
+    // Inject so openActor and panel actions can find it
+    S.basketActors = S.basketActors.filter(function(a){ return a.basket_actor_id !== baId; });
+    S.basketActors.push(ba);
+    // Set activeBasketId so basket label renders correctly in the panel header
+    S.activeBasketId = basketId;
+
+    openActor(baId);
+  } catch(e) {
+    document.getElementById('panelInner').innerHTML = '<div style="padding:16px;color:#e06c6c;font-size:12px">Nepavyko užkrauti: ' + esc(e.message) + '</div>';
+  }
 }
 
 // ── Video bandymai tab ───────────────────────────────────────────────────────
@@ -2571,9 +2650,10 @@ async function showVideoBandymai(btn) {
     );
     if (!S.showHidden) vidRows = vidRows.filter(function(r){ return !r.hidden; });
 
-    // Character baskets: everything except the video basket and atrinkti
+    // Character baskets: everything except the video basket.
+    // Include atrinkti baskets — an actor may only appear there, not in the parent.
     var charBaskets = S.baskets.filter(function(b){
-      return vidBasketIds.indexOf(b.id) === -1 && !b.is_atrinkti;
+      return vidBasketIds.indexOf(b.id) === -1;
     });
     var charBasketIds = charBaskets.map(function(b){ return b.id; });
 
@@ -2610,10 +2690,18 @@ async function showVideoBandymai(btn) {
       return;
     }
 
-    // Build groups in sidebar order; each entry carries its own nav target
+    // Build groups in sidebar order — only non-atrinkti as group headers.
+    // But matching uses all charBaskets (including atrinkti) so actors found
+    // only in an atrinkti row still get placed under the parent basket group.
+    // Build a map: atrinkti basket_id → parent basket_id for this fallback.
+    var atrToParent = {};
+    S.baskets.forEach(function(b){
+      if (!b.is_atrinkti && b.atrinkti_basket_id) atrToParent[b.atrinkti_basket_id] = b.id;
+    });
+
     var groupMap = {};
     var groupOrder = [];
-    charBaskets.forEach(function(b){
+    S.baskets.filter(function(b){ return vidBasketIds.indexOf(b.id) === -1 && !b.is_atrinkti; }).forEach(function(b){
       groupMap[b.id] = { displayName: b.name, entries: [] };
       groupOrder.push(b.id);
     });
@@ -2622,10 +2710,16 @@ async function showVideoBandymai(btn) {
     vidRows.forEach(function(r){
       var agId    = r.actors && r.actors.agency_id;
       var matches = agId ? (agencyToChars[agId] || []) : [];
+      var placed  = new Set(); // prevent placing same actor in same group twice
       if (matches.length) {
         matches.forEach(function(m){
-          if (groupMap[m.basketId]) {
-            groupMap[m.basketId].entries.push({ r: r, navBaId: m.baId, navBasketId: m.basketId });
+          // Resolve atrinkti basket to its parent group
+          var targetBasketId = atrToParent[m.basketId] || m.basketId;
+          // For nav: if original match is in atrinkti, navigate to parent basket
+          var navBasketId = atrToParent[m.basketId] || m.basketId;
+          if (groupMap[targetBasketId] && !placed.has(targetBasketId)) {
+            placed.add(targetBasketId);
+            groupMap[targetBasketId].entries.push({ r: r, navBaId: m.baId, navBasketId: navBasketId });
           }
         });
       } else {
@@ -3395,6 +3489,27 @@ async function openActor(baId) {
       + (v.thumbnail ? '<img src="' + esc(v.thumbnail) + '" alt="">' : '')
       + '<div class="vplay">▶</div><div class="vsrc">' + esc(v.source || '') + '</div></a>';
   }).join('');
+  // If no videos on this ba row, check other rows for same actor across all baskets
+  if (!vids && actor && actor.id) {
+    try {
+      var otherExt = await sb('/rest/v1/basket_actors?actor_id=eq.' + actor.id + '&select=videos');
+      var merged = [];
+      var seenUrls = new Set();
+      otherExt.forEach(function(r){
+        (r.videos || []).forEach(function(v){
+          if (v && v.url && !seenUrls.has(v.url)) { seenUrls.add(v.url); merged.push(v); }
+        });
+      });
+      if (merged.length) {
+        vids = merged.map(function(v){
+          return '<a class="vthumb" href="' + esc(v.url) + '" target="_blank" rel="noopener">'
+            + (v.thumbnail ? '<img src="' + esc(v.thumbnail) + '" alt="">' : '')
+            + '<div class="vplay">▶</div><div class="vsrc">' + esc(v.source || '') + '</div></a>';
+        }).join('');
+        ba.videos = merged; // cache so re-opens don't re-fetch
+      }
+    } catch(e) {}
+  }
   var cmtsHtml = comments.map(function(c){ return commentHtml(c, baId); }).join('');
   document.getElementById('panelInner').innerHTML =
     '<div class="panel-head"><div class="ph-top"><div>'
