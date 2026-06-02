@@ -1055,7 +1055,7 @@ function renderSidebar() {
     return;
   }
   // Atrinkti baskets are merged into their parent and never shown standalone
-  var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti; });
+  var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti && !/pakviesti.*video/i.test(b.name); });
   if (!sbBaskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
   list.innerHTML = sbBaskets.map(function(b) {
     return '<div class="sb-item ' + (b.id === S.activeBasketId && S.view === 'basket' ? 'act' : '') + '"'
@@ -1395,7 +1395,7 @@ function renderNauji(newOnes) {
     + (newOnes.length ? '<button class="fl" onclick="markNaujiRead()">Žymėti kaip peržiūrėta</button>' : '') + '</div>';
   if (!newOnes.length) { html += '<div class="empty-state">Naujų kandidatų nėra</div>'; document.getElementById('mainArea').innerHTML = html; return; }
   // Iterate parent baskets only; new candidates from atrinkti basket appear under parent
-  S.baskets.filter(function(b){ return !b.is_atrinkti; }).forEach(function(basket) {
+  S.baskets.filter(function(b){ return !b.is_atrinkti && !/pakviesti.*video/i.test(b.name); }).forEach(function(basket) {
     var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
     var bNew = newOnes.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0; });
     if (!bNew.length) return;
