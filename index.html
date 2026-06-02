@@ -2982,7 +2982,12 @@ function renderBoard() {
     var col = i % 6;
     var maxSpan = 6 - col;
     var desiredSpan = Math.max(1, Math.ceil(picksHere.length / 2));
-    var span = Math.min(desiredSpan, maxSpan);
+    // Never span into a cell that already has a category
+    var span = 1;
+    for (var s = 1; s <= Math.min(desiredSpan, maxSpan); s++) {
+      if (s > 1 && byCell[i + s - 1]) break;
+      span = s;
+    }
     skipUntil = i + span;
     var spanStyle = span > 1 ? ' style="grid-column: span ' + span + ';"' : '';
     html += '<div class="brd-cat" data-cat-id="' + cat.id + '" data-cell-idx="' + i + '" data-span="' + span + '"' + spanStyle
