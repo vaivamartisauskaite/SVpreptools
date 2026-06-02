@@ -1243,14 +1243,12 @@ function nText(n) {
     return '<strong>' + by + '</strong> pakomentavo derinį' + (bn2 ? ' <strong>' + bn2 + '</strong>' : '');
   }
   if (n.type === 'candidate_moved') {
-    var src = esc(((n.meta && n.meta.source_basket_name) || '').toUpperCase());
-    var dst = b; // basket_name already uppercased above
-    return '<strong>' + by + '</strong> perkėlė <strong>' + a + '</strong> iš <strong>' + src + '</strong> į <strong>' + dst + '</strong>';
+    var dst = b;
+    return '<strong>' + by + '</strong> perkėlė <strong>' + a + '</strong> į <strong>' + dst + '</strong>';
   }
   if (n.type === 'candidate_copied') {
-    var src2 = esc(((n.meta && n.meta.source_basket_name) || '').toUpperCase());
     var dst2 = b;
-    return '<strong>' + by + '</strong> nukopijavo <strong>' + a + '</strong> iš <strong>' + src2 + '</strong> į <strong>' + dst2 + '</strong>';
+    return '<strong>' + by + '</strong> nukopijavo <strong>' + a + '</strong> į <strong>' + dst2 + '</strong>';
   }
   return (n.meta && n.meta.text) || 'Pranešimas';
 }
