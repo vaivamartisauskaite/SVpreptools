@@ -2964,7 +2964,16 @@ function renderBoard() {
       continue;
     }
     var basket = basketsById[cat.basket_id];
-    var catName = basket ? basket.name.toUpperCase() : '(pašalintas veikėjas)';
+    // Skip video-audition basket categories — they don't belong in boards
+    if (basket && /pakviesti.*video/i.test(basket.name)) {
+      html += '<div class="brd-cell-empty" data-cell-idx="' + i + '"></div>';
+      continue;
+    }
+    // For atrinkti baskets show the parent name — the board predates the pairing
+    var displayBasket = (basket && basket.is_atrinkti && basket.parent_basket_id)
+      ? (basketsById[basket.parent_basket_id] || basket)
+      : basket;
+    var catName = displayBasket ? displayBasket.name.toUpperCase() : '(pašalintas veikėjas)';
     var picksHere = picksByCat[cat.id] || [];
     // Compute horizontal span: 2 picks per natural cell-width, capped by the
     // number of columns remaining in the current row. When there isn't enough
@@ -3012,7 +3021,7 @@ function renderBoard() {
   // "+ Pridėti veikėją" — only when there are baskets not yet on the board
   if (isOwner) {
     var existingBasketIds = new Set(d.categories.map(function(c){ return c.basket_id; }));
-    var available = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !existingBasketIds.has(bk.id); });
+    var available = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !existingBasketIds.has(bk.id) && !/pakviesti.*video/i.test(bk.name); });
     if (available.length > 0) {
       html += '<div class="brd-add-cat-card" onclick="addCategoryPrompt()">+ Pridėti veikėją (' + available.length + ' likę)</div>';
     }
@@ -3068,7 +3077,7 @@ async function createBoard() {
     });
     var newBoard = Array.isArray(rows) ? rows[0] : rows;
     // Auto-populate with all current parent baskets (skip atrinkti)
-    var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti; });
+    var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !/pakviesti.*video/i.test(bk.name); });
     if (parentBaskets.length) {
       var catRows = parentBaskets.map(function(bk, i){
         return { board_id: newBoard.id, basket_id: bk.id, position: i, cell_index: i };
@@ -3208,7 +3217,7 @@ async function removeCategoryFromBoard(catId) {
 async function addCategoryPrompt() {
   var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
   var existing = new Set(d.categories.map(function(c){ return c.basket_id; }));
-  var available = S.baskets.filter(function(b){ return !b.is_atrinkti && !existing.has(b.id); });
+  var available = S.baskets.filter(function(b){ return !b.is_atrinkti && !existing.has(b.id) && !/pakviesti.*video/i.test(b.name); });
   if (!available.length) { showToast('Visi veikėjai jau pridėti'); return; }
   // Build numbered list prompt — simplest UI for v1
   var listText = available.map(function(b, i){ return (i+1) + '. ' + b.name.toUpperCase(); }).join('\n');
