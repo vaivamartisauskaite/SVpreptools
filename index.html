@@ -2542,12 +2542,9 @@ async function jumpToActor(baId, basketId) {
 }
 
 // ── Video bandymai tab ───────────────────────────────────────────────────────
-// Shows candidates from the "Pakviesti į Video bandymus" basket, grouped by
-// their character basket (matched by agency_id). Layout mirrors showOverview.
-// Camera badge on cards that have a video synced. Clicking jumps to the actor
-// in their character basket so the full panel (with video) opens.
-// Actors whose agency_id doesn't match any character basket appear under
-// an "Nepriskirti" group at the bottom.
+// Candidates from "Pakviesti į Video bandymus", grouped by character basket.
+// An actor in multiple baskets appears in each. Camera badge = video synced.
+// Clicking jumps to that character basket. Unmatched → "Nepriskirti".
 
 async function showVideoBandymai(btn) {
   S.view = 'video'; S.activeBasketId = null; S.selectedBaId = null;
@@ -2563,24 +2560,24 @@ async function showVideoBandymai(btn) {
     if (!vidBaskets.length) {
       document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
         + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
-        + '<div style="font-size:13px;color:#888780;padding:20px 0">Krepšelis "Pakviesti į Video bandymus" nerastas. Paleiskite Sync, tada Video Sync.</div>'
+        + '<div style="font-size:13px;color:#888780;padding:20px 0">Kreпšelis "Pakviesti į Video bandymus" nerastas. Paleiskite Sync, tada Video Sync.</div>'
         + '</div>';
       return;
     }
 
     var vidBasketIds = vidBaskets.map(function(b){ return b.id; });
 
-    // All candidates in the video basket
     var vidRows = await sb(
       '/rest/v1/basket_actors?basket_id=in.(' + vidBasketIds.join(',') + ')&removed_from_agency=eq.false'
       + '&select=id,status,basket_id,videos,hidden,actors(id,first_name,agency_id)'
     );
     if (!S.showHidden) vidRows = vidRows.filter(function(r){ return !r.hidden; });
 
-    // All candidates in non-video baskets — used to match by agency_id
-    var charBasketIds = S.baskets
-      .filter(function(b){ return vidBasketIds.indexOf(b.id) === -1 && !b.is_atrinkti; })
-      .map(function(b){ return b.id; });
+    // Character baskets: everything except the video basket and atrinkti
+    var charBaskets = S.baskets.filter(function(b){
+      return vidBasketIds.indexOf(b.id) === -1 && !b.is_atrinkti;
+    });
+    var charBasketIds = charBaskets.map(function(b){ return b.id; });
 
     var charRows = [];
     if (charBasketIds.length) {
@@ -2589,11 +2586,14 @@ async function showVideoBandymai(btn) {
         + '&select=id,basket_id,actors!inner(agency_id)'
       );
     }
-    // agency_id → { baId, basketId }
-    var agencyToChar = {};
+
+    // agency_id → [ {baId, basketId}, ... ] — ALL memberships, not just first
+    var agencyToChars = {};
     charRows.forEach(function(r){
       var agId = r.actors && r.actors.agency_id;
-      if (agId && !agencyToChar[agId]) agencyToChar[agId] = { baId: r.id, basketId: r.basket_id };
+      if (!agId) return;
+      if (!agencyToChars[agId]) agencyToChars[agId] = [];
+      agencyToChars[agId].push({ baId: r.id, basketId: r.basket_id });
     });
 
     // Photos
@@ -2607,36 +2607,36 @@ async function showVideoBandymai(btn) {
     if (!vidRows.length) {
       document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
         + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
-        + '<div style="font-size:13px;color:#888780;padding:20px 0">Krepšelis tuščias arba sinchronizacija nebaigta.</div>'
+        + '<div style="font-size:13px;color:#888780;padding:20px 0">Kreпšelis tuščias arba sinchronizacija nebaigta.</div>'
         + '</div>';
       return;
     }
 
-    // Group vidRows by character basket, preserving sidebar order
-    // basketId → { displayName, navBasketId, rows[] }
-    var groups = {};   // basketId → group object
-    var groupOrder = []; // basketId in sidebar order
-    var unmatched = []; // rows with no character basket match
-
-    // Seed groups from character baskets in sidebar order
-    S.baskets.forEach(function(b){
-      if (vidBasketIds.indexOf(b.id) !== -1) return; // skip the video basket itself
-      if (b.is_atrinkti) return;
-      groups[b.id] = { displayName: b.name, navBasketId: b.id, rows: [] };
+    // Build groups in sidebar order; each entry carries its own nav target
+    var groupMap = {};
+    var groupOrder = [];
+    charBaskets.forEach(function(b){
+      groupMap[b.id] = { displayName: b.name, entries: [] };
       groupOrder.push(b.id);
     });
+    var unmatchedEntries = [];
 
     vidRows.forEach(function(r){
-      var agId = r.actors && r.actors.agency_id;
-      var match = agId ? agencyToChar[agId] : null;
-      if (match && groups[match.basketId]) {
-        groups[match.basketId].rows.push(r);
+      var agId    = r.actors && r.actors.agency_id;
+      var matches = agId ? (agencyToChars[agId] || []) : [];
+      if (matches.length) {
+        matches.forEach(function(m){
+          if (groupMap[m.basketId]) {
+            groupMap[m.basketId].entries.push({ r: r, navBaId: m.baId, navBasketId: m.basketId });
+          }
+        });
       } else {
-        unmatched.push(r);
+        unmatchedEntries.push({ r: r, navBaId: r.id, navBasketId: r.basket_id });
       }
     });
 
-    function renderCard(r, navBaId, navBasketId) {
+    function renderCard(entry) {
+      var r        = entry.r;
       var actor    = r.actors || {};
       var name     = actor.first_name || '?';
       var agId     = actor.agency_id  || 'x';
@@ -2648,37 +2648,29 @@ async function showVideoBandymai(btn) {
       var stBadge  = r.status === 'yes'   ? '<div class="card-stat t" title="Taip">✓</div>'
                    : r.status === 'maybe' ? '<div class="card-stat m" title="Galbūt">?</div>'
                    : '';
-      return '<div class="card" onclick="jumpToActor(\'' + navBaId + '\',\'' + navBasketId + '\')">'
+      return '<div class="card" onclick="jumpToActor(\'' + entry.navBaId + '\',\'' + entry.navBasketId + '\')">'
            + img + vidBadge + stBadge
            + '<div class="card-name">' + esc(name) + '</div></div>';
     }
 
-    var html = '<div class="ov-wrap">';
-    html += '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai &middot; ' + vidRows.length + ' kandidatų</div>';
+    var html = '<div class="ov-wrap">'
+      + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai &middot; ' + vidRows.length + ' kandidatų</div>';
 
     var anyRendered = false;
     groupOrder.forEach(function(bId){
-      var g = groups[bId];
-      if (!g.rows.length) return;
+      var g = groupMap[bId];
+      if (!g.entries.length) return;
       anyRendered = true;
       html += '<div class="ov-char-lbl">' + esc(g.displayName.toUpperCase()) + '</div>';
       html += '<div class="grid-sm">';
-      g.rows.forEach(function(r){
-        var agId  = r.actors && r.actors.agency_id;
-        var match = agId ? agencyToChar[agId] : null;
-        var navBaId     = match ? match.baId     : r.id;
-        var navBasketId = match ? match.basketId : r.basket_id;
-        html += renderCard(r, navBaId, navBasketId);
-      });
+      g.entries.forEach(function(entry){ html += renderCard(entry); });
       html += '</div>';
     });
 
-    if (unmatched.length) {
+    if (unmatchedEntries.length) {
       anyRendered = true;
       html += '<div class="ov-char-lbl">NEPRISKIRTI</div><div class="grid-sm">';
-      unmatched.forEach(function(r){
-        html += renderCard(r, r.id, r.basket_id);
-      });
+      unmatchedEntries.forEach(function(entry){ html += renderCard(entry); });
       html += '</div>';
     }
 
