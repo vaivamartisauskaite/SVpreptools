@@ -1087,7 +1087,9 @@ async function updateBadges() {
   // parent and atrinkti isn't double-counted.
   try {
     if (!S.baskets || !S.baskets.length) return;
-    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + S.baskets.map(function(b){ return b.id; }).join(',') + ')&removed_from_agency=eq.false&select=id,basket_id,actor_id');
+    var countBasketIds = S.baskets.filter(function(b){ return !b.is_video_basket; }).map(function(b){ return b.id; });
+    if (!countBasketIds.length) { var nb0 = document.getElementById('naukBadge'); if (nb0) nb0.style.display = 'none'; return; }
+    var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + countBasketIds.join(',') + ')&removed_from_agency=eq.false&select=id,basket_id,actor_id');
     // Build pair map for dedup: actor_id+parent_basket_key → seen
     var parentOf = {};
     S.baskets.forEach(function(b){
