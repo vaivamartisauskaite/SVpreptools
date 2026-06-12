@@ -2633,28 +2633,35 @@ async function showVideoBandymai(btn) {
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
 
   try {
-    // Fetch ALL basket_actors with non-empty videos across all non-video baskets.
-    // videos is a JSON array — PostgREST can't filter by array length directly,
-    // so we fetch all and filter client-side.
-    var allNonVidBasketIds = S.baskets
-      .filter(function(b){ return !b.is_video_basket; })
-      .map(function(b){ return b.id; });
-
-    if (!allNonVidBasketIds.length) {
+    // 1. Gather every basket_actor row that has videos — from ANY basket
+    //    (video basket synced rows + hand-added videos in character baskets).
+    var allBasketIds = S.baskets.map(function(b){ return b.id; });
+    if (!allBasketIds.length) {
       document.getElementById('mainArea').innerHTML = '<div class="ov-wrap"><div style="font-size:13px;color:#888780;padding:20px 0">Nėra krepšelių.</div></div>';
       return;
     }
 
     var allRows = await sb(
-      '/rest/v1/basket_actors?basket_id=in.(' + allNonVidBasketIds.join(',') + ')&removed_from_agency=eq.false'
+      '/rest/v1/basket_actors?basket_id=in.(' + allBasketIds.join(',') + ')&removed_from_agency=eq.false'
       + '&select=id,status,basket_id,videos,hidden,actors(id,first_name,agency_id)'
     );
-    if (!S.showHidden) allRows = allRows.filter(function(r){ return !r.hidden; });
 
-    // Keep only rows that have at least one video
-    var vidRows = allRows.filter(function(r){ return Array.isArray(r.videos) && r.videos.length > 0; });
+    // Rows that actually carry videos
+    var videoRows = allRows.filter(function(r){ return Array.isArray(r.videos) && r.videos.length > 0; });
 
-    if (!vidRows.length) {
+    // 2. Build set of agency_ids that have video (these are the candidates to show)
+    //    and a videos lookup per agency_id (merged across rows).
+    var videoByAgency = {}; // agency_id → merged videos[]
+    videoRows.forEach(function(r){
+      var agId = r.actors && r.actors.agency_id;
+      if (!agId) return;
+      if (!videoByAgency[agId]) videoByAgency[agId] = [];
+      var seen = new Set(videoByAgency[agId].map(function(v){ return v && v.url; }));
+      (r.videos || []).forEach(function(v){ if (v && v.url && !seen.has(v.url)) { seen.add(v.url); videoByAgency[agId].push(v); } });
+    });
+
+    var videoAgencyIds = Object.keys(videoByAgency);
+    if (!videoAgencyIds.length) {
       document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
         + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
         + '<div style="font-size:13px;color:#888780;padding:20px 0">Nėra aktorių su video. Paleiskite Video Sync arba pridėkite video per "Papildyti informaciją".</div>'
@@ -2662,26 +2669,16 @@ async function showVideoBandymai(btn) {
       return;
     }
 
-    // Photos
-    var actorIds = Array.from(new Set(vidRows.map(function(r){ return r.actors && r.actors.id; }).filter(Boolean)));
-    var pMap = {};
-    if (actorIds.length) {
-      var photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIds.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
-      photos.forEach(function(p){ if (!pMap[p.actor_id]) pMap[p.actor_id] = []; pMap[p.actor_id].push(p); });
-    }
-
-    // Build basketsById for display names
-    var basketsById = {};
-    S.baskets.forEach(function(b){ basketsById[b.id] = b; });
-
-    // atrinkti basket_id → parent basket_id
+    // 3. atrinkti basket_id → parent basket_id
     var atrToParent = {};
     S.baskets.forEach(function(b){
       if (!b.is_atrinkti && b.atrinkti_basket_id) atrToParent[b.atrinkti_basket_id] = b.id;
     });
 
-    // Group rows by their basket, resolving atrinkti → parent.
-    // groupMap keyed by display basket id (parent, not atrinkti).
+    // 4. For each video-bearing actor, find ALL character baskets they belong to
+    //    (from allRows, excluding video baskets). Place a card under each.
+    var vidBasketIdSet = new Set(S.baskets.filter(function(b){ return b.is_video_basket; }).map(function(b){ return b.id; }));
+
     var groupMap = {};
     var groupOrder = [];
     S.baskets.filter(function(b){ return !b.is_atrinkti && !b.is_video_basket; }).forEach(function(b){
@@ -2689,14 +2686,42 @@ async function showVideoBandymai(btn) {
       groupOrder.push(b.id);
     });
 
-    vidRows.forEach(function(r){
-      var bId    = r.basket_id;
-      var target = atrToParent[bId] || bId;
-      if (groupMap[target]) {
-        groupMap[target].entries.push({ r: r, navBaId: r.id, navBasketId: target });
-      }
-      // If target not in groupMap (shouldn't happen) just skip
+    // Track placement to avoid dupes: agency_id + group basket
+    var placed = new Set();
+    var shownActorIds = new Set();
+    var matchedAgency = new Set();
+
+    allRows.forEach(function(r){
+      var agId = r.actors && r.actors.agency_id;
+      if (!agId || !videoByAgency[agId]) return;       // only video-bearing actors
+      if (vidBasketIdSet.has(r.basket_id)) return;      // skip the video basket membership itself
+      var target = atrToParent[r.basket_id] || r.basket_id;
+      if (!groupMap[target]) return;
+      var key = agId + '|' + target;
+      if (placed.has(key)) return;
+      placed.add(key);
+      matchedAgency.add(agId);
+      groupMap[target].entries.push({ r: r, agId: agId, navBaId: r.id, navBasketId: target });
+      if (r.actors && r.actors.id) shownActorIds.add(r.actors.id);
     });
+
+    // Video-bearing actors not in any character basket → Nepriskirti
+    var unmatchedEntries = [];
+    videoRows.forEach(function(r){
+      var agId = r.actors && r.actors.agency_id;
+      if (!agId || matchedAgency.has(agId)) return;
+      matchedAgency.add(agId); // dedupe
+      unmatchedEntries.push({ r: r, agId: agId, navBaId: r.id, navBasketId: r.basket_id });
+      if (r.actors && r.actors.id) shownActorIds.add(r.actors.id);
+    });
+
+    // 5. Photos for all shown actors
+    var pMap = {};
+    var actorIdList = Array.from(shownActorIds);
+    if (actorIdList.length) {
+      var photos = await sb('/rest/v1/actor_photos?actor_id=in.(' + actorIdList.join(',') + ')&select=actor_id,storage_path,is_primary&order=is_primary.desc');
+      photos.forEach(function(p){ if (!pMap[p.actor_id]) pMap[p.actor_id] = []; pMap[p.actor_id].push(p); });
+    }
 
     function renderCard(entry) {
       var r        = entry.r;
@@ -2713,8 +2738,9 @@ async function showVideoBandymai(btn) {
            + '<div class="card-name">' + esc(name) + '</div></div>';
     }
 
+    var totalCards = Object.keys(videoByAgency).length;
     var html = '<div class="ov-wrap">'
-      + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai &middot; ' + vidRows.length + ' su video</div>';
+      + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai &middot; ' + totalCards + ' su video</div>';
 
     var anyRendered = false;
     groupOrder.forEach(function(bId){
@@ -2726,6 +2752,13 @@ async function showVideoBandymai(btn) {
       g.entries.forEach(function(entry){ html += renderCard(entry); });
       html += '</div>';
     });
+
+    if (unmatchedEntries.length) {
+      anyRendered = true;
+      html += '<div class="ov-char-lbl">NEPRISKIRTI</div><div class="grid-sm">';
+      unmatchedEntries.forEach(function(entry){ html += renderCard(entry); });
+      html += '</div>';
+    }
 
     if (!anyRendered) {
       html += '<div style="font-size:13px;color:#888780;padding:20px 0">Nerasta aktorių su video.</div>';
