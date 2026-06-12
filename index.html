@@ -909,7 +909,7 @@ async function loadData() {
     // detectAtrinkti can pair an active basket with a removed sibling whose
     // refs/comments still live in DB. S.baskets remains the active set used
     // everywhere else (sidebar, grid, etc.).
-    S.allBaskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order,removed_from_agency,is_manual,created_by&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
+    S.allBaskets = await sb('/rest/v1/baskets?project_id=eq.' + S.projectId + '&select=id,name,basket_date,actor_count,sort_order,removed_from_agency,is_manual,created_by,is_video_basket&order=sort_order.asc.nullslast,basket_date.asc,name.asc');
     S.baskets = S.allBaskets.filter(function(b){ return !b.removed_from_agency; });
     detectAtrinkti();
     await computeAllBasketCounts();
@@ -1055,7 +1055,7 @@ function renderSidebar() {
     return;
   }
   // Atrinkti baskets are merged into their parent and never shown standalone
-  var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti && !/pakviesti.*video/i.test(b.name); });
+  var sbBaskets = S.baskets.filter(function(b){ return !b.is_atrinkti && !b.is_video_basket; });
   if (!sbBaskets.length) { list.innerHTML = '<div style="padding:14px;font-size:11px;color:#888780">Veikėjų nerasta</div>'; return; }
   list.innerHTML = sbBaskets.map(function(b) {
     return '<div class="sb-item ' + (b.id === S.activeBasketId && S.view === 'basket' ? 'act' : '') + '"'
@@ -1393,7 +1393,7 @@ function renderNauji(newOnes) {
     + (newOnes.length ? '<button class="fl" onclick="markNaujiRead()">Žymėti kaip peržiūrėta</button>' : '') + '</div>';
   if (!newOnes.length) { html += '<div class="empty-state">Naujų kandidatų nėra</div>'; document.getElementById('mainArea').innerHTML = html; return; }
   // Iterate parent baskets only; new candidates from atrinkti basket appear under parent
-  S.baskets.filter(function(b){ return !b.is_atrinkti && !/pakviesti.*video/i.test(b.name); }).forEach(function(basket) {
+  S.baskets.filter(function(b){ return !b.is_atrinkti && !b.is_video_basket; }).forEach(function(basket) {
     var basketIds = basket.atrinkti_basket_id ? [basket.id, basket.atrinkti_basket_id] : [basket.id];
     var bNew = newOnes.filter(function(r){ return basketIds.indexOf(r.basket_id) >= 0; });
     if (!bNew.length) return;
@@ -2633,7 +2633,7 @@ async function showVideoBandymai(btn) {
   document.getElementById('mainArea').innerHTML = '<div class="loading"><div class="spinner"></div> Kraunama…</div>';
 
   try {
-    var vidBaskets = S.baskets.filter(function(b){ return /pakviesti.*video/i.test(b.name); });
+    var vidBaskets = S.baskets.filter(function(b){ return b.is_video_basket; });
     if (!vidBaskets.length) {
       document.getElementById('mainArea').innerHTML = '<div class="ov-wrap">'
         + '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#888780;margin-bottom:12px">Video bandymai</div>'
@@ -2965,7 +2965,7 @@ function renderBoard() {
     }
     var basket = basketsById[cat.basket_id];
     // Skip video-audition basket categories — they don't belong in boards
-    if (basket && /pakviesti.*video/i.test(basket.name)) {
+    if (basket && basket.is_video_basket) {
       html += '<div class="brd-cell-empty" data-cell-idx="' + i + '"></div>';
       continue;
     }
@@ -3026,7 +3026,7 @@ function renderBoard() {
   // "+ Pridėti veikėją" — only when there are baskets not yet on the board
   if (isOwner) {
     var existingBasketIds = new Set(d.categories.map(function(c){ return c.basket_id; }));
-    var available = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !existingBasketIds.has(bk.id) && !/pakviesti.*video/i.test(bk.name); });
+    var available = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !existingBasketIds.has(bk.id) && !bk.is_video_basket; });
     if (available.length > 0) {
       html += '<div class="brd-add-cat-card" onclick="addCategoryPrompt()">+ Pridėti veikėją (' + available.length + ' likę)</div>';
     }
@@ -3082,7 +3082,7 @@ async function createBoard() {
     });
     var newBoard = Array.isArray(rows) ? rows[0] : rows;
     // Auto-populate with all current parent baskets (skip atrinkti)
-    var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !/pakviesti.*video/i.test(bk.name); });
+    var parentBaskets = S.baskets.filter(function(bk){ return !bk.is_atrinkti && !bk.is_video_basket; });
     if (parentBaskets.length) {
       var catRows = parentBaskets.map(function(bk, i){
         return { board_id: newBoard.id, basket_id: bk.id, position: i, cell_index: i };
@@ -3222,7 +3222,7 @@ async function removeCategoryFromBoard(catId) {
 async function addCategoryPrompt() {
   var d = S.boardData; if (!d || d.board.author_name !== S.username) return;
   var existing = new Set(d.categories.map(function(c){ return c.basket_id; }));
-  var available = S.baskets.filter(function(b){ return !b.is_atrinkti && !existing.has(b.id) && !/pakviesti.*video/i.test(b.name); });
+  var available = S.baskets.filter(function(b){ return !b.is_atrinkti && !existing.has(b.id) && !b.is_video_basket; });
   if (!available.length) { showToast('Visi veikėjai jau pridėti'); return; }
   // Build numbered list prompt — simplest UI for v1
   var listText = available.map(function(b, i){ return (i+1) + '. ' + b.name.toUpperCase(); }).join('\n');
