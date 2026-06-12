@@ -1471,14 +1471,19 @@ function photoCascadeFail(id) {
 }
 
 async function markNaujiRead() {
-  var ids = [];
-  document.querySelectorAll('.card.isnew').forEach(function(c) {
-    var m = c.getAttribute('onclick').match(/jumpToActor\('([^']+)'/);
-    if (m) ids.push(m[1]);
-  });
-  if (ids.length) await markActorsSeen(ids);
+  // Mark ALL unseen candidates across non-video baskets, not just rendered cards
+  try {
+    var ids = S.baskets.filter(function(b){ return !b.is_video_basket; }).map(function(b){ return b.id; });
+    if (ids.length) {
+      var rows = await sb('/rest/v1/basket_actors?basket_id=in.(' + ids.join(',') + ')&removed_from_agency=eq.false&select=id');
+      var unseen = rows.filter(function(r){ return !S.seenActors.has(r.id); }).map(function(r){ return r.id; });
+      if (unseen.length) await markActorsSeen(unseen);
+    }
+  } catch(e) {}
   document.getElementById('naukBadge').style.display = 'none';
-  showToast('Pažymėta kaip peržiūrėta'); loadNauji();
+  showToast('Pažymėta kaip peržiūrėta');
+  loadNauji();
+  updateBadges();
 }
 
 // ── Select basket ──────────────────────────────────────────────────────────
